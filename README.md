@@ -41,7 +41,7 @@ own language, in one tap.
    - **Copy result:** one tap copies the whole verdict as plain text
 3. **Aman, the AI assistant** — a shield-and-star robot — answers
    scam-safety questions in a chat (same AI as the checker, in the
-   interface language), with optional voice readout, and can send a
+   interface language), and can send a
    pasted message to the real checker with one tap.
 4. Six **one-click samples** (clear scam, suspicious, safe, plus three
    real Indonesian cases: a fake wedding-invitation APK, a fake
@@ -88,15 +88,12 @@ own language, in one tap.
   in the first place.
 - **One-tap paste:** one tap reads the clipboard and checks immediately.
 - **Senior mode:** bigger text and buttons (the main check button
-  is relabelled "Check this message"), and the verdict read out loud.
+  is relabelled "Check this message").
   Saved on the device (`localStorage`).
 - **One-tap family alert:** warn the family in seconds — a pre-filled
   WhatsApp message (wa.me link) in all 8 interface languages — plus a
   shareable warning card rendered as a PNG through the native share
   sheet, and a one-tap PDF report (browser print, no dependencies).
-- **Voice readout:** the Voice toggle reads Aman's answers out loud, each
-  answer has its own "Listen" button, and the app says honestly when the
-  device has no usable voice.
 
 ### Phone and PC, 8 languages
 
@@ -224,7 +221,7 @@ src/main.js              UI wiring, samples, online/offline indicator, copy/CSV,
                          senior mode, family alert, PDF report
 src/ai.js                Firebase AI Logic integration + demo heuristic +
                          Aman chat (askAssistant) + screenshot analysis
-src/assistant.js         Aman — the virtual AI assistant (avatar + chat + voice)
+src/assistant.js         Aman — the virtual AI assistant (avatar + chat)
 src/risks.js             Local link-risk analysis + phone/account extraction
 src/files.js             Local fake-file-name detection (APK, programs, archives, docs)
 src/filecheck.js         Real-file inspection (magic bytes + local SHA-256)
@@ -295,13 +292,13 @@ deliberately narrow so that it stays true:
 
 Numbers we can stand behind (all re-runnable from this repo):
 
-- **63 tests passing, 0 failing** — `npm test` (43 unit tests in
+- **59 tests passing, 0 failing** — `npm test` (43 unit tests in
   `tests/unit.test.mjs`: local detectors, link-risk rules, email brand
   checks, privacy gates; plus 4 structural tests for `firestore.rules`
-  in `tests/rules.test.mjs`; plus 16 gap-fix tests in
+  in `tests/rules.test.mjs`; plus 12 gap-fix tests in
   `tests/gaps.test.mjs` — text files, number-only call checks, call-voice
-  transcription helpers + verdict merge, the standalone link tracker,
-  the cloud-voice model pin and the device-voice chunking). The rules tests assert on
+  transcription helpers + verdict merge, the standalone link tracker).
+  The rules tests assert on
   the rules text (no Java → no Firestore emulator here) and say so.
 - **AI benchmark protocol** — `tests/ai-benchmark-cases.json` +
   `tests/AI-BENCHMARK.md`: 25 fixed cases run through the live site
@@ -319,11 +316,9 @@ Numbers we can stand behind (all re-runnable from this repo):
   checking was removed the same day by the owner's order — no official
   registry can verify a QRIS merchant, so the feature was deleted
   rather than kept half-working.
-- **Voice fixed the same day** — cloud voice moved from the retired
-  preview model to the stable `gemini-3.8-flash-tts` (verbatim prompt),
-  audio unlock inside the tap, "Listen" button on the result card,
-  voice toggle defaults to on and remembers its setting, device voice
-  speaks in sentence chunks so long answers are heard to the end.
+- **Voice output removed 19 Nov** — cloud TTS + device voice never
+  sounded on the user's phone, so the whole voice-output feature was
+  removed; call-voice INPUT (record/upload → transcribe → score) is kept.
 - Live site verified: real Gemini verdicts with the `IN_CLOUD` badge.
 
 ## What's next

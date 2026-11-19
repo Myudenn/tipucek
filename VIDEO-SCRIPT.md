@@ -31,13 +31,11 @@ it", the four checker tabs visible.
 
 Visual: scroll to the "Ask Aman" panel. Aman, the robot-shield
 avatar, sits in the panel (he stays there — he does not wander the
-page). Click "What is OTP fraud?" — the answer appears with its
-Listen button.
+page). Click "What is OTP fraud?" — the answer appears.
 
 > "Meet Aman, your AI safety buddy. He lives in this panel — ask him
 > anything about suspicious messages, and he answers with the same AI
-> that checks them. He never asks for personal data. Switch Voice on,
-> and he can read his answers out loud."
+> that checks them. He never asks for personal data."
 
 ## Shot 3 — The problem (0:23–0:40) — scam sample on screen
 

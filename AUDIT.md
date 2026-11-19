@@ -402,6 +402,29 @@ dipindah selama kerja mereka.
     itu terverifikasi 19 Nov ~16:00, lalu deploy ulang
     (bundle `index-Cy5R8RGb.js`, sha
     `2249f633…`) + cek live fresh 18/18 LOLOS.
+13. **Voice output DIHAPUS 19 Nov (perintah Myuden ~16:48 WIB).**
+    Fitur suara-keluar — cloud TTS + device voice: Voice toggle,
+    tombol "Listen"/"Dengar" di kartu hasil dan di jawaban Aman,
+    pembacaan verdict di senior mode — TIDAK PERNAH berbunyi di HP
+    pengguna, jadi dihapus total atas perintah pemilik, bukan
+    diperbaiki lagi. Yang dihapus: klaim suara-keluar di
+    `README.md`, `DEVPOST-DESCRIPTION.md`, `VIDEO-SCRIPT.md`
+    (diganti catatan penghapusan ini); tes model TTS + chunking
+    device-voice di `tests/gaps.test.mjs` (beserta import
+    `TTS_MODEL`/`splitSpeechChunks` — ekspornya dihapus dari
+    `src/ai.js`/`src/assistant.js` oleh pekerja kode); skrip
+    `video/verify-listen.cjs` (seluruhnya tentang tombol Dengar,
+    dihapus); semua assert toggle/Dengar/TTS di
+    `video/verify-rombak.cjs`, `video/verify-live-fresh.cjs`,
+    `video/verify-revert.cjs`, `video/verify-v25.cjs`,
+    `video/probe-local.cjs`, `video/probe-roam-mobile.cjs`.
+    Butir L.11 di atas ("di HP pengguna seharusnya bersuara…")
+    dengan ini TIDAK BERLAKU lagi, dibiarkan sebagai riwayat.
+    Dipertahankan + terverifikasi: INPUT suara telepon (rekam/unggah
+    rekaman → transkrip cloud → dinilai seperti pesan) — itu
+    deteksi, bukan suara keluar; tes `call voice` di
+    `tests/gaps.test.mjs` (MIME audio + validasi + merge verdict)
+    tetap hijau sesudah penghapusan.
 
 ## M. Bukti (lokasi file)
 

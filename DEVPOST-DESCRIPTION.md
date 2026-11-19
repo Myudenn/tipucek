@@ -115,7 +115,7 @@ the scam journey:
 - **One-tap paste:** one tap reads the clipboard and checks immediately —
   no selecting, copying and switching back and forth.
 - **Senior mode:** bigger text and buttons, a single "Check this message"
-  button, and the verdict read out loud. The choice is saved on the
+  button. The choice is saved on the
   device.
 - **One-tap family alert:** warn the family in seconds — a pre-filled
   WhatsApp message (wa.me link) in all 8 interface languages — plus a
@@ -125,9 +125,9 @@ the scam journey:
 ### Aman, the AI assistant
 
 Aman — a shield-and-star robot — answers scam-safety questions in a chat,
-in the interface language, with optional voice readout, and can send a
+in the interface language, and can send a
 pasted message to the real checker with one tap. He greets the user, and
-the chat card shows when he is thinking or speaking.
+the chat card shows when he is thinking or answering.
 
 ### Private by design
 
@@ -263,16 +263,15 @@ tool.
   screenshot, link, number, account, file, email, call and chat export —
   in 8 languages, with a privacy model enforced by code *and* by
   Firestore rules.
-- **63 tests passing** (`npm test` — 43 unit tests in
+- **59 tests passing** (`npm test` — 43 unit tests in
   `tests/unit.test.mjs`, covering the local detectors, link-risk
   rules, email brand checks and the privacy gates, plus 4 structural
   tests for `firestore.rules` in `tests/rules.test.mjs` proving the
   verdict-only field list, the owner-only read, and the hash-only
-  report shape, plus 16 gap-fix tests in `tests/gaps.test.mjs` for the
+  report shape, plus 12 gap-fix tests in `tests/gaps.test.mjs` for the
   holes live testing found on 19 Nov — text files, number-only
   call checks, call-voice transcription helpers + verdict merge, the
-  standalone link tracker, the cloud-voice model pin and the
-  device-voice chunking). No
+  standalone link tracker). No
   Firestore emulator is available on this machine
   (no Java), so the rules tests assert on the rules text itself and
   say so.
@@ -298,14 +297,10 @@ tool.
   by the owner's order: a pasted QRIS payload had been judged 0/100
   Safe, and no official registry can verify a QRIS merchant — so the
   feature was deleted entirely rather than kept half-working.
-- **Voice fixed the same day:** the cloud voice ran on the retired
-  preview model `gemini-3.1-flash-tts-preview` (silent fallback to the
-  device voice) — now on the stable `gemini-3.8-flash-tts` with a
-  verbatim prompt, an audio unlock inside the tap, a "Listen" button
-  on the result card as well as under Aman's answers, a voice toggle
-  that defaults to on and remembers its setting, and sentence
-  chunking so the device voice is heard to the end instead of
-  stopping after the first sentence.
+- **Voice output removed 19 Nov:** cloud TTS + device voice never
+  sounded on the user's phone, so the whole voice-output feature was
+  removed; call-voice INPUT (record/upload → transcribe → score) is
+  kept.
 - Ten new checker modules, senior mode, one-tap family alert and a PDF
   report — all shipped and verified on the live site.
 
