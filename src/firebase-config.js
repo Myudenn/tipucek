@@ -45,3 +45,25 @@ export function isFirebaseConfigured() {
     !firebaseConfig.projectId.startsWith("YOUR_")
   );
 }
+
+let emulatorsConnected = false;
+
+/**
+ * Test-only: when VITE_USE_FIRESTORE_EMULATOR=1, point Auth +
+ * Firestore at the local emulator suite (127.0.0.1:9099 / :8080)
+ * instead of production — so Playwright and rules tests never write
+ * to the live project. The flag is never set in production builds,
+ * so this is inert there. Safe to call from every Firestore init
+ * site: it connects at most once per page load.
+ */
+export async function connectEmulatorsIfEnabled(auth, db) {
+  if (emulatorsConnected) return;
+  if ((import.meta.env || {}).VITE_USE_FIRESTORE_EMULATOR !== "1") return;
+  const { connectAuthEmulator } = await import("firebase/auth");
+  const { connectFirestoreEmulator } = await import("firebase/firestore");
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", {
+    disableWarnings: true,
+  });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  emulatorsConnected = true;
+}

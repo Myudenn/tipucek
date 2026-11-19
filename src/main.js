@@ -13,6 +13,11 @@ import { AID_SCENARIOS } from "./firstaid.js";
 import { scanChatLog } from "./chatlog.js";
 import { analyzeOutgoing } from "./outbound.js";
 import { getReportCount, submitReport, reportHash } from "./reports.js";
+import {
+  validateCrowdReport,
+  submitCrowdReport,
+  loadLocalReports,
+} from "./crowdreport.js";
 import { lookupDomain, resolveShortLink, registrableDomain } from "./domain.js";
 import { getQuizQuestions } from "./quiz.js";
 import { analyzeEmail } from "./emailcheck.js";
@@ -95,17 +100,20 @@ function escapeHtml(s) {
 }
 
 function sourceBadge(source) {
+  // Plain-language badges (Myuden 19 Nov 17:44): the source code
+  // (ON_DEVICE / IN_CLOUD / DEMO / LOCAL) is internal only and never
+  // shown — the badge says in plain words where the answer came from.
   if (source === "ON_DEVICE") {
-    return `<span class="badge badge-device">ON_DEVICE — ${escapeHtml(t("badgeDevice", lang))}</span>`;
+    return `<span class="badge badge-device">${escapeHtml(t("badgeDevice", lang))}</span>`;
   }
   if (source === "IN_CLOUD") {
-    return `<span class="badge badge-cloud">IN_CLOUD — ${escapeHtml(t("badgeCloud", lang))}</span>`;
+    return `<span class="badge badge-cloud">${escapeHtml(t("badgeCloud", lang))}</span>`;
   }
   if (source === "DEMO") {
-    return `<span class="badge badge-demo">DEMO</span>`;
+    return `<span class="badge badge-demo">${escapeHtml(t("badgeDemo", lang))}</span>`;
   }
   if (source === "LOCAL") {
-    return `<span class="badge badge-local">LOCAL — ${escapeHtml(t("badgeLocal", lang))}</span>`;
+    return `<span class="badge badge-local">${escapeHtml(t("badgeLocal", lang))}</span>`;
   }
   return `<span class="badge badge-unknown">${escapeHtml(t("badgeUnknown", lang))}</span>`;
 }
@@ -642,6 +650,105 @@ function setOnlineState() {
   $("offline-note").hidden = online;
 }
 
+// Crowd reports ("Laporkan penipuan"): the value label + placeholder
+// follow the selected type (phone / account / mode) and the UI
+// language. Kept in JS (not data-i18n) because one input serves
+// three labels.
+const CROWD_LABEL_KEY = {
+  phone: "crowdValuePhone",
+  account: "crowdValueAccount",
+  mode: "crowdValueMode",
+};
+const CROWD_PLACEHOLDER_KEY = {
+  phone: "crowdValuePhPhone",
+  account: "crowdValuePhAccount",
+  mode: "crowdValuePhMode",
+};
+function updateCrowdLabels() {
+  const type = $("crowd-type").value;
+  $("crowd-value-label").textContent = t(CROWD_LABEL_KEY[type] || "crowdValuePhone", lang);
+  $("crowd-value").placeholder = t(CROWD_PLACEHOLDER_KEY[type] || "crowdValuePhPhone", lang);
+}
+
+// Local-only list of the user's own sent crowd reports (in the
+// history panel). The reports themselves live in Firestore for team
+// review; this list is just the user's own copy on this device.
+function renderCrowdHistory() {
+  const reports = loadLocalReports();
+  const list = $("crowd-history-list");
+  const empty = $("crowd-history-empty");
+  if (reports.length === 0) {
+    list.innerHTML = "";
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  list.innerHTML = reports
+    .map((r) => {
+      const when = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
+      const typeLabel = t(CROWD_LABEL_KEY[r.type] || "crowdValuePhone", lang);
+      const text = `${r.value} — ${r.details || ""}`;
+      return `<li class="history-item">
+        <span class="history-status">${escapeHtml(typeLabel)}</span>
+        <span class="history-score">${escapeHtml(t("crowdHistoryPending", lang))}</span>
+        <span class="history-text">${escapeHtml(text.slice(0, 90))}${text.length > 90 ? "…" : ""}</span>
+        <time>${escapeHtml(when)}</time>
+      </li>`;
+    })
+    .join("");
+}
+
+async function onCrowdSubmit() {
+  const btn = $("crowd-submit-btn");
+  const type = $("crowd-type").value;
+  const value = $("crowd-value").value;
+  const details = $("crowd-details").value;
+  const valueErr = $("crowd-value-error");
+  const detailsErr = $("crowd-details-error");
+  const submitErr = $("crowd-submit-error");
+  const success = $("crowd-success");
+  valueErr.hidden = true;
+  detailsErr.hidden = true;
+  submitErr.hidden = true;
+  success.hidden = true;
+  const errors = validateCrowdReport({ type, value, details });
+  if (errors.value) {
+    valueErr.textContent = t(errors.value, lang);
+    valueErr.hidden = false;
+  }
+  if (errors.details) {
+    detailsErr.textContent = t(errors.details, lang);
+    detailsErr.hidden = false;
+  }
+  if (Object.keys(errors).length > 0) return;
+  btn.disabled = true;
+  btn.textContent = t("crowdSubmitting", lang);
+  try {
+    const res = await submitCrowdReport({ type, value, details });
+    if (res.ok) {
+      $("crowd-value").value = "";
+      $("crowd-details").value = "";
+      success.hidden = false;
+      renderCrowdHistory();
+    } else if (res.errors) {
+      if (res.errors.value) {
+        valueErr.textContent = t(res.errors.value, lang);
+        valueErr.hidden = false;
+      }
+      if (res.errors.details) {
+        detailsErr.textContent = t(res.errors.details, lang);
+        detailsErr.hidden = false;
+      }
+    } else {
+      submitErr.textContent = t("crowdErrSubmit", lang);
+      submitErr.hidden = false;
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t("crowdSubmit", lang);
+  }
+}
+
 // Warm the AI (App Check token + on-device model) in the background after
 // the user's first gesture, so the actual check is fast. Runs once,
 // never blocks, never shows errors.
@@ -765,6 +872,36 @@ function switchCheckerTab(name) {
   tabs.forEach((n) => {
     $(`tab-${n}`).hidden = n !== name;
     const b = $(`tab-btn-${n}`);
+    b.classList.toggle("active", n === name);
+    b.setAttribute("aria-selected", n === name ? "true" : "false");
+  });
+}
+
+// Module tabs (below the quick checker): file | link | contacts | aid
+// | chatlog | quiz | assistant | history | how. Same WAI-ARIA tabs
+// pattern as the checker tabs — one panel visible at a time, all
+// modules keep working exactly as before, nothing is removed.
+// Tab order follows the most common needs (Myuden 19 Nov 17:44):
+// check tools first (file, link), then official contacts + emergency
+// guide + report, then chat export, quiz and Aman; history and how it
+// works last so they never disturb the main flow.
+const MODULE_TABS = ["file", "link", "contacts", "aid", "report", "chatlog", "quiz", "assistant", "history", "how"];
+const MODULE_PANELS = {
+  file: "filecheck",
+  link: "linktrack",
+  contacts: "contacts",
+  aid: "firstaid",
+  chatlog: "chatlog",
+  quiz: "quiz",
+  assistant: "assistant",
+  history: "history",
+  report: "crowdreport",
+  how: "how",
+};
+function switchModuleTab(name) {
+  MODULE_TABS.forEach((n) => {
+    $(MODULE_PANELS[n]).hidden = n !== name;
+    const b = $(`module-tab-${n}`);
     b.classList.toggle("active", n === name);
     b.setAttribute("aria-selected", n === name ? "true" : "false");
   });
@@ -1248,6 +1385,8 @@ function applyStaticLanguage() {
   buildContactsCats();
   renderContacts();
   renderAidOptions();
+  updateCrowdLabels();
+  renderCrowdHistory();
   if (!quizState) $("quiz-start-btn").textContent = t("quizStart", lang);
   $("image-btn").disabled = demo || !selectedImage;
   refreshAssistantLanguage();
@@ -1326,6 +1465,23 @@ function init() {
         e.preventDefault();
         switchCheckerTab(tabNames[next]);
         $(`tab-btn-${tabNames[next]}`).focus();
+      }
+    });
+  });
+  // Module tabs: click + arrow keys (WAI-ARIA tabs pattern).
+  MODULE_TABS.forEach((n, i) => {
+    $(`module-tab-${n}`).addEventListener("click", () => switchModuleTab(n));
+    $(`module-tab-${n}`).addEventListener("keydown", (e) => {
+      let next = -1;
+      if (e.key === "ArrowRight") next = (i + 1) % MODULE_TABS.length;
+      else if (e.key === "ArrowLeft")
+        next = (i - 1 + MODULE_TABS.length) % MODULE_TABS.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = MODULE_TABS.length - 1;
+      if (next >= 0) {
+        e.preventDefault();
+        switchModuleTab(MODULE_TABS[next]);
+        $(`module-tab-${MODULE_TABS[next]}`).focus();
       }
     });
   });
@@ -1424,7 +1580,7 @@ function init() {
         <div class="actions"><button id="filecheck-ai-btn" type="button" class="secondary">${escapeHtml(t("fileCheckAiBtn", lang))}</button></div>`;
       }
       box.innerHTML = `<div class="file-item file-${info.level}"><span class="file-name">${escapeHtml(info.fileName)}</span> — ${escapeHtml(t(info.reasonKey, lang))}</div>
-        <p class="muted">${escapeHtml(t("fileCheckType", lang))}: ${escapeHtml(info.kind)}${info.sha256 ? ` · SHA-256 <code>${escapeHtml(info.sha256.slice(0, 16))}…</code>` : ""}</p>
+        <p class="muted">${escapeHtml(t("fileCheckType", lang))}: ${escapeHtml(info.kind)}${info.sha256 ? ` · ${escapeHtml(t("fileFingerprintLabel", lang))} <code>${escapeHtml(info.sha256.slice(0, 16))}…</code>` : ""}</p>
         ${countLine}
         ${textScoreLine}
         <div class="actions"><button id="filecheck-report-btn" type="button" class="secondary">${escapeHtml(t("reportBtn", lang))}</button></div>
@@ -1552,6 +1708,11 @@ function init() {
   $("quiz-start-btn").addEventListener("click", startQuiz);
   $("quiz-scam-btn").addEventListener("click", () => answerQuiz(true));
   $("quiz-safe-btn").addEventListener("click", () => answerQuiz(false));
+  // Crowd reports ("Laporkan penipuan").
+  $("crowd-type").addEventListener("change", updateCrowdLabels);
+  $("crowd-submit-btn").addEventListener("click", onCrowdSubmit);
+  updateCrowdLabels();
+  renderCrowdHistory();
   $("clear-history-btn").addEventListener("click", async () => {
     clearLocalHistory();
     renderHistory(await loadHistory());

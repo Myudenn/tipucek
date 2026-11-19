@@ -15,7 +15,7 @@
 // free Spark plan), so writes are throttled per device in localStorage
 // (one report per hash per 24 h) + App Check + auth + strict rules.
 
-import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
+import { firebaseConfig, isFirebaseConfigured, connectEmulatorsIfEnabled } from "./firebase-config.js";
 
 let dbReady = false;
 let db = null;
@@ -35,6 +35,7 @@ async function getDb() {
     uid = cred.user.uid;
     const { getFirestore } = await import("firebase/firestore");
     db = getFirestore(app);
+    await connectEmulatorsIfEnabled(auth, db);
     dbReady = true;
     return db;
   } catch (e) {

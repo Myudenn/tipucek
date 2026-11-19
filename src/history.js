@@ -16,7 +16,7 @@
 //     content in the cloud to leak. Reads merge localStorage entries
 //     so nothing is ever lost when the app switches between modes.
 
-import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
+import { firebaseConfig, isFirebaseConfigured, connectEmulatorsIfEnabled } from "./firebase-config.js";
 
 const LS_KEY = "pesanaman_history_v1";
 const MAX_ENTRIES = 50;
@@ -80,6 +80,7 @@ async function initFirestore() {
     currentUid = cred.user.uid;
     const { getFirestore } = await import("firebase/firestore");
     firestoreDb = getFirestore(app);
+    await connectEmulatorsIfEnabled(auth, firestoreDb);
     firestoreReady = true;
     return firestoreDb;
   } catch (e) {
