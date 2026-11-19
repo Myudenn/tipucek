@@ -17,7 +17,7 @@ import {
   loadLocalReports,
   recordLocalReport,
 } from "../src/crowdreport.js";
-import { analyzeWithHeuristic } from "../src/ai.js";
+import { analyzeWithHeuristic, codeOnlyVerdict } from "../src/ai.js";
 import { analyzeLink, analyzeLinks, extractNumbers } from "../src/risks.js";
 import { maskDigits, analyzeOutgoing } from "../src/outbound.js";
 import { parseChatExport, scanChatLog, CHATLOG_MAX_BYTES } from "../src/chatlog.js";
@@ -25,7 +25,7 @@ import { inspectFile, sha256HexOfBlob } from "../src/filecheck.js";
 import { getQuizQuestions } from "../src/quiz.js";
 import { registrableDomain, resolveShortLink } from "../src/domain.js";
 import { analyzeEmail } from "../src/emailcheck.js";
-import { analyzeCall } from "../src/callcheck.js";
+import { analyzeCall, mergeCallVerdict } from "../src/callcheck.js";
 
 const SCAM_PRIZE =
   "SELAMAT! Anda memenangkan hadiah Rp 50.000.000 dari undian Telkomsel. Segera klik link ini http://bit.ly/hadiah-telkomsel-2026 dan bayar biaya admin Rp 150.000 untuk klaim hadiah Anda sebelum 24 jam. Hubungi customer service kami segera!";
@@ -940,5 +940,82 @@ describe("polish 19 Nov 20:25: honest history, Mode AI label, Anda, Aman FAB", (
     assert.ok(/\.aman-fab\s*\{[^}]*min-height:\s*48px/s.test(STYLES), ".aman-fab must be at least 48px tall");
     assert.ok(/\.aman-fab\s*\{[^}]*bottom:\s*16px/s.test(STYLES), ".aman-fab must sit bottom-right");
     assert.ok(/body\s*\{[^}]*padding-bottom:\s*88px/s.test(STYLES), "body must reserve bottom space so the FAB never covers the footer");
+  });
+});
+
+describe("code-only fallback verdict (AI timeout fallback, 19 Nov)", () => {
+  // The fallback must be EXACTLY the deterministic heuristic, only
+  // re-labeled source "CODE" — nothing added, nothing inflated. The
+  // UI renders it as a code result without an AI verdict.
+  it("scam prize: same score/status/flags/summary as the heuristic, source CODE", () => {
+    const h = analyzeWithHeuristic(SCAM_PRIZE, "en");
+    const c = codeOnlyVerdict(SCAM_PRIZE, "en");
+    assert.equal(c.source, "CODE");
+    assert.equal(c.status, h.status);
+    assert.equal(c.riskScore, h.riskScore);
+    assert.deepEqual(c.redFlags, h.redFlags);
+    assert.equal(c.summary, h.summary);
+    assert.equal(c.status, "scam");
+    assert.ok(c.riskScore >= 60);
+  });
+  it("OTP sample (Myuden's timed-out check): suspicious 40, source CODE", () => {
+    // Pinned true value: the code check cannot know BCA's real number,
+    // so the fallback for this message is suspicious 40 — honest, and
+    // the card says it is code-only with a retry for the AI verdict.
+    const c = codeOnlyVerdict(OTP_SAMPLE, "id");
+    assert.equal(c.source, "CODE");
+    assert.equal(c.status, "suspicious");
+    assert.equal(c.riskScore, 40);
+    assert.ok(c.redFlags.length >= 1);
+  });
+  it("ordinary office message: safe 0, source CODE, identical to heuristic", () => {
+    const h = analyzeWithHeuristic(SAFE_OFFICE, "en");
+    const c = codeOnlyVerdict(SAFE_OFFICE, "en");
+    assert.deepEqual(
+      { status: c.status, riskScore: c.riskScore, redFlags: c.redFlags, summary: c.summary },
+      { status: h.status, riskScore: h.riskScore, redFlags: h.redFlags, summary: h.summary },
+    );
+    assert.equal(c.source, "CODE");
+  });
+  it("code-only strings exist in all 8 languages, honest, retry named", () => {
+    for (const code of LANG_CODES) {
+      const badge = t("badgeCode", code);
+      const note = t("codeOnlyNote", code, { retry: t("retryBtn", code) });
+      const receipt = t("receiptCode", code);
+      for (const [key, v] of [["badgeCode", badge], ["codeOnlyNote", note], ["receiptCode", receipt]]) {
+        assert.ok(typeof v === "string" && v.trim().length > 0, `${key} empty in ${code}`);
+        assert.notEqual(v, key, `${key} untranslated in ${code}`);
+        assert.doesNotMatch(v, /undefined/, `${key} has undefined in ${code}`);
+        assert.doesNotMatch(v, /\{retry\}/, `${key} left {retry} unfilled in ${code}`);
+      }
+      // The note must name the retry button, so the user knows the
+      // next step is one tap away.
+      assert.ok(note.includes(t("retryBtn", code)), `codeOnlyNote must name the retry button in ${code}`);
+      // The badge must say it is NOT an AI verdict (the honest label).
+      // "AI" is abbreviated IA in ES/FR/PT and KI in DE.
+      assert.ok(/AI|IA|KI/i.test(badge), `badgeCode must mention AI in ${code}: ${badge}`);
+      assert.ok(/AI|IA|KI/i.test(receipt), `receiptCode must mention AI in ${code}`);
+      if (code !== "en") assert.notEqual(badge, t("badgeCode", "en"), `badgeCode untranslated in ${code}`);
+    }
+  });
+  it("mergeCallVerdict keeps source CODE when the AI slot is the fallback", async () => {
+    const code = codeOnlyVerdict(SCAM_PRIZE, "en");
+    const { verdict: localSafe } = await analyzeCall({ number: "", said: "rapat besok jam 10" }, "en");
+    const merged = mergeCallVerdict(code, localSafe);
+    assert.equal(merged.source, "CODE");
+    assert.equal(merged.status, "scam");
+    assert.ok(merged.riskScore >= 60);
+    assert.ok(merged.redFlags.length >= 2);
+  });
+  it("main.js wires the fallback: CODE badge/note/retry, no cache of CODE, retry replaces", () => {
+    const SRC = readFileSync(new URL("../src/main.js", import.meta.url), "utf8");
+    assert.ok(SRC.includes('source === "CODE"'), "main.js must branch on source CODE");
+    assert.ok(SRC.includes('t("badgeCode"'), "main.js must use badgeCode");
+    assert.ok(SRC.includes('t("codeOnlyNote"'), "main.js must use codeOnlyNote");
+    assert.ok(SRC.includes('t("receiptCode"'), "main.js must use receiptCode");
+    assert.ok(SRC.includes('id="retry-ai-btn"'), "fallback card must have a retry button");
+    assert.ok(SRC.includes("codeOnlyVerdict(message, lang)"), "onCheck must build the fallback from the message");
+    assert.ok(SRC.includes("Never cache the fallback"), "fallback must not be cached (retry must ask the AI again)");
+    assert.ok(SRC.includes('$("result").hidden = true;'), "a failed fresh check must hide #result so no 'still loading' panel survives");
   });
 });

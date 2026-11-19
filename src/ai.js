@@ -241,6 +241,20 @@ export function analyzeWithHeuristic(message, lang = "en") {
   };
 }
 
+/**
+ * Code-only fallback verdict: the same deterministic rule set as
+ * analyzeWithHeuristic, marked source "CODE" so every surface (badge,
+ * receipt, history) can say honestly that this is a code result
+ * WITHOUT an AI verdict — never an AI verdict. Pure and deterministic:
+ * the score/status/flags are exactly the heuristic's, nothing added.
+ * Used when the AI verdict fails or times out (30 s), so the check
+ * still returns a real verdict instead of a dead error.
+ */
+export function codeOnlyVerdict(message, lang = "en") {
+  const local = analyzeWithHeuristic(message, lang);
+  return { ...local, source: "CODE" };
+}
+
 // ---------------------------------------------------------------------------
 // Production path: Firebase AI Logic (hybrid inference).
 // Lazy dynamic imports keep the Firebase SDK out of the demo path entirely.

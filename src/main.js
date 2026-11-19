@@ -1,7 +1,7 @@
 // TipuCek — UI wiring (single page).
 
 import "./styles.css";
-import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseConfigured, warmUpAI, preloadAiModules, analyzeWithHeuristic, MAX_MESSAGE_CHARS } from "./ai.js";
+import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseConfigured, warmUpAI, preloadAiModules, analyzeWithHeuristic, codeOnlyVerdict, MAX_MESSAGE_CHARS } from "./ai.js";
 import { analyzeLinks, extractNumbers } from "./risks.js";
 import { analyzeFiles } from "./files.js";
 import { buildWarningCard, shareWarningCard } from "./sharecard.js";
@@ -168,6 +168,9 @@ function sourceBadge(source) {
   if (source === "LOCAL") {
     return `<span class="badge badge-local">${escapeHtml(t("badgeLocal", lang))}</span>`;
   }
+  if (source === "CODE") {
+    return `<span class="badge badge-code">${escapeHtml(t("badgeCode", lang))}</span>`;
+  }
   return `<span class="badge badge-unknown">${escapeHtml(t("badgeUnknown", lang))}</span>`;
 }
 
@@ -179,6 +182,7 @@ function sourceLabel(source) {
   if (source === "IN_CLOUD") return t("badgeCloud", lang);
   if (source === "DEMO") return t("badgeDemo", lang);
   if (source === "LOCAL") return t("badgeLocal", lang);
+  if (source === "CODE") return t("badgeCode", lang);
   return t("badgeUnknown", lang);
 }
 
@@ -252,6 +256,7 @@ function fillPrintReport(verdict, links, phones, accounts) {
     <p><strong>${escapeHtml(t("printDate", lang))}:</strong> ${escapeHtml(when)}</p>
     <p><strong>${escapeHtml(t("printVerdict", lang))}:</strong> ${escapeHtml(statusLabel)}</p>
     <p><strong>${escapeHtml(t("printScore", lang))}:</strong> ${verdict.riskScore}/100</p>
+    ${verdict.source === "CODE" ? `<p>${escapeHtml(t("badgeCode", lang))}</p>` : ""}
     <p>${escapeHtml(verdict.summary)}</p>
     ${verdict.redFlags.length > 0 ? `<h2>${escapeHtml(t("printFlags", lang))}</h2><ul>${verdict.redFlags.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>` : ""}
     ${found.length > 0 ? `<h2>${escapeHtml(t("printFound", lang))}</h2><ul>${found.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>` : ""}
@@ -348,7 +353,11 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
   // verdict — the AI verdict above is the verdict. Shown only in
   // production mode: in demo mode the verdict IS this heuristic.
   let localSignal = "";
-  if (isFirebaseConfigured() && verdict.source !== "DEMO") {
+  if (
+    isFirebaseConfigured() &&
+    verdict.source !== "DEMO" &&
+    verdict.source !== "CODE"
+  ) {
     const local = analyzeWithHeuristic(message, lang);
     const localStatus =
       local.status === "scam"
@@ -370,7 +379,9 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
           ? t("receiptDemo", lang)
           : verdict.source === "LOCAL"
             ? t("receiptLocal", lang)
-            : t("receiptUnknown", lang);
+            : verdict.source === "CODE"
+              ? t("receiptCode", lang)
+              : t("receiptUnknown", lang);
   const receiptStored = isLocalOnly()
     ? t("receiptStoredLocal", lang)
     : t("receiptStoredCloud", lang);
@@ -402,6 +413,13 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
           )}</p>`
       : "";
   const statusLabel = t(STATUS_KEY[verdict.status] || "statusSafe", lang);
+  // Code-only fallback card: say so plainly, right under the verdict
+  // — the AI did not answer, this result is the code check only, and
+  // the retry button below asks the AI again.
+  const codeOnlyNote =
+    verdict.source === "CODE"
+      ? `<p class="code-only-note">${escapeHtml(t("codeOnlyNote", lang, { retry: t("retryBtn", lang) }))}</p>`
+      : "";
   el.innerHTML = `
     <article class="result-card status-${verdict.status}">
       <div class="result-head">
@@ -419,6 +437,7 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
         </div>
         <div class="result-badge">${sourceBadge(verdict.source)}${elapsed}</div>
       </div>
+      ${codeOnlyNote}
       <p class="result-next"><strong>${escapeHtml(t("whatToDo", lang))}</strong> ${escapeHtml(t(NEXT_KEY[verdict.status], lang))}</p>
       ${reportLine}
       ${imageNote}
@@ -432,6 +451,9 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
       <div id="report-counts" class="report-counts"></div>
       <div id="link-track" class="link-track"></div>
       <div class="result-actions">
+        ${verdict.source === "CODE"
+          ? `<button id="retry-ai-btn" type="button" class="secondary">${escapeHtml(t("retryBtn", lang))}</button>`
+          : ""}
         <button id="copy-result-btn" type="button" class="secondary">${escapeHtml(t("copyResult", lang))}</button>
         <button id="share-card-btn" type="button" class="secondary">${escapeHtml(t("shareCardBtn", lang))}</button>
         <button id="download-card-btn" type="button" class="secondary">${escapeHtml(t("downloadCardBtn", lang))}</button>
@@ -450,9 +472,22 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
     </article>`;
   el.hidden = false;
 
+  // Code-only fallback card: "Try again" re-runs the full check, so a
+  // successful retry replaces this card with the real AI verdict.
+  // Transcribed calls pass their own retry (re-score the same
+  // recording); every other card re-runs the message check.
+  const retryAiBtn = $("retry-ai-btn");
+  if (retryAiBtn) {
+    retryAiBtn.addEventListener("click", () => {
+      if (typeof extra.onRetry === "function") extra.onRetry();
+      else onCheck();
+    });
+  }
+
   $("copy-result-btn").addEventListener("click", async (ev) => {
     const lines = [
       `TipuCek — ${statusLabel} ${verdict.riskScore}/100`,
+      ...(verdict.source === "CODE" ? [t("badgeCode", lang)] : []),
       verdict.summary,
       ...(verdict.redFlags.length > 0
         ? [`${t("redFlags", lang)}: ${verdict.redFlags.join("; ")}`]
@@ -886,33 +921,54 @@ async function onCheck() {
     // AI verdict loads.
     const cached = verdictCacheGet("message", message, lang);
     let verdict;
-    let elapsedSec;
+    let elapsedSec = null;
     if (cached) {
       verdict = cached.verdict;
       elapsedSec = cached.elapsedSec;
     } else {
       renderCheckingPreview(message);
-      verdict = await analyzeMessage(
-        message,
-        ({ stage, progress }) => {
-          if (stage === "downloading-model") {
-            progressEl.textContent = t("preparingModel", lang, {
-              p: Math.round((progress || 0) * 100),
-            });
-          } else if (stage === "cloud") {
-            progressEl.textContent = t("cloudFallback", lang);
-          }
-        },
-        lang,
-      );
-      elapsedSec = (performance.now() - t0) / 1000;
-      if (isFirebaseConfigured()) {
-        verdictCacheSet("message", message, lang, {
-          verdict,
-          elapsedSec,
-          imageText: "",
-          extra: {},
-        });
+      let codeOnly = false;
+      try {
+        verdict = await analyzeMessage(
+          message,
+          ({ stage, progress }) => {
+            if (stage === "downloading-model") {
+              progressEl.textContent = t("preparingModel", lang, {
+                p: Math.round((progress || 0) * 100),
+              });
+            } else if (stage === "cloud") {
+              progressEl.textContent = t("cloudFallback", lang);
+            }
+          },
+          lang,
+        );
+      } catch (err) {
+        // AI failed or timed out (30 s): fall back to the deterministic
+        // code check — a real verdict from this message, honestly
+        // labeled code-only — instead of a dead error box. Input
+        // errors (message too long) are rejected by policy, not by the
+        // model, and demo mode has no AI to fail: rethrow those for
+        // the normal error path. Never cache the fallback: a retry
+        // must ask the AI again, not return this card from cache.
+        if (
+          !isFirebaseConfigured() ||
+          /message too long/i.test(err?.message || "")
+        ) {
+          throw err;
+        }
+        verdict = codeOnlyVerdict(message, lang);
+        codeOnly = true;
+      }
+      if (!codeOnly) {
+        elapsedSec = (performance.now() - t0) / 1000;
+        if (isFirebaseConfigured()) {
+          verdictCacheSet("message", message, lang, {
+            verdict,
+            elapsedSec,
+            imageText: "",
+            extra: {},
+          });
+        }
       }
     }
     // A newer check/re-check superseded this one: never render or save
@@ -930,6 +986,11 @@ async function onCheck() {
   } catch (err) {
     console.error(err);
     if (runId !== checkRunId) return;
+    // The interim panel ("AI verdict still loading") must not survive
+    // a failed check: nothing is loading anymore, and the panel would
+    // lie under the error box. (The re-check path keeps its own card
+    // and never reaches this catch.)
+    $("result").hidden = true;
     showCheckError(errorEl, err, () => onCheck());
   } finally {
     if (runId !== checkRunId) return;
@@ -1058,7 +1119,14 @@ async function recheckLastCheck() {
     if (runId !== checkRunId) return;
     // The old card stays exactly as it was (one language, intact) and
     // the error offers a retry that re-runs this same re-check.
-    showCheckError(errorEl, err, () => recheckLastCheck());
+    // Exception: when the card on screen is already a code-only
+    // fallback, it was just re-rendered in the new language by the
+    // instant re-label and already explains (with its own retry) that
+    // the AI did not answer — a second error box saying the same
+    // thing would only duplicate it.
+    if (lastRenderArgs?.verdict?.source !== "CODE") {
+      showCheckError(errorEl, err, () => recheckLastCheck());
+    }
   } finally {
     if (runId !== checkRunId) return;
     checkBusy = false;
@@ -1302,6 +1370,10 @@ async function onCallCheck() {
 // (callAudioLimit) and the user records it themselves.
 let callRecorder = null;
 let callRecordChunks = [];
+// Last recorded call audio, so a code-only fallback card's "Try again"
+// can re-score the same recording (the message check's retry would
+// check the wrong input).
+let lastCallAudioBlob = null;
 let callRecordTimer = null;
 let callRecordStartedAt = 0;
 const CALL_RECORD_MAX_SEC = 120;
@@ -1347,6 +1419,7 @@ function callAudioErrorText(err) {
  */
 async function scoreTranscribedCall(audioBlob) {
   const number = $("call-number").value.trim();
+  lastCallAudioBlob = audioBlob;
   hideCallAudioError();
   setCallAudioProgress(t("callTranscribing", lang));
   const t0 = performance.now();
@@ -1358,7 +1431,23 @@ async function scoreTranscribedCall(audioBlob) {
     $("call-transcript").textContent = transcript;
     $("call-transcript-box").hidden = false;
     $("call-said").value = transcript;
-    const aiVerdict = await analyzeMessage(scoredText, undefined, lang);
+    // The AI verdict for the transcript can time out like any message
+    // check (same 30 s budget): fall back to the code check on the
+    // transcript, merged with the local call analysis, instead of a
+    // dead error. A transcription failure has no transcript to score,
+    // so it still errors honestly below.
+    let aiVerdict;
+    try {
+      aiVerdict = await analyzeMessage(scoredText, undefined, lang);
+    } catch (err) {
+      if (
+        !isFirebaseConfigured() ||
+        /message too long/i.test(err?.message || "")
+      ) {
+        throw err;
+      }
+      aiVerdict = codeOnlyVerdict(scoredText, lang);
+    }
     const { verdict: localVerdict } = await analyzeCall(
       { number, said: scoredText },
       lang,
@@ -1366,8 +1455,14 @@ async function scoreTranscribedCall(audioBlob) {
     );
     const verdict = mergeCallVerdict(aiVerdict, localVerdict);
     const message = number ? `${number}: ${scoredText}` : scoredText;
-    const elapsedSec = (performance.now() - t0) / 1000;
-    renderResult(verdict, message, elapsedSec, "", { audio: true });
+    // No "checked in Xs" claim for a code-only card: the code verdict
+    // was instant, the seconds were waiting for the AI.
+    const elapsedSec =
+      verdict.source === "CODE" ? null : (performance.now() - t0) / 1000;
+    renderResult(verdict, message, elapsedSec, "", {
+      audio: true,
+      onRetry: () => scoreTranscribedCall(lastCallAudioBlob),
+    });
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
     lastStorageWhere = where;
