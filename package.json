@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/unit.test.mjs tests/rules.test.mjs tests/gaps.test.mjs",
+    "test": "node --test tests/unit.test.mjs tests/rules.test.mjs tests/gaps.test.mjs tests/cache-stale.test.mjs tests/nojs-render.test.mjs",
     "test:benchmark": "node tests/benchmark-local-rules.mjs"
   },
   "devDependencies": {
