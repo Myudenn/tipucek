@@ -2,7 +2,7 @@
 // Same-origin GET only; Firebase / Firestore / AI calls are cross-origin
 // and are never intercepted or cached.
 
-const CACHE = "tipucek-v6"; // v6: payment-code check removed + call voice added (19 Nov ~15:30) — force-update clients still on the v5 shell, which the 15:13 live test proved can linger in a reused browser profile
+const CACHE = "tipucek-v6"; // v6: payment-code check removed + call audio transcription added (19 Nov ~15:30) — force-update clients still on the v5 shell, which the 15:13 live test proved can linger in a reused browser profile
 const SHELL = [
   "/",
   "/index.html",
