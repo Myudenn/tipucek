@@ -596,6 +596,11 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 /* Local verdicts (email / call checks run on-device, no AI) */
 .badge-local { background: var(--accent-soft); color: var(--accent); }
 
+/* Code-only fallback verdict (AI timed out / failed): amber like the
+   demo badge — a caution signal, never the AI blue/green. */
+.badge-code { background: var(--warn-bg); color: var(--warn); }
+.code-only-note { border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 0.95rem; }
+
 /* Crowd reports ("Laporkan penipuan"): the privacy note is a warning
    box on purpose — this form SENDS data to the TipuCek database for
    review, unlike the local-only checkers. The success box is green
