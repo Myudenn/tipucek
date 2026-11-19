@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="PesanAman — a private scam-message scanner. Paste a suspicious SMS, WhatsApp, DM or email and get a verdict, risk score and red flags. Hybrid on-device / in-cloud AI via Firebase AI Logic."
+    />
+    <title>PesanAman — Private Scam Message Scanner</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">PA</span>
+          <div>
+            <h1>PesanAman</h1>
+            <p class="tagline">Private scam-message scanner</p>
+          </div>
+        </div>
+        <div class="topbar-status">
+          <span id="mode-label" class="mode-label">Demo mode</span>
+          <span id="net-status" class="net-pill online">Online</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div id="demo-banner" class="demo-banner" hidden>
+        <strong>Demo mode — connect Firebase to enable AI.</strong>
+        <span>
+          This build uses a local keyword analyzer so the full flow can be
+          tested without an account. Follow
+          <code>SETUP-MYUDEN.md</code> to connect Firebase AI Logic.
+        </span>
+      </div>
+
+      <p id="offline-note" class="offline-note" hidden>
+        You are offline (or in airplane mode). Only on-device inference can
+        run now — the cloud model is unreachable, and the on-device model must
+        already be downloaded on this device.
+      </p>
+
+      <section class="card checker" aria-labelledby="checker-heading">
+        <h2 id="checker-heading">Check a suspicious message</h2>
+        <p class="hint">
+          Paste an SMS, WhatsApp message, DM or email — in Indonesian or
+          English. In AI mode the message is analyzed on your device first
+          (private), and only falls back to the cloud when needed.
+        </p>
+
+        <label class="field-label" for="message-input">Message</label>
+        <textarea
+          id="message-input"
+          rows="6"
+          placeholder="Paste the suspicious message here…"
+        ></textarea>
+
+        <div class="samples" id="samples" aria-label="Try a sample message">
+          <span class="samples-label">Try a sample:</span>
+        </div>
+
+        <div class="actions">
+          <button id="check-btn" type="button" class="primary">Check message</button>
+          <p id="progress" class="progress" hidden></p>
+        </div>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section id="result" class="result" aria-live="polite" hidden></section>
+
+      <section class="card history" aria-labelledby="history-heading">
+        <div class="history-head">
+          <h2 id="history-heading">Check history</h2>
+          <button id="clear-history-btn" type="button" class="secondary">
+            Clear local history
+          </button>
+        </div>
+        <p id="storage-note" class="storage-note">
+          History is stored locally in this browser until Firebase is configured.
+        </p>
+        <p id="history-empty" class="muted">No checks yet.</p>
+        <ul id="history-list" class="history-list"></ul>
+      </section>
+
+      <section class="card how" aria-labelledby="how-heading">
+        <h2 id="how-heading">How it works</h2>
+        <ol>
+          <li>
+            <strong>On-device first.</strong> With Firebase AI Logic hybrid
+            inference (<code>PREFER_ON_DEVICE</code>), the message is analyzed
+            by a model running on this device — it never leaves your phone or
+            computer.
+          </li>
+          <li>
+            <strong>Cloud fallback.</strong> If the on-device model cannot
+            answer, the request goes to Gemini in the cloud
+            (<code>gemini-3.5-flash-lite</code>). The result card always shows
+            which one answered: <span class="badge badge-device">ON_DEVICE</span>
+            or <span class="badge badge-cloud">IN_CLOUD</span>.
+          </li>
+          <li>
+            <strong>Private history.</strong> Results are saved to Firestore
+            under an anonymous account. Without Firebase configured, history
+            stays in this browser's local storage only.
+          </li>
+        </ol>
+        <p class="muted">
+          PesanAman gives a risk assessment, not a guarantee. When in doubt,
+          verify the sender through an official channel and never share OTPs,
+          PINs or passwords.
+        </p>
+      </section>
+
+      <footer class="footer">
+        <p>
+          PesanAman — built for the #BuildHybridAI 2026 hackathon (Devpost +
+          Firebase). Open source under the Apache-2.0 license.
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
