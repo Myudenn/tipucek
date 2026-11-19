@@ -1,0 +1,123 @@
+{
+  "path": "DEMO local rules (analyzeWithHeuristic) — NOT AI accuracy",
+  "cases": 14,
+  "flaggedAccuracy": "14/14",
+  "falsePositives": "0/7",
+  "falseNegatives": "0/7",
+  "meanScoreScam": 49.4,
+  "meanScoreSafe": 7.7,
+  "rows": [
+    {
+      "id": "scam-prize",
+      "intent": "scam",
+      "status": "scam",
+      "score": 100,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-bca-block",
+      "intent": "scam",
+      "status": "suspicious",
+      "score": 38,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-otp",
+      "intent": "scam",
+      "status": "suspicious",
+      "score": 40,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-job-fee",
+      "intent": "scam",
+      "status": "suspicious",
+      "score": 38,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-family",
+      "intent": "scam",
+      "status": "suspicious",
+      "score": 54,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-apk",
+      "intent": "scam",
+      "status": "suspicious",
+      "score": 38,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-invest",
+      "intent": "scam",
+      "status": "suspicious",
+      "score": 38,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "safe-office",
+      "intent": "safe",
+      "status": "safe",
+      "score": 0,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-meeting-id",
+      "intent": "safe",
+      "status": "safe",
+      "score": 0,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-package",
+      "intent": "safe",
+      "status": "safe",
+      "score": 0,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-bill",
+      "intent": "safe",
+      "status": "safe",
+      "score": 0,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-birthday",
+      "intent": "safe",
+      "status": "safe",
+      "score": 22,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-transfer",
+      "intent": "safe",
+      "status": "safe",
+      "score": 22,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-courier-en",
+      "intent": "safe",
+      "status": "safe",
+      "score": 10,
+      "flagged": false,
+      "correct": true
+    }
+  ]
+}
