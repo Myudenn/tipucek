@@ -140,6 +140,7 @@ const STRINGS = {
     receiptSkipped: "Community counts and link tracing were skipped because cloud history is off (local-only mode).",
     localSignalTitle: "Code check (deterministic, on-device)",
     localSignalText: "Local rules scored this message {score}/100 ({status}) with {n} pattern matches — a supporting signal; the AI verdict above is the verdict.",
+    checkingPreviewNote: "Local rules scored this message {score}/100 ({status}) with {n} pattern matches. AI verdict still loading — this is a supporting signal, not the verdict.",
     fileCheckWorking: "Checking the file…",
     errorOffline:
       "You are offline — the on-device AI needs to be downloaded first.",
@@ -566,6 +567,7 @@ const STRINGS = {
     receiptSkipped: "Hitungan laporan dan pelacakan tautan dilewati karena riwayat cloud mati (mode hanya-lokal).",
     localSignalTitle: "Pemeriksaan kode (deterministik, di perangkat)",
     localSignalText: "Aturan lokal menilai pesan ini {score}/100 ({status}) dengan {n} pola cocok — sinyal pendukung; vonis AI di atas tetap vonisnya.",
+    checkingPreviewNote: "Aturan lokal menilai pesan ini {score}/100 ({status}) dengan {n} pola cocok. Vonis AI masih dimuat — ini hanya sinyal pendukung, bukan vonis.",
     fileCheckWorking: "Memeriksa file…",
     errorOffline:
       "Anda sedang offline — AI di perangkat harus sudah diunduh dulu.",
@@ -992,6 +994,7 @@ const STRINGS = {
     receiptSkipped: "Los recuentos de la comunidad y el rastreo de enlaces se omitieron porque el historial en la nube está desactivado (modo solo local).",
     localSignalTitle: "Revisión por código (determinista, en el dispositivo)",
     localSignalText: "Las reglas locales puntuaron este mensaje con {score}/100 ({status}) y {n} coincidencias de patrones — una señal de apoyo; el veredicto de la IA de arriba es el veredicto.",
+    checkingPreviewNote: "Las reglas locales puntuaron este mensaje con {score}/100 ({status}) y {n} coincidencias de patrones. Veredicto de IA aún cargando — esto es solo una señal de apoyo, no el veredicto.",
     fileCheckWorking: "Revisando el archivo…",
     errorOffline:
       "Estás sin conexión — la IA en el dispositivo necesita descargarse primero.",
@@ -1418,6 +1421,7 @@ const STRINGS = {
     receiptSkipped: "Les compteurs communautaires et le suivi des liens ont été ignorés car l'historique cloud est désactivé (mode local uniquement).",
     localSignalTitle: "Vérification par code (déterministe, sur l'appareil)",
     localSignalText: "Les règles locales ont noté ce message {score}/100 ({status}) avec {n} correspondances de motifs — un signal d'appui ; le verdict de l'IA ci-dessus reste le verdict.",
+    checkingPreviewNote: "Les règles locales ont noté ce message {score}/100 ({status}) avec {n} correspondances de motifs. Verdict de l'IA toujours en cours de chargement — ceci n'est qu'un signal d'appui, pas le verdict.",
     fileCheckWorking: "Vérification du fichier…",
     errorOffline:
       "Vous êtes hors ligne — l'IA sur l'appareil doit d'abord être téléchargée.",
@@ -1844,6 +1848,7 @@ const STRINGS = {
     receiptSkipped: "Community-Zählungen und Linkverfolgung wurden übersprungen, weil der Cloud-Verlauf deaktiviert ist (Nur-lokal-Modus).",
     localSignalTitle: "Code-Prüfung (deterministisch, auf dem Gerät)",
     localSignalText: "Lokale Regeln haben diese Nachricht mit {score}/100 ({status}) und {n} Musterübereinstimmungen bewertet — ein unterstützendes Signal; das KI-Urteil oben bleibt das Urteil.",
+    checkingPreviewNote: "Lokale Regeln haben diese Nachricht mit {score}/100 ({status}) und {n} Musterübereinstimmungen bewertet. KI-Urteil wird noch geladen — dies ist nur ein unterstützendes Signal, kein Urteil.",
     fileCheckWorking: "Datei wird geprüft…",
     errorOffline:
       "Sie sind offline — die KI auf dem Gerät muss zuerst heruntergeladen werden.",
@@ -2270,6 +2275,7 @@ const STRINGS = {
     receiptSkipped: "As contagens da comunidade e o rastreamento de links foram ignorados porque o histórico na nuvem está desativado (modo somente local).",
     localSignalTitle: "Verificação por código (determinística, no dispositivo)",
     localSignalText: "As regras locais pontuaram esta mensagem com {score}/100 ({status}) e {n} correspondências de padrões — um sinal de apoio; o veredito da IA acima é o veredito.",
+    checkingPreviewNote: "As regras locais pontuaram esta mensagem com {score}/100 ({status}) e {n} correspondências de padrões. Veredito de IA ainda carregando — isto é apenas um sinal de apoio, não o veredito.",
     fileCheckWorking: "Verificando o arquivo…",
     errorOffline:
       "Você está offline — a IA no dispositivo precisa ser baixada primeiro.",
@@ -2696,6 +2702,7 @@ const STRINGS = {
     receiptSkipped: "クラウド履歴がオフのため（ローカルのみモード）、コミュニティの件数とリンク追跡はスキップされました。",
     localSignalTitle: "コードチェック（確定的、デバイス上）",
     localSignalText: "ローカルルールはこのメッセージを{score}/100（{status}）、パターン一致{n}件と評価しました — 補助的なサインです。上のAIの判定が正式な判定です。",
+    checkingPreviewNote: "ローカルルールはこのメッセージを{score}/100（{status}）、パターン一致{n}件と評価しました。AIの判定はまだ読み込み中です — これは補助的なシグナルであり、判定そのものではありません。",
     fileCheckWorking: "ファイルを確認中…",
     errorOffline:
       "オフラインです — デバイス上のAIは事前にダウンロードされている必要があります。",
@@ -3122,6 +3129,7 @@ const STRINGS = {
     receiptSkipped: "由于云端历史记录已关闭（仅本地模式），社区计数和链接追踪已被跳过。",
     localSignalTitle: "代码检查（确定性、设备端）",
     localSignalText: "本地规则给这条消息打了 {score}/100（{status}），匹配了 {n} 个模式——这只是一个辅助信号；上方的 AI 结论才是最终结论。",
+    checkingPreviewNote: "本地规则给这条消息打了 {score}/100（{status}），匹配了 {n} 个模式。AI 判定仍在加载中——这只是一个辅助信号，不是判定。",
     fileCheckWorking: "正在检查文件…",
     errorOffline: "您已离线——设备端 AI 需要先下载。",
     resultVerdict: "结论",

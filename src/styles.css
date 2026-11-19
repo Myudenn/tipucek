@@ -271,6 +271,9 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .result-card.status-scam { border-top: 4px solid var(--danger); }
 .result-card.status-suspicious { border-top: 4px solid var(--warn); }
 .result-card.status-safe { border-top: 4px solid var(--safe); }
+/* Interim panel while the AI verdict loads: neutral accent top border
+   (never a verdict color), no score ring, no status heading. */
+.result-card.result-checking { border-top: 4px solid var(--accent); }
 .result-head { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
 .result-score-ring { position: relative; flex: 0 0 auto; }
 .ring-track { fill: none; stroke: var(--border); stroke-width: 7; }
