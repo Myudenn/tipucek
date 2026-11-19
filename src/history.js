@@ -165,6 +165,17 @@ export async function loadHistory() {
       ...remote,
       ...local.filter((l) => !seen.has(keyOf(l))),
     ];
+    // The cloud record carries only the 7 verdict fields (the rules
+    // forbid more), so a synced entry has no model — but the local
+    // copy of the same check does. Copy the model over so the history
+    // shows which model answered in both storage modes.
+    const localByKey = new Map(local.map((l) => [keyOf(l), l]));
+    for (const entry of merged) {
+      if (!entry.model) {
+        const model = localByKey.get(keyOf(entry))?.model;
+        if (model) entry.model = model;
+      }
+    }
     merged.sort((a, b) =>
       String(b.createdAt || "").localeCompare(String(a.createdAt || "")),
     );

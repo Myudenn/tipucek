@@ -174,5 +174,8 @@ export function mergeCallVerdict(aiVerdict, localVerdict) {
     redFlags,
     summary: String(ai.summary || local.summary || ""),
     source: ai.source || "Unknown",
+    // Which AI model produced the AI part (primary / backup / code /
+    // on-device): the local call analysis never supplies one.
+    model: ai.model,
   };
 }
