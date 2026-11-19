@@ -826,6 +826,35 @@ describe("language switch: per-language samples + re-check (bugs 1+2, 19 Nov)", 
       MAIN_JS.indexOf("// Screenshot check:"),
     );
     assert.ok(!recheckBody.includes("saveCheck"), "re-check must not call saveCheck (no duplicate history entry)");
+    // Audit 19 Nov: history items must show the plain-language source
+    // label (e.g. "Answered in the cloud"), never the raw source code
+    // (IN_CLOUD / ON_DEVICE).
+    assert.ok(
+      MAIN_JS.includes("function sourceLabel(source)"),
+      "sourceLabel helper must exist",
+    );
+    assert.ok(
+      MAIN_JS.includes("sourceLabel(e.source)"),
+      "history items must render sourceLabel(e.source)",
+    );
+    assert.ok(
+      !MAIN_JS.includes('<span class="history-source">${escapeHtml(e.source'),
+      "history items must never render the raw source code",
+    );
+    // Audit 19 Nov: the verdict cache must never store a demo result —
+    // every cache write is production-only (isFirebaseConfigured()).
+    for (const call of [
+      'verdictCacheSet("message"',
+      'verdictCacheSet("image"',
+      "verdictCacheSet(kind, message, lang",
+    ]) {
+      const at = MAIN_JS.indexOf(call);
+      assert.ok(at > 0, `cache write must exist: ${call}`);
+      assert.ok(
+        MAIN_JS.slice(Math.max(0, at - 200), at).includes("isFirebaseConfigured()"),
+        `cache write must be guarded by isFirebaseConfigured(): ${call}`,
+      );
+    }
   });
 });
 
