@@ -35,9 +35,54 @@ card in seconds:
 
 Every check is saved to check history (Firestore, anonymous login — no
 email, no name, no phone number), with live stats and a CSV export. An
-online/offline indicator shows the connection state, and three one-click
-samples (clear scam, suspicious, safe) make the demo fast. It checks
-messages in Indonesian or English.
+online/offline indicator shows the connection state, and six one-click
+samples (clear scam, suspicious, safe, plus three real Indonesian cases
+— a fake wedding-invitation APK, a fake part-time job, a fake bank OTP
+warning) make the demo fast. It checks messages in Indonesian or
+English.
+
+**Aman, the virtual AI assistant.** A small, handsome, dignified anime
+character who greets the user and answers scam-safety questions in a
+chat — in the UI language, with optional voice readout — and can send a
+pasted message to the real checker with one tap. He moves like a living
+character: he floats smoothly when idle, blinks, waves on greeting,
+and nods while he talks. (The art is one flat image, so the hand and
+mouth cannot move on their own — the whole character moves instead.)
+
+**Fake-file detection.** File names in the message are checked on the
+device: `.apk` installers, Windows programs, archives, and documents
+that push an install or a macro — each with a warning and advice. It
+reads names only; it never downloads or opens a file.
+
+**Report channels.** Every phone number links to Komdigi's aduannomor.id
+to report it; every account links to cekrekening.id; and scam verdicts
+carry a report line with both, even when the message has no number.
+
+**Roaming companion + voice.** A small Aman floats around the page —
+gliding edge to edge, bobbing, blinking, waving, coming to look at the
+verdict with the user after a check, parking while the user types. And
+he speaks: the Voice toggle reads every answer out loud (greeting out
+loud the moment it is turned on), each answer has its own "Listen"
+button, the app picks the best voice for the UI language, and it says
+honestly when the device has no usable voice.
+
+**Screenshot check.** Upload a screenshot of a chat and the cloud
+model's vision reads the text in it and judges it like a pasted message
+(the text it read is shown with the verdict).
+
+**Link risk + numbers.** Every URL is analyzed on the device — shortener,
+suspicious domain ending, brand look-alike, raw IP host — with a
+per-link risk label and reasons, without following any link. Phone
+numbers and bank accounts in the message are extracted and shown, with a
+link to the official account checker (cekrekening.id).
+
+**Shareable warning card.** One tap renders the verdict as a PNG card
+and shares it to a family WhatsApp group through the device's native
+share sheet (or downloads it).
+
+**PWA + Share Target.** The app is installable on a phone's home screen
+and registers as a share target: share any message to PesanAman straight
+from WhatsApp and it opens with the checker already filled in.
 
 **Automatic translation — 8 languages.** The whole interface is
 translated (English, Bahasa Indonesia, Español, Français, Deutsch,
@@ -91,7 +136,10 @@ live demo now returns Scam 100/100 with the `IN_CLOUD` badge.
 
 - More sample packs for the scam patterns seen most in Southeast Asia.
 - Optional on-device-only mode for users who never want a cloud call.
-- More interface languages, and a shareable result card.
+- A community-reported number database (with a proper backend and
+  moderation), so phone numbers and accounts can be checked against
+  real reports instead of only linked to the official checker.
+- More interface languages.
 
 ## Links
 

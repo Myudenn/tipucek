@@ -24,8 +24,10 @@ WhatsApp, DM or email — Indonesian or English) is a scam. Built for the
    export.
 4. An **offline / airplane-mode indicator** shows the connection state.
    While offline, only on-device inference can run.
-5. Three **one-click samples** (clear scam, suspicious, safe), shown as
-   chat bubbles, make the demo fast.
+5. Six **one-click samples** (clear scam, suspicious, safe, plus three
+   real Indonesian cases: a fake wedding-invitation APK, a fake
+   part-time job, a fake bank OTP warning), shown as chat bubbles,
+   make the demo fast.
 6. **Automatic translation — 8 languages.** The whole interface
    (English, Bahasa Indonesia, Español, Français, Deutsch, Português,
    日本語, 中文) is translated, and the verdict itself (summary + red
@@ -33,6 +35,57 @@ WhatsApp, DM or email — Indonesian or English) is a scam. Built for the
    by a translation table in demo mode. The language is picked
    automatically from the browser (`?lang=` overrides, the choice is
    saved), and a dropdown in the top bar switches it any time.
+7. **Aman, the virtual AI assistant.** A small, handsome, dignified
+   anime character (blue hair, blue eyes, blue hoodie) who greets the
+   user, answers scam-safety questions in a chat (same cloud model as
+   the checker, in the UI language), and can send a pasted message to
+   the real checker with one tap. Voice readout via the browser's
+   speech synthesis is available with a toggle (off by default).
+8. **Screenshot check (OCR + vision).** Upload a screenshot of a chat
+   and the cloud model reads the text in it and judges it like a pasted
+   message — the text it read is shown with the verdict. Cloud-only:
+   the on-device model cannot read images.
+9. **Link risk + numbers.** Every URL in a message is analyzed on the
+   device (shortener, suspicious TLD, brand look-alike, IP host,
+   punycode, http-only, @-trick) with a per-link risk label and reasons
+   — no link is followed and no database is consulted. Phone numbers
+   and bank-account-like numbers are extracted and shown, with a link
+   to the official checker (cekrekening.id) for accounts. PesanAman has
+   no scam-number database of its own and does not pretend otherwise.
+10. **Shareable warning card.** One tap renders the verdict as a PNG
+    card (verdict, score ring, summary, what to do, red flags) and
+    shares it through the device's native share sheet, or downloads it
+    — so a user can warn a family WhatsApp group in seconds.
+11. **PWA + Share Target.** The app is installable (manifest + service
+    worker, offline app shell) and registers as a share target: share
+    any message to PesanAman straight from WhatsApp and it opens with
+    the checker already filled in and running.
+12. **Aman moves like a living character.** He floats smoothly when idle
+    (with a shadow that softens as he rises), blinks every few seconds,
+    waves once on greeting, and nods while he talks. Honest note: the
+    art is one flat image, so the hand and the mouth cannot move on
+    their own — the whole character moves instead.
+13. **Fake-file detection (local).** File names in the message are
+    checked on the device: `.apk` installers, Windows programs
+    (`.exe`/`.msi`/`.bat`), archives (`.zip`/`.rar`), and documents that
+    push an install or a macro — each with a warning and advice. It
+    reads names only; it never downloads or opens a file.
+14. **Report channels (official).** Every phone number links to
+    Komdigi's aduannomor.id to report it; every account links to
+    cekrekening.id; and scam/suspicious verdicts carry a report line
+    with both, even when the message contains no number at all.
+15. **Roaming companion.** A small Aman floats around the page: he
+    glides from edge to edge (slow, eased, with pauses), bobs and
+    blinks while he waits, waves on arrival, and comes to look at the
+    verdict with the user after a check. He parks while the user types
+    and stays still for reduced-motion users. Click him to jump to the
+    Ask Aman chat.
+16. **Voice (on-device).** Aman speaks with the browser's own voice:
+    the Voice toggle reads every answer out loud (and greets out loud
+    the moment it is turned on), and each answer has its own "Listen"
+    button. The app picks the best voice for the UI language (Bahasa
+    Indonesia first when the device has one) and says honestly when
+    the device has no usable voice.
 
 ## How hybrid inference works
 
@@ -72,6 +125,11 @@ the banner **"Demo mode — connect Firebase to enable AI"** and demo
 verdicts carry the `DEMO` badge. The production path always uses the
 Firebase AI Logic SDK — never a mock.
 
+Note: demo mode is only for unconfigured local builds. The live site
+(https://pesanaman-80d63.web.app) is fully configured and runs the real
+Firebase AI Logic path — every check there returns a real Gemini verdict
+with the `ON_DEVICE` / `IN_CLOUD` badge.
+
 ## Run it
 
 ```bash
@@ -103,12 +161,21 @@ Requirements: Node.js 20+ (developed with Node 24), npm 10+.
 
 ```
 index.html            Single-page UI (8 languages, auto-detected)
-src/main.js           UI wiring, samples, online/offline indicator, copy/CSV
-src/ai.js             Firebase AI Logic integration + demo heuristic
+src/main.js           UI wiring, samples, online/offline indicator, copy/CSV,
+                      screenshot check, share card, PWA registration
+src/ai.js             Firebase AI Logic integration + demo heuristic +
+                      Aman chat (askAssistant) + screenshot analysis
+src/assistant.js      Aman — the virtual AI assistant (avatar + chat + voice)
+src/risks.js          Local link-risk analysis + phone/account extraction
+src/files.js          Local fake-file detection (APK, programs, archives, docs)
+src/sharecard.js      Shareable warning card (canvas PNG + Web Share)
 src/i18n.js           Interface translations (8 languages) + auto-detect
 src/history.js        Firestore (anonymous auth) with localStorage fallback
 src/firebase-config.js  Firebase config (reads `.env.local`; placeholders mean Demo mode)
 src/styles.css        Responsive, professional styling (light + dark)
+public/aman.png       Aman avatar art (Myuden's chosen character)
+public/manifest.webmanifest  PWA manifest (installable + share target)
+public/sw.js          Service worker (offline app shell)
 SETUP-MYUDEN.md       Firebase setup guide in Bahasa Indonesia
 ```
 
