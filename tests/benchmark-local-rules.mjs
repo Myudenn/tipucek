@@ -5,7 +5,7 @@
 // 7 safe-intent, Indonesian + English, incl. the built-in samples).
 // Primary metric: FLAGGED accuracy (scam-intent -> scam|suspicious,
 // safe-intent -> safe). This is NOT the AI verdict accuracy: the production
-// AI path (Gemini Nano on-device / gemini-3.5-flash-lite cloud) cannot be
+// AI path (on-device AI / cloud AI) cannot be
 // benchmarked in this build without a live Firebase config, and this file
 // must never be quoted as AI accuracy.
 //

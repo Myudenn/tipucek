@@ -17,16 +17,17 @@ were written before any run and must never be edited to fit results.
    Chrome). Confirm the page shows TipuCek.
 2. For each case, in file order: paste the exact `text` into the
    message box, click **Check message**, wait for the verdict card.
-3. Record per case: `status`, `riskScore`, badge (`ON_DEVICE` /
-   `IN_CLOUD` / `LOCAL` / `DEMO`), and seconds shown ("checked in
-   X s"). If a check fails, note the error and retry once; a second
-   failure counts as a miss for that case.
+3. Record per case: `status`, `riskScore`, badge (plain words —
+   "Answered on this device, private" / "Answered in the cloud" /
+   "Checked on your device" / "Demo check — local only"), and seconds
+   shown ("checked in X s"). If a check fails, note the error and retry
+   once; a second failure counts as a miss for that case.
 4. Score the 21 clear cases: exact `status` match counts as correct.
    Report separately: correct / 21, false positives (safe called
    scam/suspicious), false negatives (scam called safe/suspicious),
    and the 4 hard cases (correct / 4, listed individually).
 5. Report latency: median and max seconds across the 25 checks, and
-   the badge split (how many ON_DEVICE vs IN_CLOUD).
+   the badge split (how many answered on-device vs in the cloud).
 6. Record the run (date, model, site) in the Results section below
    and in DEVPOST-DESCRIPTION.md. AI scores are non-deterministic:
    always quote the latest run's numbers, never an old run's.

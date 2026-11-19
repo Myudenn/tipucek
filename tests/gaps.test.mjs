@@ -11,6 +11,8 @@
 //   4. Link tracking had no visible module — the standalone module
 //      is wired in main.js + index.html (its helpers are covered by
 //      the domain tests; the UI is covered by Playwright run 24+).
+//      Since the 19 Nov polish it lives in a module tab panel
+//      (module-tab-link), like every other module below the checker.
 //   5. Call voice (19 Nov, Myuden: "Kalau telepon suara sudah bisa
 //      terdeteksi?"): record via microphone or upload a recording —
 //      transcribed in the cloud, transcript scored like a message.

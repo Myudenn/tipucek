@@ -95,3 +95,70 @@ test("rules: no blanket allow-all except public report-count reads", () => {
     }
   }
 });
+
+test("crowd_reports: create allows exactly the 6 fields, status pending", () => {
+  const m = rules.match(/match \/crowd_reports\/\{reportId\} \{([\s\S]*?)\n    \}/);
+  assert.ok(m, "crowd_reports rule block found");
+  const block = m[1];
+  assert.ok(
+    block.includes(
+      'request.resource.data.keys().hasOnly(["type", "value", "details", "status", "createdAt", "reporterUid"])',
+    ),
+    "create hasOnly lists exactly the 6 crowd fields",
+  );
+  assert.ok(
+    block.includes('request.resource.data.type in ["phone", "account", "mode"]'),
+    "type is one of the three crowd types",
+  );
+  assert.ok(
+    block.includes("request.resource.data.value is string"),
+    "value must be a string",
+  );
+  assert.ok(
+    block.includes("request.resource.data.value.size() > 0"),
+    "value must not be empty",
+  );
+  assert.ok(
+    block.includes("request.resource.data.value.size() <= 100"),
+    "value max length 100 enforced",
+  );
+  assert.ok(
+    block.includes("request.resource.data.details is string"),
+    "details must be a string",
+  );
+  assert.ok(
+    block.includes('request.resource.data.status == "pending"'),
+    "status must be pending",
+  );
+  assert.ok(
+    block.includes("request.resource.data.details.size() >= 10"),
+    "details min length 10 enforced",
+  );
+  assert.ok(
+    block.includes("request.resource.data.details.size() <= 500"),
+    "details max length 500 enforced",
+  );
+  assert.ok(
+    block.includes("request.resource.data.createdAt is timestamp"),
+    "createdAt must be a timestamp (serverTimestamp)",
+  );
+  assert.ok(
+    block.includes("request.resource.data.reporterUid == null"),
+    "reporterUid may be null (anonymous app)",
+  );
+  assert.ok(
+    block.includes("request.resource.data.reporterUid == request.auth.uid"),
+    "reporterUid may be the signer's own UID (future signed-in client)",
+  );
+});
+
+test("crowd_reports: read/update/delete are denied for clients", () => {
+  const m = rules.match(/match \/crowd_reports\/\{reportId\} \{([\s\S]*?)\n    \}/);
+  const block = m[1];
+  assert.ok(
+    block.includes("allow read, update, delete: if false;"),
+    "no client read/update/delete — the owner reads in Console",
+  );
+  // And no separate `allow read: if true` anywhere in the block.
+  assert.ok(!/allow read: if true/.test(block), "crowd reports are never public");
+});
