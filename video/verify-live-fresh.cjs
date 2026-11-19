@@ -9,6 +9,8 @@
 // Starts a local proxy (:18086) and opens the LIVE site in a fresh
 // Chromium context (no cookies, no cache, no service worker from any
 // earlier run). Asserts the exact bundle loaded, then tests:
+//   0. new layout (polish round, asserts only after deploy): hero
+//      stat with the OJK figures + input/Cek button above the fold
 //   1. link-tracker module is visible
 //   2. scam message -> verdict
 //   3. .txt file -> read + scored (not "not recognized")
@@ -19,10 +21,12 @@
 //      -> transcript appears, transcript scored like a message
 //      (Scam), privacy receipt says the audio went to the cloud only
 //      for transcription
-// (Voice output was removed 19 Nov — Myuden: it never sounded on the
+//      (Voice output was removed 19 Nov — Myuden: it never sounded on the
 // user's phone — so there is no voice-output check
 // here anymore. Call voice above is INPUT: record/upload -> transcribe
 // -> score, and it stays.)
+//   7. crowd report form present (guarded: only after the polish
+//      deploy) — form fields exist; NEVER submits anything live.
 // Output: JSON summary on stdout + screenshots in video/raw/.
 // Usage: node video/verify-live-fresh.cjs
 const fs = require("fs");
@@ -34,7 +38,9 @@ const HOME = process.env.HOME;
 const ROOT = path.join(HOME, "workspace/pesanaman");
 const PROXY_PORT = parseInt(process.env.LOCAL_PROXY_PORT || "18086", 10);
 const LIVE = "https://tipucek.web.app/";
-const EXPECTED_BUNDLE = "index-DwpaKias.js"; // bundle of the voice-output removal commit (19 Nov ~16:52)
+// Bundle live saat ini (terverifikasi curl 19 Nov); override lewat env
+// bila deploy baru sudah jalan: EXPECTED_BUNDLE=index-XXXX.js node ...
+const EXPECTED_BUNDLE = process.env.EXPECTED_BUNDLE || "index-Dne9n-lV.js";
 const RAW = path.join(ROOT, "video/raw");
 fs.mkdirSync(RAW, { recursive: true });
 
@@ -99,6 +105,16 @@ async function main() {
       ignoreHTTPSErrors: true,
     });
     const page = await ctx.newPage();
+    // Module tabs exist only in the new (polish) layout; older live
+    // bundles have no #module-tab-*. Click only when present so this
+    // script keeps working pre-deploy.
+    async function openModuleTab(tab) {
+      const btn = page.locator(`#module-tab-${tab}`);
+      if ((await btn.count()) === 1) {
+        await btn.click();
+        await page.waitForTimeout(300);
+      }
+    }
     page.on("pageerror", (e) => errors.push("PAGEERROR: " + String((e && e.message) || e)));
     page.on("console", (m) => {
       if (m.type() === "error") errors.push(`CONSOLE-ERROR: ${m.text().slice(0, 200)}`);
@@ -117,7 +133,28 @@ async function main() {
     const bodyText = await page.evaluate(() => document.body.innerText);
     check("shell: 0 PesanAman in UI text", !bodyText.includes("PesanAman"), bodyText.includes("PesanAman") ? "FOUND" : "clean");
 
+    // --- (0) new layout (polish round): hero stat + first screen ---
+    // Hard checks: they assert the deployed layout, so run this script
+    // only after the polish deploy.
+    const heroStat = await page.locator(".hero-stat").innerText();
+    check("layout: hero stat shows OJK figures", /9\.1/.test(heroStat) && /411,000\+/.test(heroStat) && /OJK \(IASC\)/.test(heroStat), heroStat.slice(0, 150));
+    const firstScreen = await page.evaluate(() => {
+      const input = document.querySelector("#message-input").getBoundingClientRect();
+      const btn = document.querySelector("#check-btn").getBoundingClientRect();
+      return { inputBottom: Math.round(input.bottom), btnBottom: Math.round(btn.bottom) };
+    });
+    check("layout: first screen holds input + Cek button (1280x800)", firstScreen.inputBottom <= 800 && firstScreen.btnBottom <= 800, JSON.stringify(firstScreen));
+    // --- (7) crowd report form present (guarded, never submitted) ---
+    if ((await page.locator("#module-tab-report").count()) === 1) {
+      await openModuleTab("report");
+      check("crowd: report form fields present", (await page.locator("#crowd-type").count()) === 1
+        && (await page.locator("#crowd-value").count()) === 1
+        && (await page.locator("#crowd-details").count()) === 1
+        && (await page.locator("#crowd-submit-btn").count()) === 1);
+    }
+
     // --- (1) link-tracker module visible ---
+    await openModuleTab("link");
     check("linktrack: module heading present", (await page.locator("#linktrack-heading").count()) === 1);
     check("linktrack: input visible", await page.locator("#linktrack-input").isVisible());
     check("linktrack: heading reads Track/Lacak a link", await page.locator("#linktrack-heading").innerText().then((t) => /Lacak|Track/i.test(t)), await page.locator("#linktrack-heading").innerText());
@@ -133,9 +170,10 @@ async function main() {
     await page.screenshot({ path: path.join(RAW, "live-fresh-scam.png") });
 
     // --- (3) .txt file -> read + scored ---
+    await openModuleTab("file");
     await page.setInputFiles("#filecheck-input", path.join(ROOT, "test-samples/pesan-penipu.txt"));
     await page.click("#filecheck-btn");
-    // inspectFile is async (SHA-256 + content read): wait for the AI
+    // inspectFile is async (file fingerprint + content read): wait for the AI
     // button, not just the visible box (it first shows "Checking…").
     await page.waitForSelector("#filecheck-ai-btn", { timeout: 30000 });
     const fileText = await page.locator("#filecheck-result").innerText();

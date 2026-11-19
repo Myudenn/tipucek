@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// PesanAman on-device probe (Phase 1): can this Chromium prove ON_DEVICE?
+// PesanAman on-device probe (Phase 1): can this Chromium prove the
+// answer came from the device (badge class .badge-device)?
 // Checks: (1) Prompt API presence (window.LanguageModel / window.ai /
 // navigator.ml) in the VM's headless Chromium; (2) run the scam sample
 // check twice (2nd run after a wait, so a background model download
-// could finish) and record the badge (ON_DEVICE vs IN_CLOUD), the
-// elapsed time, and the console lines about the on-device path.
+// could finish) and record the badge (plain words now — "Answered on
+// this device" vs "Answered in the cloud" — read via its CSS class),
+// the elapsed time, and the console lines about the on-device path.
 // Output: JSON report on stdout + 1 screenshot to video/raw/.
 const fs = require("fs");
 const path = require("path");

@@ -54,7 +54,11 @@ const ENV_MOVED = "/tmp/.env.local.verify-rombak";
 let envSha = null;
 let demoBundle = null;
 function mainBundleName() {
-  const files = fs.readdirSync(path.join(ROOT, "dist/assets")).filter((f) => /^index-[A-Za-z0-9]+\.js$/.test(f));
+  // Vite hashes are base64-ish: they can contain "-" and "_" as well
+  // as alphanumerics (e.g. index-CvTX_s9t.js, index-Dne9n-lV.js) —
+  // the old [A-Za-z0-9]+ class matched only pure-alphanumeric hashes
+  // and returned null for the rest.
+  const files = fs.readdirSync(path.join(ROOT, "dist/assets")).filter((f) => /^index-[A-Za-z0-9_-]+\.js$/.test(f));
   return files[0] || null;
 }
 function sha256File(p) {
@@ -243,12 +247,82 @@ async function main() {
       check("avatar: #aman-avatar img loads", false, "fetch failed after 3 attempts");
     }
     // "How it works" (original section): 3 step cards, one heading id,
-    // heading text is translated (not a raw i18n key).
+    // heading text is translated (not a raw i18n key). The how panel
+    // is hidden until its module tab is clicked — open it first so
+    // innerText is real, not "" from a display:none panel.
+    await page.click("#module-tab-how");
+    await page.waitForTimeout(300);
     check("how: 3 step cards present", (await page.locator(".how-card").count()) === 3);
     check("how: single #how-heading id", (await page.locator("#how-heading").count()) === 1);
     check("how: heading is not a raw i18n key", (await page.locator("#how-heading").innerText()).trim() !== "howHeading");
     check("desktop: hero shows TipuCek", await page.locator(".brand h1").innerText().then((t) => t.trim() === "TipuCek"), await page.locator(".brand h1").innerText());
     check("desktop: 4 checker tabs", (await page.locator(".checker-tab-btn").count()) === 4);
+    // --- layout (polish round): 10 module tabs, hero stat, first screen ---
+    check("layout: 10 module tabs", (await page.locator(".module-tab-btn").count()) === 10);
+    const heroStatEn = await page.locator(".hero-stat").innerText();
+    check("layout: hero stat shows OJK figures (EN)", /9\.1/.test(heroStatEn) && /411,000\+/.test(heroStatEn) && /OJK \(IASC\)/.test(heroStatEn), heroStatEn.slice(0, 150));
+    // Measure from the true top: an earlier tab click (how) scrolled
+    // the page down, and getBoundingClientRect is viewport-relative,
+    // so a scrolled page would report negative (false-pass) bottoms.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(200);
+    const firstScreen = await page.evaluate(() => {
+      const input = document.querySelector("#message-input").getBoundingClientRect();
+      const btn = document.querySelector("#check-btn").getBoundingClientRect();
+      return { inputBottom: Math.round(input.bottom), btnBottom: Math.round(btn.bottom) };
+    });
+    check("layout: first screen holds input + Cek button (desktop 1280x800)", firstScreen.inputBottom <= 800 && firstScreen.btnBottom <= 800, JSON.stringify(firstScreen));
+    // Elderly-friendly touch targets (Myuden 19 Nov 17:44): every tab
+    // and the check button is at least 48px tall, desktop included.
+    const touchMin = await page.evaluate(() => {
+      const els = [...document.querySelectorAll(".module-tab-btn, .checker-tab-btn, #check-btn")];
+      const heights = els.map((el) => Math.round(el.getBoundingClientRect().height));
+      return { min: Math.min(...heights), n: els.length };
+    });
+    check("layout: touch targets >= 48px (desktop, tabs + check button)", touchMin.min >= 48, `min=${touchMin.min} n=${touchMin.n}`);
+    // No clipped text on the tab bar, hero or headings (desktop).
+    const clipped = await page.evaluate(() => {
+      const bad = [];
+      for (const el of document.querySelectorAll(".module-tab-btn, .checker-tab-btn, .hero-stat, .hero-title, .hero-sub")) {
+        if (el.offsetParent !== null && el.scrollWidth > el.clientWidth + 1) bad.push(el.id || el.className);
+      }
+      return bad;
+    });
+    check("layout: no clipped text in tabs/hero (desktop)", clipped.length === 0, clipped.join(", "));
+    // Tab order follows the most common needs (Myuden 19 Nov 17:44):
+    // file, link, contacts, emergency guide, report, chat, quiz, Aman,
+    // history, how it works.
+    const moduleTabs = [
+      ["file", "filecheck", "filecheck-heading"],
+      ["link", "linktrack", "linktrack-heading"],
+      ["contacts", "contacts", "contacts-heading"],
+      ["aid", "firstaid", "aid-heading"],
+      ["report", "crowdreport", "crowdreport-heading"],
+      ["chatlog", "chatlog", "chatlog-heading"],
+      ["quiz", "quiz", "quiz-heading"],
+      ["assistant", "assistant", "assistant-heading"],
+      ["history", "history", "history-heading"],
+      ["how", "how", "how-heading"],
+    ];
+    for (const [tab, panel, heading] of moduleTabs) {
+      await page.click(`#module-tab-${tab}`);
+      await page.waitForTimeout(200);
+      const panelVisible = await page.locator(`#${panel}`).isVisible();
+      const headingVisible = await page.locator(`#${heading}`).isVisible();
+      check(`layout: module tab ${tab} opens its panel + heading`, panelVisible && headingVisible, `panel=${panelVisible} heading=${headingVisible}`);
+      // Responsive (Myuden 19 Nov 17:45): no horizontal scroll after
+      // opening EVERY tab, desktop included.
+      check(`layout: no horizontal overflow after opening tab ${tab} (desktop)`,
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+        await page.evaluate(() => `scrollWidth=${document.documentElement.scrollWidth} innerWidth=${window.innerWidth}`));
+    }
+    await page.screenshot({ path: path.join(RAW, "layout-desktop-tabs.png") });
+    // Report form exists in its own tab (crowd feature, Myuden 19 Nov).
+    await page.click("#module-tab-report");
+    check("layout: report form fields present", (await page.locator("#crowd-type").count()) === 1
+      && (await page.locator("#crowd-value").count()) === 1
+      && (await page.locator("#crowd-details").count()) === 1
+      && (await page.locator("#crowd-submit-btn").count()) === 1);
     for (const id of ["checks-heading", "filecheck-heading", "linktrack-heading", "contacts-heading", "aid-heading", "chatlog-heading", "quiz-heading"]) {
       check(`desktop: section #${id} present`, await page.locator(`#${id}`).count() === 1);
     }
@@ -275,7 +349,20 @@ async function main() {
     const badgeText = await page.locator("#result .result-badge").innerText();
     check("check: scam sample verdict is Scam", /Scam|Penipuan/.test(verdictText), `${verdictText} ${scoreText}/100`);
     check("check: scam sample score >= 60", parseInt(scoreText, 10) >= 60, scoreText);
-    check("check: badge shown", /ON_DEVICE|IN_CLOUD|DEMO|LOCAL/.test(badgeText), badgeText.replace(/\n/g, " "));
+    // Plain-language badge (Myuden 19 Nov 17:44): the badge says in
+    // plain words where the answer came from; the internal source codes
+    // (ON_DEVICE / IN_CLOUD / DEMO / LOCAL) must never appear.
+    check("check: badge is plain words", /Answered on this device|Answered in the cloud|Demo check|Checked on your device/.test(badgeText), badgeText.replace(/\n/g, " "));
+    check("check: badge shows no source code", !/ON_DEVICE|IN_CLOUD/.test(badgeText), badgeText.replace(/\n/g, " "));
+    // Desktop two-column layout (Myuden 19 Nov 17:45): with a verdict
+    // shown, the result sits BESIDE the checker, not below it.
+    const twoCol = await page.evaluate(() => {
+      const c = document.querySelector(".checker").getBoundingClientRect();
+      const r = document.querySelector("#result").getBoundingClientRect();
+      const display = getComputedStyle(document.querySelector(".page")).display;
+      return { display, sideBySide: r.left >= c.right - 24 && r.top < c.bottom && r.bottom > c.top, cRight: Math.round(c.right), rLeft: Math.round(r.left) };
+    });
+    check("layout: checker + result side by side on desktop", twoCol.display === "grid" && twoCol.sideBySide, JSON.stringify(twoCol));
     // (Voice output was removed 19 Nov — Myuden: it never sounded on
     // the user's phone — so the old voice-output checks are gone.)
     check("check: result has family + PDF buttons", (await page.locator("#warn-family-btn").count()) === 1 && (await page.locator("#pdf-btn").count()) === 1);
@@ -335,7 +422,7 @@ async function main() {
     }, { timeout: 15000 });
     const emailBadge = await page.locator("#result .result-badge").innerText();
     const emailStatus = await page.locator("#result .result-status").innerText();
-    check("email: LOCAL badge", /LOCAL/.test(emailBadge), emailBadge.replace(/\n/g, " "));
+    check("email: local badge in plain words", /Checked on your device/.test(emailBadge) && !/LOCAL/.test(emailBadge), emailBadge.replace(/\n/g, " "));
     check("email: mismatch + freemail verdict scam/suspicious", /Scam|Penipuan|Suspicious|Mencurigakan/.test(emailStatus), emailStatus);
 
     // --- (5) phone call check (LOCAL) ---
@@ -352,7 +439,7 @@ async function main() {
     const callBadge = await page.locator("#result .result-badge").innerText();
     const callStatus = await page.locator("#result .result-status").innerText();
     const callRing = await page.locator("#result .ring-value strong").innerText();
-    check("call: LOCAL badge", /LOCAL/.test(callBadge), callBadge.replace(/\n/g, " "));
+    check("call: local badge in plain words", /Checked on your device/.test(callBadge) && !/LOCAL/.test(callBadge), callBadge.replace(/\n/g, " "));
     // Ring 85 = this call's own score (bank 25 + OTP 35 + threat 25).
     // If a late render overwrote it, the ring reads 100 (scam sample) —
     // that distinguishes an app bug (ring 85 + wrong badge) from a stale
@@ -406,6 +493,7 @@ async function main() {
     const crypto = require("crypto");
     const apkBytes = fs.readFileSync(path.join(ROOT, "video/fixtures/fake-invite.apk"));
     const apkSha16 = crypto.createHash("sha256").update(apkBytes).digest("hex").slice(0, 16);
+    await page.click("#module-tab-file");
     await page.setInputFiles("#filecheck-input", path.join(ROOT, "video/fixtures/fake-invite.apk"));
     await page.click("#filecheck-btn");
     // Wait for the result, not just the visible box: the box shows
@@ -416,7 +504,7 @@ async function main() {
     }, { timeout: 30000 });
     const fcHtml = await page.locator("#filecheck-result").innerHTML();
     check("filecheck: APK detected by magic bytes (high)", /Android|APK/i.test(fcHtml), fcHtml.replace(/<[^>]+>/g, " ").slice(0, 200));
-    check("filecheck: SHA-256 shown matches node hash", fcHtml.includes(apkSha16), `expected prefix ${apkSha16}`);
+    check("filecheck: file fingerprint shown matches node hash", fcHtml.includes(apkSha16), `expected prefix ${apkSha16}`);
     await page.setInputFiles("#filecheck-input", path.join(ROOT, "video/fixtures/program.exe"));
     await page.click("#filecheck-btn");
     await page.waitForTimeout(3000);
@@ -437,6 +525,7 @@ async function main() {
     await page.screenshot({ path: path.join(RAW, "rombak-desktop-filecheck.png") });
 
     // --- (6b) standalone link tracker (gap 4) ---
+    await page.click("#module-tab-link");
     await page.fill("#linktrack-input", "https://bit.ly/hadiah-telkomsel-2026");
     await page.click("#linktrack-btn");
     await page.waitForFunction(() => {
@@ -447,6 +536,7 @@ async function main() {
     check("linktrack: standalone module traces a short link", /bit\.ly/.test(ltText) && /Registrar|Terdaftar|Registered|No registry/i.test(ltText), ltText.replace(/\n/g, " | ").slice(0, 200));
 
     // --- (7) official contacts ---
+    await page.click("#module-tab-contacts");
     await page.fill("#contacts-search", "bca");
     await page.waitForTimeout(500);
     const contactsText = await page.locator("#contacts-list").innerText();
@@ -459,11 +549,13 @@ async function main() {
     await page.locator(".contacts-cat-btn", { hasText: /^All$/ }).click();
 
     // --- (8) first aid ---
+    await page.click("#module-tab-aid");
     await page.locator(".aid-opt", { hasText: "I sent money" }).click();
     await page.waitForSelector("#aid-steps:not([hidden])", { timeout: 5000 });
     check("firstaid: money scenario shows 3 steps", (await page.locator("#aid-steps li").count()) === 3, await page.locator("#aid-steps").innerText().then((t) => t.slice(0, 150)));
 
     // --- (9) chat-log scanner ---
+    await page.click("#module-tab-chatlog");
     await page.setInputFiles("#chatlog-input", path.join(ROOT, "video/fixtures/chat-export.txt"));
     await page.click("#chatlog-btn");
     await page.waitForSelector("#chatlog-result:not([hidden])", { timeout: 15000 });
@@ -471,6 +563,7 @@ async function main() {
     check("chatlog: 3 messages scanned, 1 risky", /3/.test(clText) && /1/.test(clText) && /Sari/.test(clText), clText.slice(0, 200));
 
     // --- (10) quiz ---
+    await page.click("#module-tab-quiz");
     await page.click("#quiz-start-btn");
     await page.waitForSelector("#quiz-area:not([hidden])", { timeout: 5000 });
     const q1 = await page.locator("#quiz-question").innerText();
@@ -568,10 +661,14 @@ async function main() {
     check("share-target: ?text= fills checker + auto-checks", shareFilled === SCAM_SAMPLE, `len=${shareFilled.length}`);
 
     // --- (15) judge flow: history complete, survives reload ---
+    await sharePage.click("#module-tab-history");
+    await sharePage.waitForTimeout(300);
     const hist1 = await sharePage.locator("#history-list").innerText();
     check("judge: history shows full message after check", /Telkomsel/.test(hist1), hist1.slice(0, 150));
     await sharePage.reload({ waitUntil: "load", timeout: 60000 });
     await sharePage.waitForTimeout(4000);
+    await sharePage.click("#module-tab-history");
+    await sharePage.waitForTimeout(300);
     const hist2 = await sharePage.locator("#history-list").innerText();
     check("judge: history still complete after reload", /Telkomsel/.test(hist2), hist2.slice(0, 150));
     await sharePage.close();
@@ -594,7 +691,9 @@ async function main() {
     // Privacy gate, second half: with local-only OFF (user opted into
     // cloud history), link tracking DOES run — the box fills with the
     // RDAP domain info (short-link itself is CORS-blocked, honestly
-    // reported as "cannot be traced").
+    // reported as "cannot be traced"). The toggle lives in the
+    // history panel, so open that tab first.
+    await page.click("#module-tab-history");
     await page.uncheck("#local-only-toggle");
     await page.click("#tab-btn-message");
     await page.locator("#samples button").first().click();
@@ -611,11 +710,34 @@ async function main() {
     }
     await ctx.close();
 
+    // --- (13b) locale: auto-detect kept (i18n.js:40 untouched) ---
+    // Fresh contexts: id-ID -> Indonesian UI, en-US -> English UI.
+    for (const [locale, titleRe, statRe] of [
+      ["id-ID", /Apakah pesan ini penipuan\?/, /9,1/],
+      ["en-US", /Is this message a scam\?/, /9\.1/],
+    ]) {
+      const lctx = await browser.newContext({
+        viewport: { width: 1280, height: 800 },
+        locale,
+        ignoreHTTPSErrors: true,
+      });
+      const lpage = await lctx.newPage();
+      wirePage(lpage);
+      await lpage.goto(`http://localhost:${PREVIEW_PORT}/`, { waitUntil: "load", timeout: 60000 });
+      await lpage.waitForTimeout(3000);
+      const heroTitle = await lpage.locator(".hero-title").innerText();
+      const heroStat = await lpage.locator(".hero-stat").innerText();
+      check(`locale ${locale}: hero title matches`, titleRe.test(heroTitle), heroTitle.slice(0, 80));
+      check(`locale ${locale}: hero stat figures match`, statRe.test(heroStat) && /411[.,]000\+/.test(heroStat) && /OJK \(IASC\)/.test(heroStat), heroStat.slice(0, 120));
+      await lctx.close();
+    }
+
     // ================= MOBILE =================
     const mctx = await browser.newContext({
       viewport: { width: 390, height: 844 },
       hasTouch: true,
       isMobile: true,
+      locale: "id-ID",
       userAgent: "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36",
       ignoreHTTPSErrors: true,
     });
@@ -625,10 +747,46 @@ async function main() {
     await mpage.waitForTimeout(4000);
     check("mobile: no horizontal overflow", await mpage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
       await mpage.evaluate(() => `scrollWidth=${document.documentElement.scrollWidth} innerWidth=${window.innerWidth}`));
+    await mpage.evaluate(() => window.scrollTo(0, 0));
+    await mpage.waitForTimeout(200);
+    const mFirstScreen = await mpage.evaluate(() => {
+      const input = document.querySelector("#message-input").getBoundingClientRect();
+      const btn = document.querySelector("#check-btn").getBoundingClientRect();
+      return { inputBottom: Math.round(input.bottom), btnBottom: Math.round(btn.bottom) };
+    });
+    check("mobile: first screen holds input + Cek button (390x844, id-ID)", mFirstScreen.inputBottom <= 844 && mFirstScreen.btnBottom <= 844, JSON.stringify(mFirstScreen));
     const checkBtnH = await mpage.locator("#check-btn").evaluate((el) => el.getBoundingClientRect().height);
-    check("mobile: check button touch target >= 44px", checkBtnH >= 44, `height=${checkBtnH}`);
+    check("mobile: check button touch target >= 48px", checkBtnH >= 48, `height=${checkBtnH}`);
     const tabBtnH = await mpage.locator("#tab-btn-email").evaluate((el) => el.getBoundingClientRect().height);
-    check("mobile: tab button touch target >= 44px", tabBtnH >= 44, `height=${tabBtnH}`);
+    check("mobile: tab button touch target >= 48px", tabBtnH >= 48, `height=${tabBtnH}`);
+    // Mobile tab bar: every module tab opens its panel, no horizontal
+    // scroll after any of them, buttons never shrink (Myuden 19 Nov
+    // 17:44/17:45). Same order as desktop.
+    for (const [tab, panel, heading] of moduleTabs) {
+      await mpage.click(`#module-tab-${tab}`);
+      await mpage.waitForTimeout(200);
+      const panelVisible = await mpage.locator(`#${panel}`).isVisible();
+      const headingVisible = await mpage.locator(`#${heading}`).isVisible();
+      check(`mobile: module tab ${tab} opens its panel + heading`, panelVisible && headingVisible, `panel=${panelVisible} heading=${headingVisible}`);
+      check(`mobile: no horizontal overflow after opening tab ${tab}`,
+        await mpage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+        await mpage.evaluate(() => `scrollWidth=${document.documentElement.scrollWidth} innerWidth=${window.innerWidth}`));
+    }
+    const mTouchMin = await mpage.evaluate(() => {
+      const els = [...document.querySelectorAll(".module-tab-btn, .checker-tab-btn")];
+      const heights = els.map((el) => Math.round(el.getBoundingClientRect().height));
+      return { min: Math.min(...heights), n: els.length };
+    });
+    check("mobile: all tab buttons >= 48px tall", mTouchMin.min >= 48, `min=${mTouchMin.min} n=${mTouchMin.n}`);
+    const mClipped = await mpage.evaluate(() => {
+      const bad = [];
+      for (const el of document.querySelectorAll(".module-tab-btn, .checker-tab-btn, .hero-stat, .hero-title, .hero-sub")) {
+        if (el.offsetParent !== null && el.scrollWidth > el.clientWidth + 1) bad.push(el.id || el.className);
+      }
+      return bad;
+    });
+    check("mobile: no clipped text in tabs/hero", mClipped.length === 0, mClipped.join(", "));
+    await mpage.screenshot({ path: path.join(RAW, "layout-mobile-tabs.png") });
     await mpage.locator("#samples button").first().click();
     await mpage.click("#check-btn");
     await mpage.waitForSelector("#result .result-card", { timeout: 90000 });

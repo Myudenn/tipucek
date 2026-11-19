@@ -102,7 +102,14 @@ async function main() {
     await page.waitForTimeout(8000);
     report.desktop.at20s = await amanState(page);
 
-    // Chat with Aman (answer arrives).
+    // Chat with Aman (answer arrives). The assistant panel lives
+    // behind the #module-tab-assistant tab in the new layout — open
+    // it first when it exists (guarded: the old live domain has no
+    // module tabs yet, and the fill must still work there).
+    if ((await page.locator("#module-tab-assistant").count()) === 1) {
+      await page.click("#module-tab-assistant");
+      await page.waitForTimeout(300);
+    }
     await page.fill("#assistant-input", "halo, apa itu penipuan OTP?");
     await page.click("#assistant-send");
     let answered = false;
