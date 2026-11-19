@@ -1,8 +1,9 @@
-// No-JS render check for the 19 Nov 2026 stale-cache fix.
+// No-JS render check for the 19 Nov 2026 stale-cache fix (revised
+// 19 Nov 20:25: the static mode label is the production value).
 // Serves the built dist/ over a local static server and opens it in
-// Chromium with JavaScript DISABLED: the page must show a neutral
-// mode label ("…"), zero "Mode demo"/"Demo mode" in visible text, and
-// the Indonesian hero — i.e. even with no JS at all, nothing claims
+// Chromium with JavaScript DISABLED: the page must show the production
+// mode label ("Mode AI"), zero "Mode demo"/"Demo mode" in visible text,
+// and the Indonesian hero — i.e. even with no JS at all, nothing claims
 // a demo mode. Skips gracefully when Playwright is unavailable.
 // Run: node --test tests/nojs-render.test.mjs
 // (requires a prior `npm run build` so dist/ is current)
@@ -53,8 +54,8 @@ function serveDist() {
   });
 }
 
-describe("no-JS render: neutral label, no mode claim, Indonesian hero", () => {
-  it("dist page without JS shows … label and no demo-mode claim", async (t) => {
+describe("no-JS render: production label, no mode claim, Indonesian hero", () => {
+  it("dist page without JS shows Mode AI label and no demo-mode claim", async (t) => {
     if (!existsSync(path.join(DIST, "index.html"))) {
       t.skip("dist/ not built (run npm run build first)");
       return;
@@ -80,9 +81,10 @@ describe("no-JS render: neutral label, no mode claim, Indonesian hero", () => {
         timeout: 30000,
       });
       const label = (await page.locator("#mode-label").innerText()).trim();
-      assert.ok(
-        label === "" || label === "…",
-        `no-JS mode label must be neutral, got ${JSON.stringify(label)}`,
+      assert.equal(
+        label,
+        "Mode AI",
+        `no-JS mode label must be the production value "Mode AI", got ${JSON.stringify(label)}`,
       );
       const bodyText = await page.evaluate(() => document.body.innerText);
       assert.doesNotMatch(

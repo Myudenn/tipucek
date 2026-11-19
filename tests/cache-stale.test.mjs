@@ -1,9 +1,14 @@
-// Tests for the 19 Nov 2026 stale-cache ("Demo mode") fix.
-//   (i) Static HTML must never claim a mode: the #mode-label fallback
-//       is neutral ("…"); "Mode demo"/"Demo mode" may appear in
-//       index.html ONLY inside the hidden #demo-banner (JS reveals it)
-//       — never as visible static text. The same holds for the built
-//       dist/index.html.
+// Tests for the 19 Nov 2026 stale-cache ("Demo mode") fix, as revised
+// 19 Nov 20:25 (Myuden: the header badge must read clearly at once).
+//   (i) Static HTML must never claim a demo mode: the #mode-label
+//       fallback is the PRODUCTION value ("Mode AI", the Indonesian
+//       static fallback language) — true in production with or without
+//       JS, so there is no flicker and no "…" placeholder. JS still
+//       overwrites it after load in every case (demo builds show
+//       "Mode demo" once JS runs). "Mode demo"/"Demo mode" may appear
+//       in index.html ONLY inside the hidden #demo-banner (JS reveals
+//       it) — never as visible static text. The same holds for the
+//       built dist/index.html.
 //   (ii) The service worker must be network-first for documents,
 //        cache-first for hashed /assets/**, install per-asset
 //        (allSettled, never addAll), and carry the v7 cache name.
@@ -54,15 +59,16 @@ describe("static HTML: no visible mode claim", () => {
       );
     });
 
-    it(`${file}: #mode-label fallback is neutral`, (t) => {
+    it(`${file}: #mode-label fallback is the production value "Mode AI"`, (t) => {
       if (!existsSync(path.join(ROOT, file))) {
         t.skip(`${file} not present (run npm run build first)`);
         return;
       }
       const label = modeLabelText(read(file));
-      assert.ok(
-        label === "" || label === "…",
-        `#mode-label fallback must be empty or "…", got ${JSON.stringify(label)}`,
+      assert.equal(
+        label,
+        "Mode AI",
+        `#mode-label fallback must be the production value "Mode AI", got ${JSON.stringify(label)}`,
       );
       assert.doesNotMatch(label, MODE_CLAIM);
     });

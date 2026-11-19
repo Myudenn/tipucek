@@ -3,12 +3,13 @@
 // These pin the behaviour the Devpost description cites: the local
 // rule engine, the link/number analysis, the outbound guard, the chat
 // export scanner, the file-structure check and the quiz bank.
-import { describe, it } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { t, LANGUAGES } from "../src/i18n.js";
+import { t, LANGUAGES, demoSummary } from "../src/i18n.js";
 import {
   validateCrowdReport,
   normalizeCrowdPhone,
@@ -22,7 +23,7 @@ import { maskDigits, analyzeOutgoing } from "../src/outbound.js";
 import { parseChatExport, scanChatLog, CHATLOG_MAX_BYTES } from "../src/chatlog.js";
 import { inspectFile, sha256HexOfBlob } from "../src/filecheck.js";
 import { getQuizQuestions } from "../src/quiz.js";
-import { registrableDomain } from "../src/domain.js";
+import { registrableDomain, resolveShortLink } from "../src/domain.js";
 import { analyzeEmail } from "../src/emailcheck.js";
 import { analyzeCall } from "../src/callcheck.js";
 
@@ -587,5 +588,328 @@ describe("crowd report validation (lapor-balik, 19 Nov)", () => {
         assert.notEqual(t(key, code), key, `${key} missing in ${code}`);
       }
     }
+  });
+});
+
+describe("resolveShortLink reports whether the redirect was followed (honest label, 19 Nov)", () => {
+  let server;
+  let base;
+  before(async () => {
+    server = createServer((req, res) => {
+      if (req.url === "/short") {
+        res.writeHead(302, { Location: "/target" });
+        res.end();
+      } else if (req.url === "/target" || req.url === "/plain") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("ok");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    base = `http://127.0.0.1:${server.address().port}`;
+  });
+  after(async () => {
+    await new Promise((r) => server.close(r));
+  });
+
+  it("redirect followed: finalUrl is the target, resolved true", async () => {
+    const r = await resolveShortLink(`${base}/short`);
+    assert.equal(r.resolved, true);
+    assert.equal(r.finalUrl, `${base}/target`);
+    assert.equal(r.error, undefined);
+  });
+  it("no redirect: finalUrl equals the input, still resolved true (the fetch confirmed it)", async () => {
+    const r = await resolveShortLink(`${base}/plain`);
+    assert.equal(r.resolved, true);
+    assert.equal(r.finalUrl, `${base}/plain`);
+  });
+  it("blocked follow (connection refused): no finalUrl, resolved false, error unresolvable", async () => {
+    const r = await resolveShortLink("http://127.0.0.1:1/x");
+    assert.equal(r.resolved, false);
+    assert.equal(r.error, "unresolvable");
+    assert.equal(r.finalUrl, undefined);
+  });
+  it("honest-label keys exist with real text in all 8 languages", () => {
+    for (const key of ["linkFinal", "linkFinalUnresolved", "linktrackFinal", "linktrackFinalUnresolved"]) {
+      for (const code of LANG_CODES) {
+        const v = t(key, code);
+        assert.notEqual(v, key, `${key} missing in ${code}`);
+        assert.ok(v.trim().length > 0, `${key} empty in ${code}`);
+        assert.notEqual(v, "undefined", `${key} undefined in ${code}`);
+      }
+    }
+    // The two labels must differ: "final destination" is only for a
+    // follow that really happened, "link you entered" for one that did not.
+    for (const code of LANG_CODES) {
+      assert.notEqual(t("linkFinal", code), t("linkFinalUnresolved", code), `labels identical in ${code}`);
+      assert.notEqual(t("linktrackFinal", code), t("linktrackFinalUnresolved", code), `linktrack labels identical in ${code}`);
+    }
+  });
+});
+
+describe("i18n completeness: every key in all 8 languages, non-empty, placeholders match (19 Nov)", () => {
+  // The STRINGS/DEMO tables are not exported, so the test parses the
+  // source of truth (src/i18n.js) directly. Values are double-quoted
+  // (no escaped double quotes inside — verified), so one regex covers
+  // single- and multi-line entries.
+  const SRC = readFileSync(new URL("../src/i18n.js", import.meta.url), "utf8");
+  const ENTRY = /(?:\"([^\"]+)\"|([A-Za-z0-9_]+))\s*:\s*\"((?:[^\"\\]|\\.)*)\"/g;
+  function langBlocks(section) {
+    const starts = [...section.matchAll(/^  (en|id|es|fr|de|pt|ja|zh): \{$/gm)];
+    const out = {};
+    for (let i = 0; i < starts.length; i++) {
+      const body = section.slice(starts[i].index, starts[i + 1]?.index ?? section.length);
+      out[starts[i][1]] = new Map(
+        [...body.matchAll(ENTRY)].map((m) => [m[1] ?? m[2], m[3]]),
+      );
+    }
+    return out;
+  }
+  const stringsSection = SRC.slice(SRC.indexOf("const STRINGS = {"), SRC.indexOf("const DEMO = {"));
+  const demoSection = SRC.slice(SRC.indexOf("const DEMO = {"), SRC.indexOf("export function t("));
+  const STR = langBlocks(stringsSection);
+  const DEMO = langBlocks(demoSection);
+  const placeholders = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
+
+  it("STRINGS: same key set in all 8 languages, every value a non-empty string", () => {
+    const ref = [...STR.en.keys()];
+    assert.ok(ref.length > 300, `en has only ${ref.length} keys`);
+    for (const code of LANG_CODES) {
+      assert.deepEqual([...STR[code].keys()].sort(), [...ref].sort(), `key set differs in ${code}`);
+      for (const [k, v] of STR[code]) {
+        assert.ok(typeof v === "string" && v.trim().length > 0, `${k} empty in ${code}`);
+        assert.notEqual(v.trim(), "undefined", `${k} is "undefined" in ${code}`);
+      }
+    }
+  });
+  it("STRINGS: placeholders identical to English in every language", () => {
+    for (const code of LANG_CODES) {
+      if (code === "en") continue;
+      for (const k of STR.en.keys()) {
+        assert.equal(
+          placeholders(STR[code].get(k)),
+          placeholders(STR.en.get(k)),
+          `${k} placeholders differ in ${code}`,
+        );
+      }
+    }
+  });
+  it("DEMO: summaries complete in all 8 languages; flags complete in all except en (empty by design)", () => {
+    for (const code of LANG_CODES) {
+      for (const status of ["scam", "suspicious", "safe"]) {
+        const v = DEMO[code].get(status);
+        assert.ok(typeof v === "string" && v.trim().length > 0, `demo summary ${status} missing/empty in ${code}`);
+      }
+    }
+    // en.flags is empty by design (demoFlag returns the English flag as-is).
+    assert.equal(DEMO.en.size, 3, "en DEMO should hold only the 3 summaries");
+    const refFlags = [...DEMO.id.keys()].filter((k) => !["scam", "suspicious", "safe"].includes(k));
+    assert.ok(refFlags.length > 0, "id DEMO flags missing");
+    for (const code of ["es", "fr", "de", "pt", "ja", "zh"]) {
+      const flags = [...DEMO[code].keys()].filter((k) => !["scam", "suspicious", "safe"].includes(k));
+      assert.deepEqual(flags.sort(), refFlags.sort(), `demo flags differ in ${code}`);
+      for (const k of flags) {
+        assert.ok(DEMO[code].get(k).trim().length > 0, `demo flag empty in ${code}: ${k}`);
+      }
+    }
+  });
+});
+
+describe("language switch: per-language samples + re-check (bugs 1+2, 19 Nov)", () => {
+  const SAMPLE_KEYS = [
+    "sampleTextScam",
+    "sampleTextSuspicious",
+    "sampleTextSafe",
+    "sampleTextApk",
+    "sampleTextJob",
+    "sampleTextOtp",
+  ];
+  it("rechecking key exists in all 8 languages, non-empty, never the key itself", () => {
+    for (const code of LANG_CODES) {
+      const s = t("rechecking", code);
+      assert.notEqual(s, "rechecking", code);
+      assert.ok(s.trim().length > 0, code);
+    }
+  });
+  it("every sample text exists in all 8 languages, non-empty, and differs per language", () => {
+    for (const key of SAMPLE_KEYS) {
+      const seen = new Set();
+      for (const code of LANG_CODES) {
+        const s = t(key, code);
+        assert.notEqual(s, key, `${key} missing in ${code}`);
+        assert.ok(s.trim().length > 20, `${key} too short in ${code}: ${s}`);
+        seen.add(s);
+      }
+      // One natural text per language: no two languages share a body.
+      assert.equal(seen.size, LANG_CODES.length, `${key} repeats across languages`);
+    }
+  });
+  it("English samples contain no Indonesian text; Indonesian samples contain no English body", () => {
+    const idMarkers = /SELAMAT|hadiah|Telkomsel|undian|Rp |BCA|Kode OTP|kurir|kantor|pernikahan|LOWONGAN/;
+    for (const key of SAMPLE_KEYS) {
+      assert.ok(!idMarkers.test(t(key, "en")), `${key}/en leaks Indonesian: ${t(key, "en").slice(0, 80)}`);
+    }
+    assert.ok(/SELAMAT/.test(t("sampleTextScam", "id")), "id scam must keep SELAMAT");
+    assert.ok(/Rp 50\.000\.000/.test(t("sampleTextScam", "id")), "id scam must keep the Rp amount");
+    assert.ok(!/Your package is held|team meeting is moved/.test(t("sampleTextSuspicious", "id")), "id suspicious must not be the English DHL text");
+    assert.ok(!/team meeting is moved/.test(t("sampleTextSafe", "id")), "id safe must not be the English office text");
+    assert.ok(/Sari dari kantor/.test(t("sampleTextSafe", "id")), "id safe must be the Indonesian office text");
+  });
+  it("non-EN/ID scam samples open in their own language, never SELAMAT/CONGRATULATIONS", () => {
+    const openers = {
+      es: /FELICIDADES/,
+      fr: /FÉLICITATIONS/,
+      de: /HERZLICHEN GLÜCKWUNSCH/,
+      pt: /PARABÉNS/,
+      ja: /おめでとうございます/,
+      zh: /恭喜您/,
+    };
+    for (const [code, re] of Object.entries(openers)) {
+      assert.ok(re.test(t("sampleTextScam", code)), `${code} scam opener missing: ${t("sampleTextScam", code).slice(0, 60)}`);
+      assert.ok(!/SELAMAT|CONGRATULATIONS/.test(t("sampleTextScam", code)), `${code} scam leaks another language`);
+    }
+  });
+  it("heuristic verdicts pinned for EN + ID (the two languages the demo rules cover)", () => {
+    // Measured 19 Nov; the demo heuristic is ID/EN-only by design
+    // (src/ai.js), so only these two languages are pinned here.
+    const pinned = [
+      ["en", "sampleTextScam", "scam", 86],
+      ["id", "sampleTextScam", "scam", 100],
+      ["en", "sampleTextSuspicious", "suspicious", 58],
+      ["id", "sampleTextSuspicious", "suspicious", 42],
+      ["en", "sampleTextSafe", "safe", 0],
+      ["id", "sampleTextSafe", "safe", 0],
+      ["en", "sampleTextApk", "suspicious", 38],
+      ["id", "sampleTextApk", "suspicious", 38],
+      ["en", "sampleTextJob", "safe", 0],
+      ["id", "sampleTextJob", "safe", 0],
+      ["en", "sampleTextOtp", "suspicious", 40],
+      ["id", "sampleTextOtp", "suspicious", 40],
+    ];
+    for (const [code, key, status, score] of pinned) {
+      const v = analyzeWithHeuristic(t(key, code), code);
+      assert.equal(v.status, status, `${code}/${key}`);
+      assert.equal(v.riskScore, score, `${code}/${key} score`);
+    }
+  });
+  it("demo verdict re-run in a new language keeps status+score, translates summary+flags (bug 2, demo path)", () => {
+    // The DHL message from the bug report, checked in EN then re-run in ID.
+    const dhlEn = t("sampleTextSuspicious", "en");
+    const en = analyzeWithHeuristic(dhlEn, "en");
+    const id = analyzeWithHeuristic(dhlEn, "id");
+    assert.equal(id.status, en.status);
+    assert.equal(id.riskScore, en.riskScore);
+    assert.equal(id.summary, demoSummary(en.status, "id"));
+    assert.ok(/This message/.test(en.summary), en.summary);
+    assert.ok(/Pesan ini/.test(id.summary), id.summary);
+    assert.equal(id.redFlags.length, en.redFlags.length);
+    // No English flag text may survive into the Indonesian verdict.
+    for (const f of id.redFlags) {
+      assert.ok(
+        !/Urgency|Prize|Suspicious or shortened|Asks for money|Impersonates|Family \/ known|Too-good|download an app|Fee or tax|Phishing-style|Multiple links/.test(f),
+        `id flag leaks English: ${f}`,
+      );
+    }
+  });
+  it("main.js wires samples per language and re-checks on language change (static pins)", () => {
+    assert.ok(MAIN_JS.includes("textKey"), "SAMPLES must carry a per-language textKey");
+    assert.ok(!MAIN_JS.includes('text: "SELAMAT'), "no hard-coded Indonesian sample body may remain");
+    assert.ok(!MAIN_JS.includes("DHL courier. Your package is held"), "no hard-coded English sample body may remain");
+    assert.ok(MAIN_JS.includes("recheckLastCheck"), "language change must trigger a re-check");
+    assert.ok(MAIN_JS.includes('t("rechecking"'), "re-check must show a progress status");
+    assert.ok(MAIN_JS.includes("recheckAfterCheck"), "language change during a running check must queue a re-check");
+    // History: the re-check must not re-record (no saveCheck inside it).
+    const recheckBody = MAIN_JS.slice(
+      MAIN_JS.indexOf("async function recheckLastCheck()"),
+      MAIN_JS.indexOf("// Screenshot check:"),
+    );
+    assert.ok(!recheckBody.includes("saveCheck"), "re-check must not call saveCheck (no duplicate history entry)");
+  });
+});
+
+describe("polish 19 Nov 20:25: honest history, Mode AI label, Anda, Aman FAB", () => {
+  const I18N_SRC = readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "i18n.js"),
+    "utf8",
+  );
+  const STYLES = readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "styles.css"),
+    "utf8",
+  );
+  const idBlock = I18N_SRC.slice(I18N_SRC.indexOf("  id: {"), I18N_SRC.indexOf("  es: {"));
+  const deBlock = I18N_SRC.slice(I18N_SRC.indexOf("  de: {"), I18N_SRC.indexOf("  pt: {"));
+
+  it("(1) history strings are honest in all 8 languages: no 'not configured yet'", () => {
+    const stale = /sampai AI tersambung|until the AI is connected|hasta conectar la IA|jusqu'à la connexion de l'IA|bis die KI verbunden ist|até conectar a IA|AIに接続するまで|在连接 AI 之前|not configured|belum dikonfigurasi|no configurado|non configuré|nicht konfiguriert|não configurado|未設定|未配置|Firebase/;
+    for (const code of LANG_CODES) {
+      assert.ok(!stale.test(t("historyLocalNote", code)), `historyLocalNote/${code} still claims unconfigured: ${t("historyLocalNote", code)}`);
+      assert.ok(!stale.test(t("storageLocal", code)), `storageLocal/${code} still claims unconfigured: ${t("storageLocal", code)}`);
+      assert.ok(t("historyLocalNote", code).trim().length > 10, code);
+      assert.ok(t("storageLocal", code).trim().length > 5, code);
+    }
+    assert.equal(
+      t("historyLocalNote", "id"),
+      "Riwayat hanya tersimpan di browser ini. Selama pengaturan ini aktif, tidak ada yang dikirim ke cloud.",
+    );
+    assert.equal(
+      t("historyLocalNote", "en"),
+      "History is stored only in this browser. While this setting is on, nothing is sent to the cloud.",
+    );
+    assert.equal(t("storageLocal", "id"), "Disimpan lokal di browser ini.");
+    assert.equal(t("storageLocal", "en"), "Saved locally in this browser.");
+    // The static fallback in index.html must say the same honest thing.
+    assert.ok(INDEX_HTML.includes("Riwayat hanya tersimpan di browser ini. Selama pengaturan ini aktif, tidak ada yang dikirim ke cloud."), "index.html storage-note fallback is stale");
+    assert.ok(!INDEX_HTML.includes("sampai Firebase dikonfigurasi"), "index.html still says 'sampai Firebase dikonfigurasi'");
+  });
+  it("(2) static mode label is the production value 'Mode AI', never a demo claim", () => {
+    const m = INDEX_HTML.match(/<span id="mode-label"[^>]*>([\s\S]*?)<\/span>/);
+    assert.ok(m, "#mode-label span not found in index.html");
+    assert.equal(m[1].trim(), "Mode AI");
+    const banner = INDEX_HTML.match(/<div id="demo-banner"[^>]*hidden[^>]*>[\s\S]*?<\/div>/);
+    assert.ok(banner, "hidden demo-banner block not found");
+    const visible = INDEX_HTML.replace(banner[0], "");
+    assert.doesNotMatch(visible, /demo mode|mode demo/i, "visible static text still claims a demo mode");
+  });
+  it("(3) Indonesian is uniformly 'Anda': zero 'kamu' anywhere", () => {
+    assert.doesNotMatch(idBlock, /\bkamu\b|Kamu|Laporanmu|pribadimu|pesanmu|laporanmu/, "Indonesian i18n still has kamu/-mu");
+    assert.doesNotMatch(INDEX_HTML, /kamu/i, "index.html still has kamu");
+    assert.equal(t("tagline", "id"), "Cek pesannya sebelum Anda percaya");
+    for (const key of ["crowdHint", "crowdPrivacy", "crowdThanks", "crowdHistoryTitle", "assistantGreeting"]) {
+      assert.ok(/Anda/.test(t(key, "id")), `${key}/id must use Anda: ${t(key, "id").slice(0, 60)}`);
+    }
+  });
+  it("(3) other languages: no formal/informal mix in one language", () => {
+    // DE was Sie-form everywhere except the crowd-report pocket + the
+    // Aman greeting (du/dein) — now Sie-form throughout.
+    assert.doesNotMatch(deBlock, /\bdu\b/, "German i18n still has du");
+    assert.doesNotMatch(deBlock, /\b[Dd]ein(e|em|er|en|es)?\b/, "German i18n still has dein/deine");
+    for (const key of ["crowdHint", "crowdPrivacy", "crowdThanks", "crowdHistoryTitle", "assistantGreeting"]) {
+      assert.ok(/Sie|Ihr/.test(t(key, "de")), `${key}/de must use Sie: ${t(key, "de").slice(0, 60)}`);
+    }
+    // FR was vous-form except the Aman greeting (ton/tes/te) — now vous.
+    assert.ok(/votre compagnon/.test(t("assistantGreeting", "fr")), "fr greeting must use votre");
+    assert.doesNotMatch(t("assistantGreeting", "fr"), /\bton\b|\btes\b|\bte\b|Pose-moi/, "fr greeting still tu-form");
+    // ZH was 您-form except the Aman greeting (你) — now 您 (你好 stays:
+    // it is the fixed greeting, not an address).
+    assert.ok(/您的/.test(t("assistantGreeting", "zh")), "zh greeting must use 您");
+    assert.doesNotMatch(t("assistantGreeting", "zh").replaceAll("你好", ""), /你/, "zh greeting still uses 你 for address");
+    // ES is informal throughout and PT is você throughout — consistent
+    // by design, left as-is (not a mix).
+    assert.ok(/tu compañero/.test(t("assistantGreeting", "es")), "es greeting stays tu-form");
+    assert.doesNotMatch(t("assistantGreeting", "es"), /usted/i, "es must not mix usted in");
+    assert.ok(/seu companheiro/.test(t("assistantGreeting", "pt")), "pt greeting stays você-form");
+  });
+  it("(4) floating Aman button: markup + wiring + 48px style", () => {
+    assert.ok(INDEX_HTML.includes('id="aman-fab"'), "index.html must have #aman-fab");
+    assert.ok(INDEX_HTML.includes('<span data-i18n="moduleTabAssistant">'), "FAB label must follow the UI language");
+    assert.ok(MAIN_JS.includes('$("aman-fab").addEventListener("click"'), "main.js must wire the FAB click");
+    assert.ok(MAIN_JS.includes('switchModuleTab("assistant")'), "FAB must open the assistant tab");
+    assert.ok(MAIN_JS.includes('$("assistant-input").focus'), "FAB must focus the question box");
+    assert.ok(/\.aman-fab\s*\{[^}]*position:\s*fixed/s.test(STYLES), ".aman-fab must be position:fixed");
+    assert.ok(/\.aman-fab\s*\{[^}]*min-height:\s*48px/s.test(STYLES), ".aman-fab must be at least 48px tall");
+    assert.ok(/\.aman-fab\s*\{[^}]*bottom:\s*16px/s.test(STYLES), ".aman-fab must sit bottom-right");
+    assert.ok(/body\s*\{[^}]*padding-bottom:\s*88px/s.test(STYLES), "body must reserve bottom space so the FAB never covers the footer");
   });
 });
