@@ -89,9 +89,9 @@ Paste a suspicious message, tap **Check message**, and get a verdict card:
   event invitations are caught by the same text checker — no separate
   flow to learn.
 
-### Eleven tools around the checker
+### Twelve tools around the checker
 
-The message checker is the core; eleven focused modules cover the rest of
+The message checker is the core; twelve focused modules cover the rest of
 the scam journey:
 
 | Module | What it does |
@@ -103,6 +103,7 @@ the scam journey:
 | Chat-log scan | Scans a WhatsApp `.txt` chat export (max 2 MB / 5,000 messages), scores every message locally, lists the risky ones |
 | Check before sending | Warns — locally, with values masked — if a message you are about to send contains an OTP, password, card number, ID number, account number or PIN |
 | Community reports | Hash-only database: only a SHA-256 hash + category + count + timestamp is stored, never the raw number, account or file, never the reporter |
+| Crowd reports | Report a scam phone number, bank account or new scam mode. The report is sent to the TipuCek database for review — only the reported number/account/mode is sent, no chat history, no personal data. Every report stays pending until a human reviews it; reports are never trusted automatically and never shown publicly |
 | Domain lookup | Public RDAP domain age/registrar + best-effort short-link tracing |
 | Scam quiz | "Scam or safe?" — 8 questions in Indonesian and English (other languages fall back to English) |
 | Email check | Phishing-email check: display-name vs. sender-domain mismatch, free-mailbox sender, suspicious links, pressure language |
@@ -142,6 +143,13 @@ the chat card shows when he is thinking or answering.
   same anonymous UID can read it back.
 - **Community reports and link tracking only run when cloud history is
   on.** Community reports store hashes only (see above).
+- **Crowd reports are the deliberate exception — and the form says so.**
+  When a user reports a scam number, account or mode, that report is
+  sent to the TipuCek database for human review: only the reported
+  value and a short description are sent — no chat history, no personal
+  data. Every report stays pending until reviewed; reports are never
+  trusted automatically and never shown publicly, and clients cannot
+  read, update or delete them.
 - **Honest about the cloud fallback:** when the on-device model cannot
   answer, the message is sent to Gemini in the cloud *to produce the
   verdict* (inference input). Our privacy promise is about
@@ -330,8 +338,10 @@ tool.
 - Google Search Console + search indexing so people find TipuCek when
   they search for a scam check.
 - Demo video (max 3 minutes) for the Devpost submission.
-- Moderation for community reports, so the hash-only counts stay
-  trustworthy as they grow.
+- Moderation for community reports: the crowd report-back form exists
+  and every report stays pending until a human reviews it, so the
+  hash-only counts stay trustworthy as they grow; the next step is the
+  review workflow that turns reviewed reports into trusted data.
 - Translate the quiz bank into the other 6 interface languages (it is
   Indonesian + English today, English fallback elsewhere).
 

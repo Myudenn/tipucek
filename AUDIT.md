@@ -425,6 +425,92 @@ dipindah selama kerja mereka.
     deteksi, bukan suara keluar; tes `call voice` di
     `tests/gaps.test.mjs` (MIME audio + validasi + merge verdict)
     tetap hijau sesudah penghapusan.
+14. **Fitur lapor-balik crowdsource 19 Nov (disetujui Myuden
+    ~17:21 WIB).** Tab "Laporkan" (`src/crowdreport.js`,
+    koleksi Firestore baru `crowd_reports`): pengguna melaporkan
+    nomor HP penipu, nomor rekening, atau modus baru. Aturan yang
+    ditegakkan: (a) dokumen TEPAT 6 field — `type`, `value`,
+    `details`, `status="pending"`, `createdAt` (serverTimestamp),
+    `reporterUid` (null — aplikasi anonim/tanpa login); (b)
+    `firestore.rules` mengizinkan create siapa saja (termasuk
+    anonim) HANYA dengan tepat 6 field itu + `status` wajib
+    `"pending"` + `details` 10–500 karakter + `type` salah satu
+    dari phone/account/mode; (c) read/update/delete DITOLAK untuk
+    klien — pemilik membaca lewat Firebase Console; (d) laporan
+    TIDAK langsung dipercaya dan TIDAK ditampilkan ke publik —
+    status tetap `pending` sampai diperiksa manusia; (e) privasi
+    dinyatakan jujur di formulir DAN di privacy receipt: laporan
+    DIKIRIM ke database TipuCek untuk diperiksa (bukan local-only),
+    yang dikirim hanya nomor/rekening/modus yang dilaporkan —
+    tanpa riwayat chat dan tanpa data pribadi; (f) setelah kirim,
+    pengguna melihat "Terima kasih — laporanmu akan diperiksa" dan
+    salinan laporan tercatat di riwayat lokalnya (local-only).
+    Validasi klien: HP Indonesia (awalan 08/+62/62, digit saja,
+    9–15 digit), rekening digit saja 8–20 digit, deskripsi
+    10–500 karakter, pesan error per kolom. Tes: unit validasi di
+    `tests/unit.test.mjs`; tes aturan struktural di
+    `tests/rules.test.mjs`; tes aturan LIVE di
+    `tests/crowd-rules-emulator.mjs` (Firebase Emulator Suite,
+    11 cek: create lolos + 7 penolakan create + read/update/delete
+    ditolak) — laporan uji TIDAK PERNAH menyentuh koleksi
+    produksi; Playwright `video/verify-crowd.cjs` menguji
+    pengiriman formulir terhadap build lokal + emulator dengan
+    bukti nol request ke `*.googleapis.com`. CATATAN 19 Nov:
+    jalur dokumen emulator TIDAK BISA jalan di sandbox VM ini
+    (emulator hidup dan hub menjawab, tapi setiap operasi dokumen
+    gagal: 503 "Network closed for unknown reason" / RST_STREAM /
+    HTTP 500 dengan `INTERNAL: http2 exception` di
+    `firestore-debug.log` — lapisan Netty emulator rusak di
+    sandbox; terbukti BUKAN aturan, karena jar emulator tanpa
+    `--rules` pun gagal identik); kedua skrip emulator kini
+    fail-fast dengan probe REST (hanya HTTP 200 = jalan) dan
+    keluar SKIP (kode 2) disertai diagnosis, bukan menggantung.
+    Dua perbaikan sampingan yang ditemukan saat menyelidiki ini:
+    (a) `firebase.json` kini punya blok `emulators` (auth 9099,
+    firestore 8080, UI 4000) — tanpanya Auth emulator tidak start
+    sama sekali ("Not starting the auth emulator, make sure you
+    have run firebase init"); (b) kedua skrip kini mematikan
+    grup proses emulator (detached spawn + kill grup), karena
+    SIGTERM ke pembungkus npx saja meninggalkan java emulator
+    yatim yang terus memegang port 8080/9099 dan merusak run
+    berikutnya. Aturan tetap terverifikasi statis oleh
+    `tests/rules.test.mjs`; bukti live harus dijalankan di mesin
+    yang emulatornya bisa melayani dokumen.
+15. **Polish tata letak + bahasa polos + responsif 19 Nov
+    (standar Myuden ~17:44–17:45 WIB).** (a) Label tab kata
+    sederhana Bahasa Indonesia ("Cek Pesan", "Cek File",
+    "Cek Tautan", "Cek Nomor", "Laporkan", "Panduan Darurat",
+    "Kuis", "Tanya Aman"); urutan tab mengikuti kebutuhan paling
+    umum: file, tautan, kontak resmi, panduan darurat, laporkan,
+    ekspor chat, kuis, Aman, riwayat, cara kerja — cek pesan tetap
+    di layar pertama, bukan tab. TIDAK ADA modul "Cek Rekening"
+    mandiri: cek rekening adalah tautan cekrekening.id di dalam
+    hasil cek; "Cek Nomor" adalah tab panggilan di kartu checker
+    (bukan modul tab) — membangun modul rekening baru dilarang
+    karena itu fitur baru. (b) Target sentuh minimal 48px untuk
+    semua tab/tombol utama, jarak longgar; baris tab satu baris
+    (geser horizontal bila tidak muat, tombol tidak mengecil).
+    (c) TIDAK ADA jargon di permukaan UI: badge sumber jawaban
+    kini kata biasa ("Dijawab di perangkat ini, privat",
+    "Dijawab di cloud", "Diperiksa di perangkat Anda",
+    "Cek demo — lokal saja") — kode internal ON_DEVICE /
+    IN_CLOUD / DEMO / LOCAL tetap ada di `src/ai.js` dan TIDAK
+    ditampilkan; "SHA-256" jadi "Sidik file", "rdap.org" dan
+    "Gemini Nano"/"Firebase AI Logic"/"App Check" dihapus dari
+    semua string pengguna (sapuan tes atas 388 kunci EN+ID: 0
+    jargon tersisa); istilah teknis hanya boleh di komentar kode
+    dan nama variabel internal, bukan di tampilan. (d) Responsif:
+    layar pertama hanya hero ringkas + kotak cek (1280x800 dan
+    390x844, tanpa scroll); di PC ≥1024px hasil cek berdampingan
+    dengan kotak cek (dua kolom, hanya bila hasil sudah ada);
+    tidak ada scroll horizontal di halaman mana pun dan sesudah
+    membuka tiap tab; teks tidak terpotong. (e) Statistik OJK di
+    hero: "Rp 9,1 triliun … 411.000+ laporan · Nov 2024–Des 2025
+    · OJK (IASC)" — angka literal identik di 8 bahasa.
+    Verifikasi: `video/verify-rombak.cjs` (desktop + HP +
+    locale id-ID/en-US, termasuk cek 48px, tanpa-overflow per
+    tab, teks tak terpotong, dua kolom, dan screenshot
+    `layout-desktop-tabs.png` / `layout-mobile-tabs.png`).
 
 ## M. Bukti (lokasi file)
 

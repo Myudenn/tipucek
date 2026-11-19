@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="TipuCek — free private scam checker. Check a suspicious message, file, email, call or link — on-device first, in 8 languages."
+      content="TipuCek — pemeriksa pesan penipuan (scam) gratis dan privat. Cek pesan, file, email, panggilan, atau tautan mencurigakan — di perangkat dulu, 8 bahasa."
     />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="canonical" href="https://tipucek.web.app/" />
@@ -44,7 +44,7 @@
         "operatingSystem": "Web",
         "isAccessibleForFree": true,
         "inLanguage": ["id", "en"],
-        "description": "TipuCek — free private scam checker. Check text messages, screenshots (OCR), links & sites, phone numbers, bank accounts, files (APK/exe/zip), and invitations — on-device first, in 8 languages.",
+        "description": "TipuCek — pemeriksa penipuan gratis dan privat. Cek pesan teks, tangkapan layar (OCR), tautan & situs, nomor telepon, rekening bank, file (APK/exe/zip), dan undangan — di perangkat dulu, 8 bahasa.",
         "image": "https://tipucek.web.app/og-image.png",
         "author": { "@type": "Organization", "name": "TipuCek", "url": "https://github.com/kyleweb3/tipucek" },
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
@@ -63,101 +63,86 @@
           <span class="brand-mark" aria-hidden="true">TC</span>
           <div>
             <h1>TipuCek</h1>
-            <p class="tagline" data-i18n="tagline">Private scam-message scanner</p>
+            <p class="tagline" data-i18n="tagline">Cek pesannya sebelum kamu percaya</p>
           </div>
         </div>
         <div class="topbar-status">
           <select id="lang-select" class="lang-select" aria-label="Language"></select>
-          <button id="senior-toggle" type="button" class="secondary senior-toggle" aria-pressed="false" data-i18n="seniorToggle">Senior mode</button>
-          <span id="mode-label" class="mode-label">Demo mode</span>
-          <span id="net-status" class="net-pill online">Online</span>
+          <button id="senior-toggle" type="button" class="secondary senior-toggle" aria-pressed="false" data-i18n="seniorToggle">Mode Orang Tua</button>
+          <span id="mode-label" class="mode-label">Mode demo — hubungkan Firebase untuk mengaktifkan AI</span>
+          <span id="net-status" class="net-pill online">Daring</span>
         </div>
       </div>
     </header>
 
     <main class="page">
-      <p id="senior-note" class="senior-note" data-i18n="seniorNote" hidden>
-        Senior mode on: bigger text and buttons, results read out loud.
-      </p>
+      <p id="senior-note" class="senior-note" data-i18n="seniorNote" hidden>Mode orang tua aktif: teks dan tombol besar, hasil dibacakan.</p>
       <div id="demo-banner" class="demo-banner" hidden>
-        <strong data-i18n="demoTitle">Demo mode — connect Firebase to enable AI.</strong>
+        <strong data-i18n="demoTitle">Mode demo — AI belum tersambung.</strong>
         <span data-i18n="demoText">
-          This build uses a local keyword analyzer so the full flow can be
-          tested without an account. Follow
-          <code>SETUP-MYUDEN.md</code> to connect Firebase AI Logic.
+          Build ini memakai pemeriksa lokal agar seluruh alur
+          bisa diuji tanpa akun. Ikuti
+          <code>SETUP-MYUDEN.md</code> untuk menyambungkan AI.
         </span>
       </div>
 
-      <p id="offline-note" class="offline-note" data-i18n="offlineNote" hidden>
-        You are offline (or in airplane mode). Only on-device inference can
-        run now — the cloud model is unreachable, and the on-device model must
-        already be downloaded on this device.
-      </p>
+      <p id="offline-note" class="offline-note" data-i18n="offlineNote" hidden>Anda sedang offline (atau mode pesawat). Hanya AI di perangkat yang bisa jalan sekarang — AI cloud tidak terjangkau, dan AI di perangkat harus sudah diunduh di perangkat ini.</p>
 
       <section class="hero">
-        <p class="hero-eyebrow" data-i18n="heroEyebrow">#BuildHybridAI 2026 · Firebase AI Logic</p>
-        <h2 class="hero-title" data-i18n="heroTitle">Is this message a scam?</h2>
-        <p class="hero-sub" data-i18n="heroSub">
-          Paste any SMS, WhatsApp, DM or email — in Indonesian or English.
-          TipuCek checks it privately, on your device first, and tells you
-          in seconds.
-        </p>
+        <p class="hero-eyebrow" data-i18n="heroEyebrow">#BuildHybridAI 2026</p>
+        <h2 class="hero-title" data-i18n="heroTitle">Apakah pesan ini penipuan?</h2>
+        <p class="hero-sub" data-i18n="heroSub">Tempel SMS, WhatsApp, DM, atau email apa pun — dalam Bahasa Indonesia atau Inggris. TipuCek memeriksanya secara privat, di perangkat Anda dulu, dan memberi tahu Anda dalam hitungan detik.</p>
+        <p class="hero-stat" data-i18n="heroStat">Rp 9,1 triliun kerugian penipuan dari 411.000+ laporan · Nov 2024–Des 2025 · OJK (IASC)</p>
         <ul class="hero-chips">
-          <li data-i18n="chipNoAccount">No account needed</li>
-          <li data-i18n="chipOnDevice">On-device first</li>
-          <li data-i18n="chipLanguages">UI in 8 languages</li>
-          <li data-i18n="chipFree">Free</li>
+          <li data-i18n="chipNoAccount">Tanpa akun</li>
+          <li data-i18n="chipOnDevice">Di perangkat dulu</li>
+          <li data-i18n="chipLanguages">Antarmuka 8 bahasa</li>
+          <li data-i18n="chipFree">Gratis</li>
         </ul>
       </section>
 
       <section class="card checker" aria-labelledby="checker-heading">
-        <h2 id="checker-heading" data-i18n="checkerHeading">Check a suspicious message</h2>
-        <p class="hint" data-i18n="checkerHint">
-          In AI mode the message is analyzed on your device first (private),
-          and only falls back to the cloud when needed. The result always
-          shows which one answered.
-        </p>
+        <h2 id="checker-heading" data-i18n="checkerHeading">Periksa pesan mencurigakan</h2>
+        <p class="hint" data-i18n="checkerHint">Dalam mode AI, pesan dianalisis di perangkat Anda dulu (privat), dan hanya beralih ke cloud bila diperlukan. Hasil selalu menunjukkan siapa yang menjawab.</p>
 
-        <div class="checker-tabs" role="tablist" aria-label="Check modes">
-          <button id="tab-btn-message" type="button" class="checker-tab-btn" aria-controls="tab-message" active" role="tab" aria-selected="true" data-i18n="checkBtn">Check message</button>
-          <button id="tab-btn-email" type="button" class="checker-tab-btn" aria-controls="tab-email"" role="tab" aria-selected="false" data-i18n="emailTab">Check an email</button>
-          <button id="tab-btn-call" type="button" class="checker-tab-btn" aria-controls="tab-call"" role="tab" aria-selected="false" data-i18n="callTab">Check a phone call</button>
-          <button id="tab-btn-outbound" type="button" class="checker-tab-btn" aria-controls="tab-outbound"" role="tab" aria-selected="false" data-i18n="outboundTab">Check before sending</button>
+        <div class="checker-tabs" role="tablist" aria-label="Mode pemeriksaan">
+          <button id="tab-btn-message" type="button" class="checker-tab-btn" aria-controls="tab-message" role="tab" aria-selected="true" data-i18n="messageTab">Cek Pesan</button>
+          <button id="tab-btn-email" type="button" class="checker-tab-btn" aria-controls="tab-email" role="tab" aria-selected="false" data-i18n="emailTab">Cek Email</button>
+          <button id="tab-btn-call" type="button" class="checker-tab-btn" aria-controls="tab-call" role="tab" aria-selected="false" data-i18n="callTab">Cek Nomor</button>
+          <button id="tab-btn-outbound" type="button" class="checker-tab-btn" aria-controls="tab-outbound" role="tab" aria-selected="false" data-i18n="outboundTab">Cek sebelum kirim</button>
         </div>
 
         <div id="tab-message" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-message">
-        <label class="field-label" for="message-input" data-i18n="fieldLabel">Message</label>
+        <label class="field-label" for="message-input" data-i18n="fieldLabel">Pesan</label>
         <textarea
           id="message-input"
-          rows="5"
+          rows="3"
           maxlength="4000"
           data-i18n-placeholder="placeholder"
-          placeholder="Paste the suspicious message here…"
+          placeholder="Tempel pesan mencurigakan di sini…"
         ></textarea>
 
-        <p class="samples-heading" data-i18n="samplesHeading">Or try a real-looking sample:</p>
-        <div class="samples" id="samples" aria-label="Try a sample message"></div>
-
         <div class="actions">
-          <button id="check-btn" type="button" class="primary">Check message</button>
-          <button id="paste-btn" type="button" class="secondary" data-i18n="pasteBtn">Paste</button>
+          <button id="check-btn" type="button" class="primary" data-i18n="checkBtn">Periksa pesan</button>
+          <button id="paste-btn" type="button" class="secondary" data-i18n="pasteBtn">Tempel</button>
           <p id="progress" class="progress" hidden></p>
         </div>
         <p id="paste-note" class="muted" hidden></p>
         <div id="error" class="error" role="alert" hidden></div>
 
+        <p class="samples-heading" data-i18n="samplesHeading">Atau coba contoh yang terlihat asli:</p>
+        <div class="samples" id="samples" aria-label="Coba contoh pesan"></div>
+
         <div class="image-check">
-          <h3 data-i18n="imageHeading">Or check a screenshot</h3>
-          <p class="hint" data-i18n="imageHint">
-            Upload a screenshot of the chat — the AI reads the text in it and checks it. Images are analyzed in the cloud only.
-          </p>
+          <h3 data-i18n="imageHeading">Atau periksa tangkapan layar</h3>
+          <p class="hint" data-i18n="imageHint">Unggah tangkapan layar chat — AI membaca teks di dalamnya dan memeriksanya. Gambar hanya dianalisis di cloud.</p>
           <div class="image-row">
             <label class="secondary image-picker">
-              <span data-i18n="imageChoose">Choose image</span>
+              <span data-i18n="imageChoose">Pilih gambar</span>
               <input id="image-input" type="file" accept="image/*" hidden />
             </label>
-            <button id="image-btn" type="button" class="primary" disabled data-i18n="imageBtn">Check screenshot</button>
-            <button id="image-remove-btn" type="button" class="secondary" hidden data-i18n="imageRemove">Remove image</button>
+            <button id="image-btn" type="button" class="primary" disabled data-i18n="imageBtn">Periksa tangkapan layar</button>
+            <button id="image-remove-btn" type="button" class="secondary" hidden data-i18n="imageRemove">Hapus gambar</button>
           </div>
           <img id="image-preview" class="image-preview" alt="" hidden />
           <p id="image-progress" class="progress" hidden></p>
@@ -166,186 +151,218 @@
         </div>
 
         <div id="tab-email" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-email" hidden>
-          <p class="hint" data-i18n="emailHint">
-            Paste the email content and its sender. TipuCek checks whether the sender name matches its domain, the links inside, and the pressure language.
-          </p>
-          <label class="field-label" for="email-from-name" data-i18n="emailFromName">Sender name (as shown)</label>
+          <p class="hint" data-i18n="emailHint">Tempel isi email dan pengirimnya. TipuCek memeriksa apakah nama pengirim cocok dengan domainnya, tautan di dalamnya, dan bahasa mendesaknya.</p>
+          <label class="field-label" for="email-from-name" data-i18n="emailFromName">Nama pengirim (yang tampil)</label>
           <input id="email-from-name" type="text" autocomplete="off" />
-          <label class="field-label" for="email-from-email" data-i18n="emailFromEmail">Sender email address</label>
+          <label class="field-label" for="email-from-email" data-i18n="emailFromEmail">Alamat email pengirim</label>
           <input id="email-from-email" type="email" autocomplete="off" placeholder="name@company.com" />
-          <label class="field-label" for="email-body" data-i18n="emailBody">Email content</label>
+          <label class="field-label" for="email-body" data-i18n="emailBody">Isi email</label>
           <textarea id="email-body" rows="5"></textarea>
           <div class="actions">
-            <button id="email-btn" type="button" class="primary" data-i18n="emailBtn">Check email</button>
+            <button id="email-btn" type="button" class="primary" data-i18n="emailBtn">Cek email</button>
           </div>
           <p id="email-error" class="error" role="alert" hidden></p>
         </div>
 
         <div id="tab-call" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-call" hidden>
-          <p class="hint" data-i18n="callHint">
-            Type the caller number and what they said. TipuCek checks the number against the community report database and matches the words against known phone-scam scripts.
-          </p>
-          <label class="field-label" for="call-number" data-i18n="callNumber">Caller number</label>
+          <p class="hint" data-i18n="callHint">Ketik nomor penelepon dan apa yang dikatakannya. TipuCek memeriksa nomor itu ke database laporan komunitas dan mencocokkan kata-katanya dengan naskah penipuan telepon yang dikenal. Kalau Anda hanya punya nomornya, isi nomor saja — nomor akan dicek ke kontak resmi dan database laporan.</p>
+          <label class="field-label" for="call-number" data-i18n="callNumber">Nomor penelepon</label>
           <input id="call-number" type="tel" autocomplete="off" placeholder="08xx…" />
-          <label class="field-label" for="call-said" data-i18n="callSaid">What the caller said</label>
+          <label class="field-label" for="call-said" data-i18n="callSaid">Apa yang dikatakan penelepon</label>
           <textarea id="call-said" rows="4"></textarea>
           <div class="actions">
-            <button id="call-btn" type="button" class="primary" data-i18n="callBtn">Check call</button>
+            <button id="call-btn" type="button" class="primary" data-i18n="callBtn">Cek panggilan</button>
           </div>
           <p id="call-error" class="error" role="alert" hidden></p>
           <div class="call-audio">
-            <h3 data-i18n="callAudioHeading">Or check the call by voice</h3>
-            <p class="hint" data-i18n="callAudioHint">
-              Record the caller (loudspeaker) or upload a recording of the call. TipuCek transcribes the speech and scores it like a message.
-            </p>
-            <p class="hint"><strong data-i18n="callAudioLimit">TipuCek cannot listen to a phone call directly. Record it yourself — put the call on loudspeaker and press Record — or upload a recording file.</strong></p>
+            <h3 data-i18n="callAudioHeading">Atau periksa panggilan lewat suara</h3>
+            <p class="hint" data-i18n="callAudioHint">Rekam suara penelepon (loudspeaker) atau unggah rekaman panggilan. TipuCek mentranskrip ucapannya lalu menilainya seperti pesan.</p>
+            <p class="hint"><strong data-i18n="callAudioLimit">TipuCek tidak bisa menyadap panggilan telepon langsung. Rekam sendiri — nyalakan loudspeaker lalu tekan Rekam — atau unggah file rekaman.</strong></p>
             <div class="actions">
-              <button id="call-record-btn" type="button" class="secondary" data-i18n="callRecordBtn">Record voice</button>
-              <button id="call-upload-btn" type="button" class="secondary" data-i18n="callUploadBtn">Upload a recording</button>
+              <button id="call-record-btn" type="button" class="secondary" data-i18n="callRecordBtn">Rekam suara</button>
+              <button id="call-upload-btn" type="button" class="secondary" data-i18n="callUploadBtn">Unggah rekaman</button>
               <input id="call-audio-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.webm" hidden />
             </div>
             <p id="call-recording" class="muted" hidden></p>
             <p id="call-audio-progress" class="muted" hidden></p>
             <p id="call-audio-error" class="error" role="alert" hidden></p>
             <div id="call-transcript-box" hidden>
-              <p><strong data-i18n="callTranscriptLabel">What was said (transcribed)</strong></p>
+              <p><strong data-i18n="callTranscriptLabel">Yang dikatakan (hasil transkrip)</strong></p>
               <p id="call-transcript" class="transcript-text"></p>
             </div>
-            <p class="hint" data-i18n="callAudioNote">The recording is sent to the cloud (Gemini) only to transcribe the speech. It is not stored in the cloud and never added to history.</p>
+            <p class="hint" data-i18n="callAudioNote">Rekaman dikirim ke cloud hanya untuk mentranskrip ucapan. Rekaman tidak disimpan di cloud dan tidak pernah masuk riwayat.</p>
           </div>
         </div>
 
         <div id="tab-outbound" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-outbound" hidden>
-          <h3 data-i18n="outboundHeading">Check before you send</h3>
-          <p class="hint" data-i18n="outboundHint">
-            Paste a message you are about to send. TipuCek warns you — locally, in seconds — if it contains information a scammer could use. This is your own message: it is never judged as a scam.
-          </p>
-          <label class="field-label" for="outbound-input" data-i18n="outboundTab">Check before sending</label>
+          <h3 data-i18n="outboundHeading">Cek sebelum kirim</h3>
+          <p class="hint" data-i18n="outboundHint">Tempel pesan yang akan Anda kirim. TipuCek memperingatkan — secara lokal, dalam hitungan detik — bila pesannya berisi informasi yang bisa dipakai penipu. Ini pesan Anda sendiri: tidak pernah dinilai sebagai penipuan.</p>
+          <label class="field-label" for="outbound-input" data-i18n="outboundTab">Cek sebelum kirim</label>
           <textarea
             id="outbound-input"
             rows="5"
             data-i18n-placeholder="outboundPlaceholder"
-            placeholder="Paste the message you are about to send…"
+            placeholder="Tempel pesan yang akan Anda kirim…"
           ></textarea>
           <div class="actions">
-            <button id="outbound-btn" type="button" class="primary" data-i18n="outboundBtn">Check before sending</button>
+            <button id="outbound-btn" type="button" class="primary" data-i18n="outboundBtn">Periksa sebelum kirim</button>
           </div>
           <div id="outbound-result" class="outbound-result" aria-live="polite" hidden></div>
-          <p class="hint" data-i18n="outboundNote">
-            Checked locally on your device — nothing is sent anywhere. Remove the sensitive parts before sending.
-          </p>
+          <p class="hint" data-i18n="outboundNote">Diperiksa secara lokal di perangkat Anda — tidak ada yang dikirim ke mana pun. Hapus bagian sensitif sebelum mengirim.</p>
         </div>
       </section>
 
       <section id="result" class="result" aria-live="polite" hidden></section>
 
       <section class="card checks" aria-labelledby="checks-heading">
-        <h2 id="checks-heading" data-i18n="checksHeading">What TipuCek can check</h2>
-        <p class="hint" data-i18n="checksIntro">One checker for every way a scam can reach you.</p>
+        <h2 id="checks-heading" data-i18n="checksHeading">Yang bisa diperiksa TipuCek</h2>
+        <p class="hint" data-i18n="checksIntro">Satu pemeriksa untuk semua cara penipuan sampai ke Anda.</p>
         <ul class="checks-list">
-          <li data-i18n="checkText">Text messages — SMS, WhatsApp, DM or email, any pasted text</li>
-          <li data-i18n="checkImage">Screenshots — chat images read with OCR</li>
-          <li data-i18n="checkLink">Links &amp; sites — shorteners, fake domains, brand look-alikes</li>
-          <li data-i18n="checkLinkTrack">Link tracking — follow a link to its real destination, registrar and registration date</li>
-          <li data-i18n="checkPhone">Phone numbers — Indonesian numbers, with a report link</li>
-          <li data-i18n="checkAccount">Bank accounts — account numbers, with the official checker</li>
-          <li data-i18n="checkFile">Files — APK, programs, archives and documents, by name or upload</li>
-          <li data-i18n="checkInvite">Invitations — fake jobs, fake prizes, fake invitations</li>
+          <li data-i18n="checkText">Pesan teks — SMS, WhatsApp, DM atau email, teks apa pun yang ditempel</li>
+          <li data-i18n="checkImage">Screenshot — gambar chat dibaca dengan OCR</li>
+          <li data-i18n="checkLink">Tautan &amp; situs — shortener, domain palsu, tiruan merek</li>
+          <li data-i18n="checkLinkTrack">Lacak tautan — ikuti tautan ke tujuan asli, registrar, dan tanggal pendaftaran</li>
+          <li data-i18n="checkPhone">Nomor HP — nomor Indonesia, dengan tautan lapor</li>
+          <li data-i18n="checkAccount">Rekening bank — nomor rekening, dengan pemeriksa resmi</li>
+          <li data-i18n="checkFile">File — APK, program, arsip dan dokumen, dari nama atau dari unggahan</li>
+          <li data-i18n="checkInvite">Undangan — lowongan palsu, hadiah palsu, undangan acara palsu</li>
         </ul>
-        <p class="muted" data-i18n="checksNote">Not checked: QR-code images and payment codes — TipuCek does not scan those. A voice call can be checked: record it or upload a recording, and TipuCek transcribes it.</p>
+        <p class="muted" data-i18n="checksNote">Tidak diperiksa: gambar kode QR dan kode pembayaran — TipuCek tidak memindai itu. Panggilan suara bisa diperiksa: rekam atau unggah rekamannya, TipuCek akan mentranskripnya.</p>
       </section>
 
-      <section class="card filecheck" aria-labelledby="filecheck-heading">
-        <h2 id="filecheck-heading" data-i18n="fileCheckHeading">Check a file</h2>
-        <p class="hint" data-i18n="fileCheckHint">Upload a file someone sent you — TipuCek reads its structure on your device. The file never leaves your device.</p>
+      <nav class="modules" aria-labelledby="modules-heading">
+        <h2 id="modules-heading" class="modules-label" data-i18n="moduleTabsLabel">Alat lainnya</h2>
+        <div class="module-tabs" role="tablist" aria-label="Alat lainnya">
+          <button id="module-tab-file" type="button" class="module-tab-btn" role="tab" aria-controls="filecheck" aria-selected="true" data-i18n="moduleTabFile">Cek File</button>
+          <button id="module-tab-link" type="button" class="module-tab-btn" role="tab" aria-controls="linktrack" aria-selected="false" data-i18n="moduleTabLink">Cek Tautan</button>
+          <button id="module-tab-contacts" type="button" class="module-tab-btn" role="tab" aria-controls="contacts" aria-selected="false" data-i18n="moduleTabContacts">Kontak Resmi</button>
+          <button id="module-tab-aid" type="button" class="module-tab-btn" role="tab" aria-controls="firstaid" aria-selected="false" data-i18n="moduleTabAid">Panduan Darurat</button>
+          <button id="module-tab-report" type="button" class="module-tab-btn" role="tab" aria-controls="crowdreport" aria-selected="false" data-i18n="moduleTabReport">Laporkan</button>
+          <button id="module-tab-chatlog" type="button" class="module-tab-btn" role="tab" aria-controls="chatlog" aria-selected="false" data-i18n="moduleTabChatlog">Cek Chat</button>
+          <button id="module-tab-quiz" type="button" class="module-tab-btn" role="tab" aria-controls="quiz" aria-selected="false" data-i18n="moduleTabQuiz">Kuis</button>
+          <button id="module-tab-assistant" type="button" class="module-tab-btn" role="tab" aria-controls="assistant" aria-selected="false" data-i18n="moduleTabAssistant">Tanya Aman</button>
+          <button id="module-tab-history" type="button" class="module-tab-btn" role="tab" aria-controls="history" aria-selected="false" data-i18n="moduleTabHistory">Riwayat</button>
+          <button id="module-tab-how" type="button" class="module-tab-btn" role="tab" aria-controls="how" aria-selected="false" data-i18n="moduleTabHow">Cara kerja</button>
+        </div>
+      </nav>
+
+      <section id="filecheck" class="card filecheck module-panel" role="tabpanel" aria-labelledby="module-tab-file">
+        <h2 id="filecheck-heading" data-i18n="fileCheckHeading">Periksa file</h2>
+        <p class="hint" data-i18n="fileCheckHint">Unggah file yang dikirim seseorang — TipuCek membaca strukturnya di perangkat Anda. File tidak pernah keluar dari perangkat Anda.</p>
         <div class="image-row">
           <label class="secondary image-picker">
-            <span data-i18n="fileCheckChoose">Choose file</span>
+            <span data-i18n="fileCheckChoose">Pilih file</span>
             <input id="filecheck-input" type="file" hidden />
           </label>
-          <button id="filecheck-btn" type="button" class="primary" disabled data-i18n="fileCheckBtn">Check file</button>
+          <button id="filecheck-btn" type="button" class="primary" disabled data-i18n="fileCheckBtn">Periksa file</button>
         </div>
         <p id="filecheck-name" class="muted" hidden></p>
         <div id="filecheck-result" class="filecheck-result" aria-live="polite" hidden></div>
-        <p class="hint" data-i18n="fileHashNote">The file fingerprint (SHA-256) is computed on your device — the file is never sent anywhere. Community reports only, not an antivirus scan.</p>
+        <p class="hint" data-i18n="fileHashNote">Sidik file dihitung di perangkat ini — file tidak pernah dikirim ke mana pun. Laporan komunitas saja, bukan pemindai antivirus.</p>
       </section>
 
-      <section class="card linktrack" aria-labelledby="linktrack-heading">
-        <h2 id="linktrack-heading" data-i18n="linktrackHeading">Track a link</h2>
-        <p class="hint" data-i18n="linktrackHint">Paste a link someone sent you. TipuCek follows shorteners and looks up the domain's registrar and registration date — for this link only, because you asked.</p>
+      <section id="linktrack" class="card linktrack module-panel" role="tabpanel" aria-labelledby="module-tab-link" hidden>
+        <h2 id="linktrack-heading" data-i18n="linktrackHeading">Lacak tautan</h2>
+        <p class="hint" data-i18n="linktrackHint">Tempel tautan yang dikirim seseorang. TipuCek mengikuti pemendek tautan dan mencari tahu registrar serta tanggal pendaftaran domainnya — hanya untuk tautan ini, karena Anda memintanya.</p>
         <div class="image-row">
           <input id="linktrack-input" type="url" data-i18n-placeholder="linktrackPlaceholder" placeholder="https://…" autocomplete="off" />
-          <button id="linktrack-btn" type="button" class="primary" data-i18n="linktrackBtn">Track this link</button>
+          <button id="linktrack-btn" type="button" class="primary" data-i18n="linktrackBtn">Lacak tautan ini</button>
         </div>
         <p id="linktrack-error" class="error" role="alert" hidden></p>
         <div id="linktrack-result" class="linktrack-result" aria-live="polite" hidden></div>
-        <p class="hint" data-i18n="linktrackNote">Tracing contacts the shortener and the domain registry (rdap.org) for the link you entered. Nothing else is sent.</p>
+        <p class="hint" data-i18n="linktrackNote">Pelacakan menghubungi pemendek tautan dan pendaftar domain untuk tautan yang Anda masukkan. Tidak ada yang lain yang dikirim.</p>
       </section>
 
-      <section class="card contacts" aria-labelledby="contacts-heading">
-        <h2 id="contacts-heading" data-i18n="contactsHeading">Official contacts — verify the sender yourself</h2>
-        <p class="hint" data-i18n="contactsHint">A message claiming to be from a bank, shop or operator is fake if its number is not the official one below. Call the number here — never the one in the message.</p>
+      <section id="contacts" class="card contacts module-panel" role="tabpanel" aria-labelledby="module-tab-contacts" hidden>
+        <h2 id="contacts-heading" data-i18n="contactsHeading">Kontak resmi — verifikasi sendiri pengirimnya</h2>
+        <p class="hint" data-i18n="contactsHint">Pesan yang mengaku dari bank, toko, atau operator adalah palsu bila nomornya bukan nomor resmi di bawah ini. Hubungi nomor di sini — jangan pernah nomor yang ada di pesan.</p>
         <div class="contacts-controls">
-          <input id="contacts-search" type="search" data-i18n-placeholder="contactsSearch" placeholder="Search a bank, shop or operator…" autocomplete="off" />
-          <div class="contacts-cats" id="contacts-cats" role="group" aria-label="Categories"></div>
+          <input id="contacts-search" type="search" data-i18n-placeholder="contactsSearch" placeholder="Cari bank, toko, atau operator…" autocomplete="off" />
+          <div class="contacts-cats" id="contacts-cats" role="group" aria-label="Kategori"></div>
         </div>
         <ul id="contacts-list" class="contacts-list"></ul>
-        <p id="contacts-empty" class="muted" hidden data-i18n="contactsNoResult">No results — try another name.</p>
-        <p class="muted" data-i18n="contactsNote">Numbers verified 19 Nov 2026. They can change — always confirm on the company's official channel before calling.</p>
+        <p id="contacts-empty" class="muted" hidden data-i18n="contactsNoResult">Tidak ada yang cocok — coba nama lain.</p>
+        <p class="muted" data-i18n="contactsNote">Nomor diperiksa 19 Nov 2026. Nomor bisa berubah — selalu konfirmasi di kanal resmi perusahaan sebelum menelepon.</p>
       </section>
 
-      <section class="card firstaid" aria-labelledby="aid-heading">
-        <h2 id="aid-heading" data-i18n="aidHeading">Already happened? Act now</h2>
-        <p class="hint" data-i18n="aidHint">Choose what happened. Follow the steps in order — the first minutes matter most.</p>
-        <div class="aid-options" id="aid-options" role="group" aria-label="What happened"></div>
+      <section id="firstaid" class="card firstaid module-panel" role="tabpanel" aria-labelledby="module-tab-aid" hidden>
+        <h2 id="aid-heading" data-i18n="aidHeading">Sudah terjadi? Bertindak sekarang</h2>
+        <p class="hint" data-i18n="aidHint">Pilih yang terjadi. Kerjakan langkahnya berurutan — menit-menit pertama paling penting.</p>
+        <div class="aid-options" id="aid-options" role="group" aria-label="Yang terjadi"></div>
         <p id="aid-steps-title" class="aid-steps-title" hidden></p>
         <ol id="aid-steps" class="aid-steps" hidden></ol>
-        <p class="muted" data-i18n="aidNote">General guidance, not legal or financial advice. Recovering money is never guaranteed — act fast and follow the bank's and the authorities' instructions.</p>
+        <p class="muted" data-i18n="aidNote">Panduan umum, bukan nasihat hukum atau keuangan. Uang yang sudah terkirim tidak dijamin kembali — bertindak cepat dan ikuti arahan bank serta pihak berwenang.</p>
       </section>
 
-      <section class="card chatlog" aria-labelledby="chatlog-heading">
-        <h2 id="chatlog-heading" data-i18n="chatlogHeading">Scan a whole chat export</h2>
-        <p class="hint" data-i18n="chatlogHint">Upload a WhatsApp chat export (.txt). TipuCek scores each message with its local rule engine and lists the risky ones. The file never leaves your device.</p>
+      <section id="crowdreport" class="card crowdreport module-panel" role="tabpanel" aria-labelledby="module-tab-report" hidden>
+        <h2 id="crowdreport-heading" data-i18n="crowdHeading">Laporkan penipuan</h2>
+        <p class="hint" data-i18n="crowdHint">Laporanmu diperiksa dulu oleh tim TipuCek — laporan tidak langsung dipercaya dan tidak langsung tampil di mana pun.</p>
+        <p class="hint crowd-privacy" data-i18n="crowdPrivacy">Laporan ini dikirim ke database TipuCek untuk diperiksa — bukan hanya tersimpan di perangkat ini. Yang dikirim hanya yang kamu isi di formulir ini: jenis, nomor/rekening/modus, dan deskripsi. Riwayat pemeriksaan dan data pribadimu tidak ikut dikirim.</p>
+        <label class="field-label" for="crowd-type" data-i18n="crowdTypeLabel">Jenis laporan</label>
+        <select id="crowd-type" class="crowd-select">
+          <option value="phone" data-i18n="crowdTypePhone">Nomor HP</option>
+          <option value="account" data-i18n="crowdTypeAccount">Nomor rekening</option>
+          <option value="mode" data-i18n="crowdTypeMode">Modus baru</option>
+        </select>
+        <label class="field-label" for="crowd-value" id="crowd-value-label">Nomor HP penipu</label>
+        <input id="crowd-value" type="text" autocomplete="off" placeholder="08xxxxxxxxxx" />
+        <p id="crowd-value-error" class="error" role="alert" hidden></p>
+        <label class="field-label" for="crowd-details" data-i18n="crowdDetailsLabel">Deskripsi modus</label>
+        <textarea id="crowd-details" rows="4" maxlength="500" data-i18n-placeholder="crowdDetailsPh" placeholder="Ceritakan singkat modusnya — apa yang terjadi, apa yang diminta penipu…"></textarea>
+        <p id="crowd-details-error" class="error" role="alert" hidden></p>
+        <div class="actions">
+          <button id="crowd-submit-btn" type="button" class="primary" data-i18n="crowdSubmit">Kirim laporan</button>
+        </div>
+        <p id="crowd-submit-error" class="error" role="alert" hidden></p>
+        <div id="crowd-success" class="crowd-success" aria-live="polite" hidden>
+          <p><strong data-i18n="crowdThanks">Terima kasih — laporanmu akan diperiksa</strong></p>
+          <p class="muted" data-i18n="crowdReceipt">Terkirim ke database TipuCek untuk diperiksa oleh tim. Hanya jenis, nomor/rekening/modus, dan deskripsi yang dikirim — tanpa riwayat chat, tanpa data pribadi.</p>
+        </div>
+      </section>
+
+      <section id="chatlog" class="card chatlog module-panel" role="tabpanel" aria-labelledby="module-tab-chatlog" hidden>
+        <h2 id="chatlog-heading" data-i18n="chatlogHeading">Pindai ekspor chat utuh</h2>
+        <p class="hint" data-i18n="chatlogHint">Unggah ekspor chat WhatsApp (.txt). TipuCek menilai setiap pesan dengan mesin aturan lokal dan menampilkan yang berisiko. File tidak pernah keluar dari perangkat Anda.</p>
         <div class="image-row">
           <label class="secondary image-picker">
-            <span data-i18n="chatlogChoose">Choose .txt export</span>
+            <span data-i18n="chatlogChoose">Pilih ekspor .txt</span>
             <input id="chatlog-input" type="file" accept=".txt,text/plain" hidden />
           </label>
-          <button id="chatlog-btn" type="button" class="primary" disabled data-i18n="chatlogBtn">Scan the chat</button>
+          <button id="chatlog-btn" type="button" class="primary" disabled data-i18n="chatlogBtn">Pindai log chat</button>
         </div>
         <div id="chatlog-result" class="chatlog-result" aria-live="polite" hidden></div>
-        <p class="hint" data-i18n="chatlogNote">Scored with the local rule engine (not the AI model). The score is per message, not a verdict on the whole chat — read each flagged message yourself.</p>
+        <p class="hint" data-i18n="chatlogNote">Dinilai dengan mesin aturan lokal (bukan model AI). Skor berlaku per pesan, bukan vonis untuk seluruh chat — baca sendiri tiap pesan yang ditandai.</p>
       </section>
 
-      <section class="card quiz" aria-labelledby="quiz-heading">
-        <h2 id="quiz-heading" data-i18n="quizHeading">Scam or safe? Take the quiz</h2>
-        <p class="hint" data-i18n="quizHint">Read each message and guess: scam or safe? TipuCek explains the answer using its own risk rules. Learn to spot the signs yourself.</p>
+      <section id="quiz" class="card quiz module-panel" role="tabpanel" aria-labelledby="module-tab-quiz" hidden>
+        <h2 id="quiz-heading" data-i18n="quizHeading">Penipuan atau aman? Ikuti kuisnya</h2>
+        <p class="hint" data-i18n="quizHint">Baca tiap pesan lalu tebak: penipuan atau aman? TipuCek menjelaskan jawabannya dengan aturan risikonya sendiri. Belajar mengenali tandanya sendiri.</p>
         <div class="actions">
-          <button id="quiz-start-btn" type="button" class="primary" data-i18n="quizStart">Start the quiz</button>
+          <button id="quiz-start-btn" type="button" class="primary" data-i18n="quizStart">Mulai kuis</button>
         </div>
         <div id="quiz-area" class="quiz-area" hidden>
           <p id="quiz-progress" class="muted"></p>
           <blockquote id="quiz-question" class="quiz-question"></blockquote>
           <div class="quiz-answers">
-            <button id="quiz-scam-btn" type="button" class="primary" data-i18n="quizScamBtn">Scam</button>
-            <button id="quiz-safe-btn" type="button" class="secondary" data-i18n="quizSafeBtn">Safe</button>
+            <button id="quiz-scam-btn" type="button" class="primary" data-i18n="quizScamBtn">Penipuan</button>
+            <button id="quiz-safe-btn" type="button" class="secondary" data-i18n="quizSafeBtn">Aman</button>
           </div>
           <div id="quiz-feedback" class="quiz-feedback" hidden></div>
           <div class="actions">
-            <button id="quiz-next-btn" type="button" class="secondary" hidden data-i18n="quizNext">Next question</button>
+            <button id="quiz-next-btn" type="button" class="secondary" hidden data-i18n="quizNext">Soal berikutnya</button>
           </div>
           <p id="quiz-score" class="quiz-score"></p>
         </div>
       </section>
 
-      <section class="card assistant" aria-labelledby="assistant-heading">
+      <section id="assistant" class="card assistant module-panel" role="tabpanel" aria-labelledby="module-tab-assistant" hidden>
         <div class="assistant-head">
           <div class="avatar" id="aman-avatar">
             <img src="/aman.png" alt="Aman — TipuCek AI assistant" />
           </div>
           <div class="assistant-title">
-            <h2 id="assistant-heading" data-i18n="assistantHeading">Ask Aman</h2>
-            <p class="assistant-sub" data-i18n="assistantSub">Your AI scam-safety assistant</p>
+            <h2 id="assistant-heading" data-i18n="assistantHeading">Tanya Aman</h2>
+            <p class="assistant-sub" data-i18n="assistantSub">Asisten AI keamanan pesan Anda</p>
           </div>
         </div>
         <p id="assistant-greeting" class="assistant-greeting"></p>
@@ -356,97 +373,75 @@
             id="assistant-input"
             type="text"
             data-i18n-placeholder="assistantPlaceholder"
-            placeholder="Ask Aman about scams…"
+            placeholder="Tanya Aman soal penipuan…"
             autocomplete="off"
           />
-          <button id="assistant-send" type="button" class="primary" data-i18n="assistantSend">Send</button>
+          <button id="assistant-send" type="button" class="primary" data-i18n="assistantSend">Kirim</button>
         </div>
         <p id="assistant-note" class="assistant-note"></p>
       </section>
 
-      <section class="card history" aria-labelledby="history-heading">
+      <section id="history" class="card history module-panel" role="tabpanel" aria-labelledby="module-tab-history" hidden>
         <div class="history-head">
-          <h2 id="history-heading" data-i18n="historyHeading">Check history</h2>
+          <h2 id="history-heading" data-i18n="historyHeading">Riwayat pemeriksaan</h2>
           <div class="history-actions">
-            <button id="export-history-btn" type="button" class="secondary" data-i18n="exportHistory">
-              Download CSV
-            </button>
-            <button id="clear-history-btn" type="button" class="secondary" data-i18n="clearHistory">
-              Clear local history
-            </button>
+            <button id="export-history-btn" type="button" class="secondary" data-i18n="exportHistory">Unduh CSV</button>
+            <button id="clear-history-btn" type="button" class="secondary" data-i18n="clearHistory">Hapus riwayat lokal</button>
           </div>
         </div>
         <p id="history-stats" class="history-stats"></p>
         <p id="storage-note" class="storage-note">
-          History is stored locally in this browser until Firebase is configured.
+          Riwayat disimpan lokal di browser ini sampai Firebase dikonfigurasi.
         </p>
         <label class="privacy-toggle">
           <input type="checkbox" id="local-only-toggle" checked />
-          <span data-i18n="privacyLocalOnly">Save history only on this device</span>
+          <span data-i18n="privacyLocalOnly">Simpan riwayat hanya di perangkat ini</span>
         </label>
-        <p class="storage-note" data-i18n="privacyLocalOnlyNote">
-          When on, checks are never sent to the cloud — history stays in
-          this browser only. Turn it off to sync history to your anonymous
-          cloud account.
-        </p>
-        <p id="history-empty" class="muted" data-i18n="historyEmpty">No checks yet.</p>
+        <p class="storage-note" data-i18n="privacyLocalOnlyNote">Saat aktif, hasil pemeriksaan tidak pernah dikirim ke cloud — riwayat hanya tersimpan di browser ini. Matikan untuk menyinkronkan riwayat ke akun cloud anonim Anda.</p>
+        <p id="history-empty" class="muted" data-i18n="historyEmpty">Belum ada pemeriksaan.</p>
         <ul id="history-list" class="history-list"></ul>
+        <div class="crowd-history">
+          <h3 data-i18n="crowdHistoryTitle">Laporan yang kamu kirim</h3>
+          <p id="crowd-history-empty" class="muted" data-i18n="crowdHistoryEmpty">Belum ada laporan terkirim.</p>
+          <ul id="crowd-history-list" class="history-list"></ul>
+        </div>
       </section>
 
-      <section class="how" aria-labelledby="how-heading">
-        <h2 id="how-heading" data-i18n="howHeading">How it works</h2>
+      <section id="how" class="how module-panel" role="tabpanel" aria-labelledby="module-tab-how" hidden>
+        <h2 id="how-heading" data-i18n="howHeading">Cara kerja</h2>
         <div class="how-grid">
           <article class="how-card">
             <span class="how-num" aria-hidden="true">1</span>
-            <h3 data-i18n="how1Title">Paste</h3>
-            <p data-i18n="how1Text">
-              Drop in any suspicious message — SMS, WhatsApp, DM or email.
-              No sign-up, no personal data.
-            </p>
+            <h3 data-i18n="how1Title">Tempel</h3>
+            <p data-i18n="how1Text">Masukkan pesan mencurigakan apa pun — SMS, WhatsApp, DM, atau email. Tanpa daftar, tanpa data pribadi.</p>
           </article>
           <article class="how-card">
             <span class="how-num" aria-hidden="true">2</span>
-            <h3 data-i18n="how2Title">Check</h3>
+            <h3 data-i18n="how2Title">Periksa</h3>
             <p data-i18n="how2Text">
-              A Gemini model on your device answers first. If it cannot, the
-              cloud model (<code>gemini-3.5-flash-lite</code>) steps in —
-              usually within seconds.
+              AI di perangkat Anda menjawab dulu. Bila tidak bisa,
+              AI cloud yang mengambil alih — biasanya dalam hitungan detik.
             </p>
           </article>
           <article class="how-card">
             <span class="how-num" aria-hidden="true">3</span>
-            <h3 data-i18n="how3Title">Decide</h3>
-            <p data-i18n="how3Text">
-              Get a verdict, a risk score out of 100, the red flags found,
-              and exactly what to do next.
-            </p>
+            <h3 data-i18n="how3Title">Putuskan</h3>
+            <p data-i18n="how3Text">Dapatkan hasil, skor risiko dari 100, tanda bahaya yang ditemukan, dan langkah yang harus dilakukan.</p>
           </article>
         </div>
-        <p class="muted" data-i18n="disclaimer">
-          TipuCek gives a risk assessment, not a guarantee. When in doubt,
-          verify the sender through an official channel and never share OTPs,
-          PINs or passwords.
-        </p>
-        <p class="muted" data-i18n="deviceNote">
-          On-device AI needs a supported browser (Chrome with Gemini Nano).
-          On other browsers the cloud model answers instead — the result
-          always says which one.
-        </p>
+        <p class="muted" data-i18n="disclaimer">TipuCek memberi penilaian risiko, bukan jaminan. Bila ragu, verifikasi pengirim lewat jalur resmi dan jangan pernah membagikan OTP, PIN, atau kata sandi.</p>
+        <p class="muted" data-i18n="deviceNote">AI di perangkat butuh browser yang didukung (Chrome dengan AI di perangkat). Di browser lain, model cloud yang menjawab — hasilnya selalu menyebut siapa yang menjawab.</p>
       </section>
 
       <footer class="footer">
         <p>
           <a href="https://tipucek.web.app">TipuCek</a>
-          <span data-i18n="footerPre">— built for the</span>
+          <span data-i18n="footerPre">— dibuat untuk</span>
           <a href="https://buildhybridai.devpost.com/">#BuildHybridAI 2026</a>
-          <span data-i18n="footerPost">hackathon (Devpost + Firebase). Open source under the Apache-2.0 license —</span>
+          <span data-i18n="footerPost">hackathon (Devpost). Open source dengan lisensi Apache-2.0 —</span>
           <a href="https://github.com/kyleweb3/tipucek">github.com/kyleweb3/tipucek</a>.
         </p>
-        <p data-i18n="pwaInstallHint">
-          Tip: install TipuCek on your phone from your browser's menu (Add
-          to Home screen) — then share any message to it straight from
-          WhatsApp.
-        </p>
+        <p data-i18n="pwaInstallHint">Tips: pasang TipuCek di HP Anda dari menu browser (Tambahkan ke Layar utama) — lalu bagikan pesan apa pun ke TipuCek langsung dari WhatsApp.</p>
       </footer>
     </main>
 

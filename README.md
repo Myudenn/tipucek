@@ -67,7 +67,7 @@ own language, in one tap.
 | WhatsApp chat export | `.txt` export scan (max 2 MB / 5,000 messages), per-message local scores, risky messages listed |
 | Messages you are about to send | Outbound guard: warns locally, with values masked, if the message contains an OTP, password, card number, ID number, account number or PIN |
 
-### Eleven modules around the checker
+### Twelve modules around the checker
 
 | Module (`src/`) | What it does |
 |---|---|
@@ -77,6 +77,7 @@ own language, in one tap.
 | `chatlog.js` | WhatsApp `.txt` export scanner (2 MB / 5,000 messages), local-only, per-message scores |
 | `outbound.js` | Check-before-you-send guard: local patterns only, no AI, no network, findings masked (first 2 + last 2 digits), never saved to history |
 | `reports.js` | Community report database (Firestore `reports`): **hash-only** — a document holds only a SHA-256 hash + `kind` + `count` + `firstSeen` + `lastSeen`. Never a raw value, never a reporter. A count is not a verdict and not a blocklist. |
+| `crowdreport.js` | Crowd report-back form (Firestore `crowd_reports`): a user reports a scam phone number, bank account or new scam mode. Exactly 6 fields — `type`, `value`, `details`, `status="pending"`, `createdAt`, `reporterUid` (null, the app has no login) — enforced by `firestore.rules`; clients cannot read, update or delete reports (the owner reads them in the Firebase Console). Reports are **never trusted automatically and never shown publicly** — each stays `pending` until a human reviews it. The form and the privacy receipt say plainly that the report is sent to the TipuCek database for review, and only the reported number/account/mode is sent — no chat history, no personal data. A copy of the user's own report is kept in local history (local-only). |
 | `domain.js` | Public RDAP domain age/registrar + best-effort short-link tracing; says honestly when a lookup fails; standalone link-tracker section (explicit per-link consent, works in local-only mode) |
 | `quiz.js` | "Scam or safe?" quiz — 8 questions in Indonesian and English (other languages fall back to English) |
 | `emailcheck.js` | Phishing-email check (local, no AI, no network): name-vs-domain, free mailbox, links, urgency, body heuristic |
@@ -271,6 +272,17 @@ deliberately narrow so that it stays true:
   or file-content hash) and holds only `{ kind, count, firstSeen,
   lastSeen }` — never the raw value, never the reporter. Counts are
   public; a count is not personal data.
+- **Crowd reports (lapor-balik) are sent to the database for human
+  review — and the form says so.** A crowd report is the one place
+  where the user deliberately sends a raw value: the reported phone
+  number, bank account or scam mode (`type`, `value`, `details`) plus
+  `status="pending"`, `createdAt` and `reporterUid` (null) — exactly
+  those 6 fields, enforced by `firestore.rules`. Nothing else is
+  sent: no chat history, no personal data. Reports are never trusted
+  automatically and never shown publicly; each stays `pending` until
+  a human reviews it in the Firebase Console (clients cannot read,
+  update or delete them). The user keeps a local-only copy in their
+  own history.
 - **Community counts and link tracking only run when cloud history is
   on.** With the default local-only setting, no report lookup and no
   link tracking happen.
@@ -327,7 +339,10 @@ Numbers we can stand behind (all re-runnable from this repo):
   result honestly.
 - Google Search Console + search indexing.
 - Demo video (max 3 minutes) for the Devpost submission.
-- Moderation for community reports.
+- Moderation for community reports: the crowd report-back form
+  exists and every report stays `pending` until a human reviews it;
+  the next step is the review workflow that turns reviewed reports
+  into trusted data.
 - Translate the quiz bank into the other 6 interface languages.
 
 ## License

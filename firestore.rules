@@ -51,5 +51,32 @@ service cloud.firestore {
         && request.resource.data.lastSeen is timestamp;
       allow delete: if false;
     }
+    match /crowd_reports/{reportId} {
+      // Crowdsourced scam reports — reviewed by a human first.
+      //
+      // A report holds EXACTLY { type, value, details, status,
+      // createdAt, reporterUid } — the reported phone number / bank
+      // account / scam-mode title + a short description. Anyone
+      // (including anonymous) may create one, but only with
+      // status == "pending": a report is NEVER trusted outright and
+      // NEVER shown to the public until the TipuCek team reviews it
+      // (there is no public list in the app). Clients may NOT read,
+      // update or delete reports — the owner reads them in the
+      // Firebase Console. reporterUid is null for the anonymous app;
+      // a future signed-in client may attach its own UID.
+      allow create: if request.resource.data.keys().hasOnly(["type", "value", "details", "status", "createdAt", "reporterUid"])
+        && request.resource.data.type in ["phone", "account", "mode"]
+        && request.resource.data.value is string
+        && request.resource.data.value.size() > 0
+        && request.resource.data.value.size() <= 100
+        && request.resource.data.details is string
+        && request.resource.data.details.size() >= 10
+        && request.resource.data.details.size() <= 500
+        && request.resource.data.status == "pending"
+        && request.resource.data.createdAt is timestamp
+        && (request.resource.data.reporterUid == null
+          || request.resource.data.reporterUid == request.auth.uid);
+      allow read, update, delete: if false;
+    }
   }
 }
