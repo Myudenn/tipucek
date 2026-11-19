@@ -1,12 +1,14 @@
 {
-  "name": "pesanaman",
-  "version": "0.0.0",
+  "name": "tipucek",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test tests/unit.test.mjs tests/rules.test.mjs tests/gaps.test.mjs",
+    "test:benchmark": "node tests/benchmark-local-rules.mjs"
   },
   "devDependencies": {
     "vite": "^8.3.6"

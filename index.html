@@ -6,21 +6,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="PesanAman — a private scam-message scanner. Paste a suspicious SMS, WhatsApp, DM or email and get a verdict, risk score and red flags. Hybrid on-device / in-cloud AI via Firebase AI Logic."
+      content="TipuCek — free private scam checker. Check a suspicious message, file, email, call or link — on-device first, in 8 languages."
     />
-    <title>PesanAman — Private Scam Message Scanner</title>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href="https://tipucek.web.app/" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TipuCek" />
+    <meta property="og:title" content="TipuCek — Scam-Message Scanner | Cek Pesan Penipuan" />
+    <meta
+      property="og:description"
+      content="Check a suspicious message, file, email, call or link — private, on-device first, free. Cek pesan, file, email, panggilan, atau tautan yang mencurigakan — privat, di perangkat dulu, gratis."
+    />
+    <meta property="og:url" content="https://tipucek.web.app/" />
+    <meta property="og:image" content="https://tipucek.web.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Aman — TipuCek AI assistant" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TipuCek — Scam-Message Scanner | Cek Pesan Penipuan" />
+    <meta
+      name="twitter:description"
+      content="Check a suspicious message, file, email, call or link — private, on-device first, free. Cek pesan, file, email, panggilan, atau tautan yang mencurigakan — privat, di perangkat dulu, gratis."
+    />
+    <meta name="twitter:image" content="https://tipucek.web.app/og-image.png" />
+    <meta name="twitter:image:alt" content="Aman — TipuCek AI assistant" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "TipuCek",
+        "alternateName": "TipuCek — Scam-Message Scanner",
+        "url": "https://tipucek.web.app/",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Web",
+        "isAccessibleForFree": true,
+        "inLanguage": ["id", "en"],
+        "description": "TipuCek — free private scam checker. Check text messages, screenshots (OCR), links & sites, phone numbers, bank accounts, files (APK/exe/zip), and invitations — on-device first, in 8 languages.",
+        "image": "https://tipucek.web.app/og-image.png",
+        "author": { "@type": "Organization", "name": "TipuCek", "url": "https://github.com/kyleweb3/tipucek" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#1a56db" />
+    <title>TipuCek — Scam-Message Scanner | Cek Pesan Penipuan</title>
   </head>
   <body>
+    <a class="skip-link" href="#checker-heading">Lewati ke pemeriksa / Skip to checker</a>
+    <noscript><p class="noscript-note">TipuCek membutuhkan JavaScript untuk memeriksa pesan. / TipuCek needs JavaScript to check messages.</p></noscript>
     <header class="topbar">
       <div class="topbar-inner">
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true">PA</span>
+          <span class="brand-mark" aria-hidden="true">TC</span>
           <div>
-            <h1>PesanAman</h1>
-            <p class="tagline">Private scam-message scanner</p>
+            <h1>TipuCek</h1>
+            <p class="tagline" data-i18n="tagline">Private scam-message scanner</p>
           </div>
         </div>
         <div class="topbar-status">
+          <select id="lang-select" class="lang-select" aria-label="Language"></select>
+          <button id="senior-toggle" type="button" class="secondary senior-toggle" aria-pressed="false" data-i18n="seniorToggle">Senior mode</button>
           <span id="mode-label" class="mode-label">Demo mode</span>
           <span id="net-status" class="net-pill online">Online</span>
         </div>
@@ -28,100 +76,384 @@
     </header>
 
     <main class="page">
+      <p id="senior-note" class="senior-note" data-i18n="seniorNote" hidden>
+        Senior mode on: bigger text and buttons, results read out loud.
+      </p>
       <div id="demo-banner" class="demo-banner" hidden>
-        <strong>Demo mode — connect Firebase to enable AI.</strong>
-        <span>
+        <strong data-i18n="demoTitle">Demo mode — connect Firebase to enable AI.</strong>
+        <span data-i18n="demoText">
           This build uses a local keyword analyzer so the full flow can be
           tested without an account. Follow
           <code>SETUP-MYUDEN.md</code> to connect Firebase AI Logic.
         </span>
       </div>
 
-      <p id="offline-note" class="offline-note" hidden>
+      <p id="offline-note" class="offline-note" data-i18n="offlineNote" hidden>
         You are offline (or in airplane mode). Only on-device inference can
         run now — the cloud model is unreachable, and the on-device model must
         already be downloaded on this device.
       </p>
 
+      <section class="hero">
+        <p class="hero-eyebrow" data-i18n="heroEyebrow">#BuildHybridAI 2026 · Firebase AI Logic</p>
+        <h2 class="hero-title" data-i18n="heroTitle">Is this message a scam?</h2>
+        <p class="hero-sub" data-i18n="heroSub">
+          Paste any SMS, WhatsApp, DM or email — in Indonesian or English.
+          TipuCek checks it privately, on your device first, and tells you
+          in seconds.
+        </p>
+        <ul class="hero-chips">
+          <li data-i18n="chipNoAccount">No account needed</li>
+          <li data-i18n="chipOnDevice">On-device first</li>
+          <li data-i18n="chipLanguages">UI in 8 languages</li>
+          <li data-i18n="chipFree">Free</li>
+        </ul>
+      </section>
+
       <section class="card checker" aria-labelledby="checker-heading">
-        <h2 id="checker-heading">Check a suspicious message</h2>
-        <p class="hint">
-          Paste an SMS, WhatsApp message, DM or email — in Indonesian or
-          English. In AI mode the message is analyzed on your device first
-          (private), and only falls back to the cloud when needed.
+        <h2 id="checker-heading" data-i18n="checkerHeading">Check a suspicious message</h2>
+        <p class="hint" data-i18n="checkerHint">
+          In AI mode the message is analyzed on your device first (private),
+          and only falls back to the cloud when needed. The result always
+          shows which one answered.
         </p>
 
-        <label class="field-label" for="message-input">Message</label>
+        <div class="checker-tabs" role="tablist" aria-label="Check modes">
+          <button id="tab-btn-message" type="button" class="checker-tab-btn" aria-controls="tab-message" active" role="tab" aria-selected="true" data-i18n="checkBtn">Check message</button>
+          <button id="tab-btn-email" type="button" class="checker-tab-btn" aria-controls="tab-email"" role="tab" aria-selected="false" data-i18n="emailTab">Check an email</button>
+          <button id="tab-btn-call" type="button" class="checker-tab-btn" aria-controls="tab-call"" role="tab" aria-selected="false" data-i18n="callTab">Check a phone call</button>
+          <button id="tab-btn-outbound" type="button" class="checker-tab-btn" aria-controls="tab-outbound"" role="tab" aria-selected="false" data-i18n="outboundTab">Check before sending</button>
+        </div>
+
+        <div id="tab-message" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-message">
+        <label class="field-label" for="message-input" data-i18n="fieldLabel">Message</label>
         <textarea
           id="message-input"
-          rows="6"
+          rows="5"
+          maxlength="4000"
+          data-i18n-placeholder="placeholder"
           placeholder="Paste the suspicious message here…"
         ></textarea>
 
-        <div class="samples" id="samples" aria-label="Try a sample message">
-          <span class="samples-label">Try a sample:</span>
-        </div>
+        <p class="samples-heading" data-i18n="samplesHeading">Or try a real-looking sample:</p>
+        <div class="samples" id="samples" aria-label="Try a sample message"></div>
 
         <div class="actions">
           <button id="check-btn" type="button" class="primary">Check message</button>
+          <button id="paste-btn" type="button" class="secondary" data-i18n="pasteBtn">Paste</button>
           <p id="progress" class="progress" hidden></p>
         </div>
-        <p id="error" class="error" role="alert" hidden></p>
+        <p id="paste-note" class="muted" hidden></p>
+        <div id="error" class="error" role="alert" hidden></div>
+
+        <div class="image-check">
+          <h3 data-i18n="imageHeading">Or check a screenshot</h3>
+          <p class="hint" data-i18n="imageHint">
+            Upload a screenshot of the chat — the AI reads the text in it and checks it. Images are analyzed in the cloud only.
+          </p>
+          <div class="image-row">
+            <label class="secondary image-picker">
+              <span data-i18n="imageChoose">Choose image</span>
+              <input id="image-input" type="file" accept="image/*" hidden />
+            </label>
+            <button id="image-btn" type="button" class="primary" disabled data-i18n="imageBtn">Check screenshot</button>
+            <button id="image-remove-btn" type="button" class="secondary" hidden data-i18n="imageRemove">Remove image</button>
+          </div>
+          <img id="image-preview" class="image-preview" alt="" hidden />
+          <p id="image-progress" class="progress" hidden></p>
+          <p id="image-error" class="error" role="alert" hidden></p>
+        </div>
+        </div>
+
+        <div id="tab-email" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-email" hidden>
+          <p class="hint" data-i18n="emailHint">
+            Paste the email content and its sender. TipuCek checks whether the sender name matches its domain, the links inside, and the pressure language.
+          </p>
+          <label class="field-label" for="email-from-name" data-i18n="emailFromName">Sender name (as shown)</label>
+          <input id="email-from-name" type="text" autocomplete="off" />
+          <label class="field-label" for="email-from-email" data-i18n="emailFromEmail">Sender email address</label>
+          <input id="email-from-email" type="email" autocomplete="off" placeholder="name@company.com" />
+          <label class="field-label" for="email-body" data-i18n="emailBody">Email content</label>
+          <textarea id="email-body" rows="5"></textarea>
+          <div class="actions">
+            <button id="email-btn" type="button" class="primary" data-i18n="emailBtn">Check email</button>
+          </div>
+          <p id="email-error" class="error" role="alert" hidden></p>
+        </div>
+
+        <div id="tab-call" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-call" hidden>
+          <p class="hint" data-i18n="callHint">
+            Type the caller number and what they said. TipuCek checks the number against the community report database and matches the words against known phone-scam scripts.
+          </p>
+          <label class="field-label" for="call-number" data-i18n="callNumber">Caller number</label>
+          <input id="call-number" type="tel" autocomplete="off" placeholder="08xx…" />
+          <label class="field-label" for="call-said" data-i18n="callSaid">What the caller said</label>
+          <textarea id="call-said" rows="4"></textarea>
+          <div class="actions">
+            <button id="call-btn" type="button" class="primary" data-i18n="callBtn">Check call</button>
+          </div>
+          <p id="call-error" class="error" role="alert" hidden></p>
+          <div class="call-audio">
+            <h3 data-i18n="callAudioHeading">Or check the call by voice</h3>
+            <p class="hint" data-i18n="callAudioHint">
+              Record the caller (loudspeaker) or upload a recording of the call. TipuCek transcribes the speech and scores it like a message.
+            </p>
+            <p class="hint"><strong data-i18n="callAudioLimit">TipuCek cannot listen to a phone call directly. Record it yourself — put the call on loudspeaker and press Record — or upload a recording file.</strong></p>
+            <div class="actions">
+              <button id="call-record-btn" type="button" class="secondary" data-i18n="callRecordBtn">Record voice</button>
+              <button id="call-upload-btn" type="button" class="secondary" data-i18n="callUploadBtn">Upload a recording</button>
+              <input id="call-audio-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.webm" hidden />
+            </div>
+            <p id="call-recording" class="muted" hidden></p>
+            <p id="call-audio-progress" class="muted" hidden></p>
+            <p id="call-audio-error" class="error" role="alert" hidden></p>
+            <div id="call-transcript-box" hidden>
+              <p><strong data-i18n="callTranscriptLabel">What was said (transcribed)</strong></p>
+              <p id="call-transcript" class="transcript-text"></p>
+            </div>
+            <p class="hint" data-i18n="callAudioNote">The recording is sent to the cloud (Gemini) only to transcribe the speech. It is not stored in the cloud and never added to history.</p>
+          </div>
+        </div>
+
+        <div id="tab-outbound" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-outbound" hidden>
+          <h3 data-i18n="outboundHeading">Check before you send</h3>
+          <p class="hint" data-i18n="outboundHint">
+            Paste a message you are about to send. TipuCek warns you — locally, in seconds — if it contains information a scammer could use. This is your own message: it is never judged as a scam.
+          </p>
+          <label class="field-label" for="outbound-input" data-i18n="outboundTab">Check before sending</label>
+          <textarea
+            id="outbound-input"
+            rows="5"
+            data-i18n-placeholder="outboundPlaceholder"
+            placeholder="Paste the message you are about to send…"
+          ></textarea>
+          <div class="actions">
+            <button id="outbound-btn" type="button" class="primary" data-i18n="outboundBtn">Check before sending</button>
+          </div>
+          <div id="outbound-result" class="outbound-result" aria-live="polite" hidden></div>
+          <p class="hint" data-i18n="outboundNote">
+            Checked locally on your device — nothing is sent anywhere. Remove the sensitive parts before sending.
+          </p>
+        </div>
       </section>
 
       <section id="result" class="result" aria-live="polite" hidden></section>
 
+      <section class="card checks" aria-labelledby="checks-heading">
+        <h2 id="checks-heading" data-i18n="checksHeading">What TipuCek can check</h2>
+        <p class="hint" data-i18n="checksIntro">One checker for every way a scam can reach you.</p>
+        <ul class="checks-list">
+          <li data-i18n="checkText">Text messages — SMS, WhatsApp, DM or email, any pasted text</li>
+          <li data-i18n="checkImage">Screenshots — chat images read with OCR</li>
+          <li data-i18n="checkLink">Links &amp; sites — shorteners, fake domains, brand look-alikes</li>
+          <li data-i18n="checkLinkTrack">Link tracking — follow a link to its real destination, registrar and registration date</li>
+          <li data-i18n="checkPhone">Phone numbers — Indonesian numbers, with a report link</li>
+          <li data-i18n="checkAccount">Bank accounts — account numbers, with the official checker</li>
+          <li data-i18n="checkFile">Files — APK, programs, archives and documents, by name or upload</li>
+          <li data-i18n="checkInvite">Invitations — fake jobs, fake prizes, fake invitations</li>
+        </ul>
+        <p class="muted" data-i18n="checksNote">Not checked: voice calls and QR codes — TipuCek does not check those (yet).</p>
+      </section>
+
+      <section class="card filecheck" aria-labelledby="filecheck-heading">
+        <h2 id="filecheck-heading" data-i18n="fileCheckHeading">Check a file</h2>
+        <p class="hint" data-i18n="fileCheckHint">Upload a file someone sent you — TipuCek reads its structure on your device. The file never leaves your device.</p>
+        <div class="image-row">
+          <label class="secondary image-picker">
+            <span data-i18n="fileCheckChoose">Choose file</span>
+            <input id="filecheck-input" type="file" hidden />
+          </label>
+          <button id="filecheck-btn" type="button" class="primary" disabled data-i18n="fileCheckBtn">Check file</button>
+        </div>
+        <p id="filecheck-name" class="muted" hidden></p>
+        <div id="filecheck-result" class="filecheck-result" aria-live="polite" hidden></div>
+        <p class="hint" data-i18n="fileHashNote">The file fingerprint (SHA-256) is computed on your device — the file is never sent anywhere. Community reports only, not an antivirus scan.</p>
+      </section>
+
+      <section class="card linktrack" aria-labelledby="linktrack-heading">
+        <h2 id="linktrack-heading" data-i18n="linktrackHeading">Track a link</h2>
+        <p class="hint" data-i18n="linktrackHint">Paste a link someone sent you. TipuCek follows shorteners and looks up the domain's registrar and registration date — for this link only, because you asked.</p>
+        <div class="image-row">
+          <input id="linktrack-input" type="url" data-i18n-placeholder="linktrackPlaceholder" placeholder="https://…" autocomplete="off" />
+          <button id="linktrack-btn" type="button" class="primary" data-i18n="linktrackBtn">Track this link</button>
+        </div>
+        <p id="linktrack-error" class="error" role="alert" hidden></p>
+        <div id="linktrack-result" class="linktrack-result" aria-live="polite" hidden></div>
+        <p class="hint" data-i18n="linktrackNote">Tracing contacts the shortener and the domain registry (rdap.org) for the link you entered. Nothing else is sent.</p>
+      </section>
+
+      <section class="card contacts" aria-labelledby="contacts-heading">
+        <h2 id="contacts-heading" data-i18n="contactsHeading">Official contacts — verify the sender yourself</h2>
+        <p class="hint" data-i18n="contactsHint">A message claiming to be from a bank, shop or operator is fake if its number is not the official one below. Call the number here — never the one in the message.</p>
+        <div class="contacts-controls">
+          <input id="contacts-search" type="search" data-i18n-placeholder="contactsSearch" placeholder="Search a bank, shop or operator…" autocomplete="off" />
+          <div class="contacts-cats" id="contacts-cats" role="group" aria-label="Categories"></div>
+        </div>
+        <ul id="contacts-list" class="contacts-list"></ul>
+        <p id="contacts-empty" class="muted" hidden data-i18n="contactsNoResult">No results — try another name.</p>
+        <p class="muted" data-i18n="contactsNote">Numbers verified 19 Nov 2026. They can change — always confirm on the company's official channel before calling.</p>
+      </section>
+
+      <section class="card firstaid" aria-labelledby="aid-heading">
+        <h2 id="aid-heading" data-i18n="aidHeading">Already happened? Act now</h2>
+        <p class="hint" data-i18n="aidHint">Choose what happened. Follow the steps in order — the first minutes matter most.</p>
+        <div class="aid-options" id="aid-options" role="group" aria-label="What happened"></div>
+        <p id="aid-steps-title" class="aid-steps-title" hidden></p>
+        <ol id="aid-steps" class="aid-steps" hidden></ol>
+        <p class="muted" data-i18n="aidNote">General guidance, not legal or financial advice. Recovering money is never guaranteed — act fast and follow the bank's and the authorities' instructions.</p>
+      </section>
+
+      <section class="card chatlog" aria-labelledby="chatlog-heading">
+        <h2 id="chatlog-heading" data-i18n="chatlogHeading">Scan a whole chat export</h2>
+        <p class="hint" data-i18n="chatlogHint">Upload a WhatsApp chat export (.txt). TipuCek scores each message with its local rule engine and lists the risky ones. The file never leaves your device.</p>
+        <div class="image-row">
+          <label class="secondary image-picker">
+            <span data-i18n="chatlogChoose">Choose .txt export</span>
+            <input id="chatlog-input" type="file" accept=".txt,text/plain" hidden />
+          </label>
+          <button id="chatlog-btn" type="button" class="primary" disabled data-i18n="chatlogBtn">Scan the chat</button>
+        </div>
+        <div id="chatlog-result" class="chatlog-result" aria-live="polite" hidden></div>
+        <p class="hint" data-i18n="chatlogNote">Scored with the local rule engine (not the AI model). The score is per message, not a verdict on the whole chat — read each flagged message yourself.</p>
+      </section>
+
+      <section class="card quiz" aria-labelledby="quiz-heading">
+        <h2 id="quiz-heading" data-i18n="quizHeading">Scam or safe? Take the quiz</h2>
+        <p class="hint" data-i18n="quizHint">Read each message and guess: scam or safe? TipuCek explains the answer using its own risk rules. Learn to spot the signs yourself.</p>
+        <div class="actions">
+          <button id="quiz-start-btn" type="button" class="primary" data-i18n="quizStart">Start the quiz</button>
+        </div>
+        <div id="quiz-area" class="quiz-area" hidden>
+          <p id="quiz-progress" class="muted"></p>
+          <blockquote id="quiz-question" class="quiz-question"></blockquote>
+          <div class="quiz-answers">
+            <button id="quiz-scam-btn" type="button" class="primary" data-i18n="quizScamBtn">Scam</button>
+            <button id="quiz-safe-btn" type="button" class="secondary" data-i18n="quizSafeBtn">Safe</button>
+          </div>
+          <div id="quiz-feedback" class="quiz-feedback" hidden></div>
+          <div class="actions">
+            <button id="quiz-next-btn" type="button" class="secondary" hidden data-i18n="quizNext">Next question</button>
+          </div>
+          <p id="quiz-score" class="quiz-score"></p>
+        </div>
+      </section>
+
+      <section class="card assistant" aria-labelledby="assistant-heading">
+        <div class="assistant-head">
+          <div class="avatar" id="aman-avatar">
+            <img src="/aman.png" alt="Aman — TipuCek AI assistant" />
+          </div>
+          <div class="assistant-title">
+            <h2 id="assistant-heading" data-i18n="assistantHeading">Ask Aman</h2>
+            <p class="assistant-sub" data-i18n="assistantSub">Your AI scam-safety assistant</p>
+          </div>
+          <button id="voice-toggle" type="button" class="secondary" aria-pressed="false">Voice: off</button>
+        </div>
+        <p id="assistant-greeting" class="assistant-greeting"></p>
+        <div id="assistant-log" class="assistant-log" aria-live="polite"></div>
+        <div id="assistant-chips" class="assistant-chips"></div>
+        <div class="assistant-input-row">
+          <input
+            id="assistant-input"
+            type="text"
+            data-i18n-placeholder="assistantPlaceholder"
+            placeholder="Ask Aman about scams…"
+            autocomplete="off"
+          />
+          <button id="assistant-send" type="button" class="primary" data-i18n="assistantSend">Send</button>
+        </div>
+        <p id="assistant-note" class="assistant-note"></p>
+      </section>
+
       <section class="card history" aria-labelledby="history-heading">
         <div class="history-head">
-          <h2 id="history-heading">Check history</h2>
-          <button id="clear-history-btn" type="button" class="secondary">
-            Clear local history
-          </button>
+          <h2 id="history-heading" data-i18n="historyHeading">Check history</h2>
+          <div class="history-actions">
+            <button id="export-history-btn" type="button" class="secondary" data-i18n="exportHistory">
+              Download CSV
+            </button>
+            <button id="clear-history-btn" type="button" class="secondary" data-i18n="clearHistory">
+              Clear local history
+            </button>
+          </div>
         </div>
+        <p id="history-stats" class="history-stats"></p>
         <p id="storage-note" class="storage-note">
           History is stored locally in this browser until Firebase is configured.
         </p>
-        <p id="history-empty" class="muted">No checks yet.</p>
+        <label class="privacy-toggle">
+          <input type="checkbox" id="local-only-toggle" checked />
+          <span data-i18n="privacyLocalOnly">Save history only on this device</span>
+        </label>
+        <p class="storage-note" data-i18n="privacyLocalOnlyNote">
+          When on, checks are never sent to the cloud — history stays in
+          this browser only. Turn it off to sync history to your anonymous
+          cloud account.
+        </p>
+        <p id="history-empty" class="muted" data-i18n="historyEmpty">No checks yet.</p>
         <ul id="history-list" class="history-list"></ul>
       </section>
 
-      <section class="card how" aria-labelledby="how-heading">
-        <h2 id="how-heading">How it works</h2>
-        <ol>
-          <li>
-            <strong>On-device first.</strong> With Firebase AI Logic hybrid
-            inference (<code>PREFER_ON_DEVICE</code>), the message is analyzed
-            by a model running on this device — it never leaves your phone or
-            computer.
-          </li>
-          <li>
-            <strong>Cloud fallback.</strong> If the on-device model cannot
-            answer, the request goes to Gemini in the cloud
-            (<code>gemini-3.5-flash-lite</code>). The result card always shows
-            which one answered: <span class="badge badge-device">ON_DEVICE</span>
-            or <span class="badge badge-cloud">IN_CLOUD</span>.
-          </li>
-          <li>
-            <strong>Private history.</strong> Results are saved to Firestore
-            under an anonymous account. Without Firebase configured, history
-            stays in this browser's local storage only.
-          </li>
-        </ol>
-        <p class="muted">
-          PesanAman gives a risk assessment, not a guarantee. When in doubt,
+      <section class="how" aria-labelledby="how-heading">
+        <h2 id="how-heading" data-i18n="howHeading">How it works</h2>
+        <div class="how-grid">
+          <article class="how-card">
+            <span class="how-num" aria-hidden="true">1</span>
+            <h3 data-i18n="how1Title">Paste</h3>
+            <p data-i18n="how1Text">
+              Drop in any suspicious message — SMS, WhatsApp, DM or email.
+              No sign-up, no personal data.
+            </p>
+          </article>
+          <article class="how-card">
+            <span class="how-num" aria-hidden="true">2</span>
+            <h3 data-i18n="how2Title">Check</h3>
+            <p data-i18n="how2Text">
+              A Gemini model on your device answers first. If it cannot, the
+              cloud model (<code>gemini-3.5-flash-lite</code>) steps in —
+              usually within seconds.
+            </p>
+          </article>
+          <article class="how-card">
+            <span class="how-num" aria-hidden="true">3</span>
+            <h3 data-i18n="how3Title">Decide</h3>
+            <p data-i18n="how3Text">
+              Get a verdict, a risk score out of 100, the red flags found,
+              and exactly what to do next.
+            </p>
+          </article>
+        </div>
+        <p class="muted" data-i18n="disclaimer">
+          TipuCek gives a risk assessment, not a guarantee. When in doubt,
           verify the sender through an official channel and never share OTPs,
           PINs or passwords.
+        </p>
+        <p class="muted" data-i18n="deviceNote">
+          On-device AI needs a supported browser (Chrome with Gemini Nano).
+          On other browsers the cloud model answers instead — the result
+          always says which one.
         </p>
       </section>
 
       <footer class="footer">
         <p>
-          PesanAman — built for the #BuildHybridAI 2026 hackathon (Devpost +
-          Firebase). Open source under the Apache-2.0 license.
+          <a href="https://tipucek.web.app">TipuCek</a>
+          <span data-i18n="footerPre">— built for the</span>
+          <a href="https://buildhybridai.devpost.com/">#BuildHybridAI 2026</a>
+          <span data-i18n="footerPost">hackathon (Devpost + Firebase). Open source under the Apache-2.0 license —</span>
+          <a href="https://github.com/kyleweb3/tipucek">github.com/kyleweb3/tipucek</a>.
+        </p>
+        <p data-i18n="pwaInstallHint">
+          Tip: install TipuCek on your phone from your browser's menu (Add
+          to Home screen) — then share any message to it straight from
+          WhatsApp.
         </p>
       </footer>
     </main>
 
     <script type="module" src="/src/main.js"></script>
+    <!-- Print-only report (V4): filled by JS before window.print(),
+         hidden on screen, the only thing visible on paper. -->
+    <section id="print-report" class="print-only" aria-hidden="true"></section>
   </body>
 </html>

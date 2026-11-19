@@ -26,3 +26,10 @@ dist-ssr
 # Local env (real Firebase credentials go here, never committed)
 .env.local
 .env.*.local
+
+# TipuCek: keep Playwright scripts, never commit media or build artifacts
+video/*
+!video/*.cjs
+aman-baru/
+test-screenshot.png
+.firebase/

@@ -1,4 +1,4 @@
-# SETUP-MYUDEN — Cara Menghubungkan Firebase ke PesanAman
+# SETUP-MYUDEN — Cara Menghubungkan Firebase ke TipuCek
 
 Panduan ini untuk Myuden. Semua langkah dilakukan di browser / Firebase
 Console — **tidak ada password yang perlu dikirim ke siapa pun**, dan
@@ -11,27 +11,27 @@ Firebase + Gemini Developer API).
 
 1. Buka https://console.firebase.google.com/ dan login dengan akun Google kamu.
 2. Klik **Add project** (atau **Create a project**).
-3. Nama project: `pesanaman` (bebas, tapi ini yang rapi).
+3. Nama project: `tipucek` (bebas, tapi ini yang rapi).
 4. Google Analytics: boleh dimatikan (tidak dibutuhkan) — klik Continue
    sampai project selesai dibuat, lalu klik **Continue** / buka project.
 
 ## 2. Daftarkan aplikasi Web
 
 1. Di halaman utama project, klik ikon Web (`</>`) — **Add app**.
-2. Nickname aplikasi: `PesanAman Web`.
+2. Nickname aplikasi: `TipuCek Web`.
 3. **Jangan** centang "Also set up Firebase Hosting" (tidak perlu).
 4. Klik **Register app**. Akan muncul kode config seperti ini:
    ```js
    const firebaseConfig = {
      apiKey: "AIza...",
-     authDomain: "pesanaman.firebaseapp.com",
-     projectId: "pesanaman",
-     storageBucket: "pesanaman.firebasestorage.app",
+     authDomain: "tipucek.firebaseapp.com",
+     projectId: "tipucek",
+     storageBucket: "tipucek.firebasestorage.app",
      messagingSenderId: "123456789",
      appId: "1:123456789:web:abc..."
    };
    ```
-5. Salin nilai-nilai itu ke file `.env.local` di repo PesanAman
+5. Salin nilai-nilai itu ke file `.env.local` di repo TipuCek
    (salin `.env.local.example` dulu), dengan nama variabel
    `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
    `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`,
@@ -88,12 +88,12 @@ nama ini sampai diubah manual.
 App Check melindungi API key dari penyalahgunaan oleh situs lain.
 
 1. Menu kiri: **Build → App Check**.
-2. Pilih aplikasi Web PesanAman → **Register**.
+2. Pilih aplikasi Web TipuCek → **Register**.
 3. Provider: **reCAPTCHA Enterprise** (disebut "Fraud Defense" di
    console). **Jangan pilih reCAPTCHA v3 klasik — formnya sudah
    dinonaktifkan di console.**
    - Buka Google Cloud Console → Security → reCAPTCHA Enterprise,
-     buat key baru: label `PesanAman`, tipe **Website, score-based**,
+     buat key baru: label `TipuCek`, tipe **Website, score-based**,
      domain: `localhost` + domain hosting kamu nanti.
    - Salin **Site key** ke `VITE_FIREBASE_APPCHECK_SITE_KEY` di
      `.env.local`.
@@ -105,9 +105,9 @@ App Check melindungi API key dari penyalahgunaan oleh situs lain.
    kode — aplikasi tidak melakukannya.)
 
 **Catatan penting (pelajaran 19 Nov 2026):** domain live WAJIB ada di
-daftar domain key reCAPTCHA Enterprise. Key PesanAman terdaftar dengan
-domain `localhost`, `pesanaman-80d63.web.app`,
-`pesanaman-80d63.firebaseapp.com` — kalau domain live tidak ada di
+daftar domain key reCAPTCHA Enterprise. Key TipuCek terdaftar dengan
+domain `localhost`, `tipucek.web.app`,
+`tipucek.firebaseapp.com` — kalau domain live tidak ada di
 daftar ini, pemeriksaan AI gagal dengan error App Check.
 
 ## 7. Uji
@@ -141,8 +141,8 @@ kartu hasil muncul dengan badge `ON_DEVICE` (model sudah terunduh) atau
 Cloud browser tidak bisa menjangkau localhost VM, jadi aplikasi harus
 di-deploy dulu ke Hosting baru bisa diuji live.
 
-**URL live:** https://pesanaman-80d63.web.app
-(juga https://pesanaman-80d63.firebaseapp.com)
+**URL live:** https://tipucek.web.app
+(juga https://tipucek.firebaseapp.com)
 
 **Status 19 Nov 2026 — LIVE dan pemeriksaan AI LOLOS.**
 - Deploy pertama 19 Nov ~08:38 WIB (11 file, tier Spark gratis).
@@ -152,14 +152,14 @@ di-deploy dulu ke Hosting baru bisa diuji live.
 - `firebase-tools` 15.37.0 di `~/workspace/tools/firebase-tools/`
   (bukan global, supaya tahan restart VM).
 - `firebase.json` + `.firebaserc` ada di repo (project
-  `pesanaman-80d63`, Hosting menyajikan folder `dist`, SPA rewrite ke
+  `tipucek`, Hosting menyajikan folder `dist`, SPA rewrite ke
   `/index.html`).
 
 **Perintah deploy:**
 ```bash
 export PATH="$HOME/workspace/tools/firebase-tools/node_modules/.bin:$PATH"
 export XDG_CONFIG_HOME=/tmp/firebase-config
-firebase deploy --only hosting --project pesanaman-80d63
+firebase deploy --only hosting --project tipucek
 ```
 (Login ulang bila sesi habis: `firebase login --no-localhost`, buka URL
 yang dicetak di browser, login sebagai fauzanzy1@gmail.com, tempel kode

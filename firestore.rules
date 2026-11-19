@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// TipuCek check history — private per anonymous account.
+//
+// Every check document carries ownerUid = the Firebase Auth anonymous
+// UID of the browser that saved it. A user may only create checks
+// for themselves and read their own checks — never anyone else's.
+// Checks saved before ownerUid existed have no owner and are no
+// longer readable through these rules (they stay in the collection
+// but are unreachable). No updates or deletes through the client.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /checks/{checkId} {
+      // Defense in depth: the client only ever writes the verdict
+      // fields (never the message text). The rule enforces that
+      // shape, so even a buggy or malicious client cannot store a
+      // raw message in the cloud (audit §2, added 19 Nov 2026).
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(["status", "riskScore", "redFlags", "summary", "source", "createdAt", "ownerUid"])
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Community reports — aggregate counts only.
+    //
+    // A document is keyed by the SHA-256 hash of a normalized value
+    // (phone, account, file name, or file content hash) and holds
+    // ONLY { kind, count, firstSeen, lastSeen } — never a raw value,
+    // never a reporter identity. Anyone may read the counts (a count
+    // is not personal data). Writes need a signed-in user (anonymous
+    // auth) and may only create a count-1 document or bump the count
+    // by exactly 1. No deletes. Per-user server-side rate limiting
+    // is not possible in rules alone (no Cloud Functions on the free
+    // Spark plan); the client throttles to one report per hash per
+    // device per 24 h, and App Check + auth + these rules bound abuse.
+    match /reports/{hash} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(["kind", "count", "firstSeen", "lastSeen"])
+        && request.resource.data.kind in ["phone", "account", "filename", "filehash"]
+        && request.resource.data.count == 1
+        && request.resource.data.firstSeen is timestamp
+        && request.resource.data.lastSeen is timestamp;
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["count", "lastSeen"])
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.kind == resource.data.kind
+        && request.resource.data.lastSeen is timestamp;
+      allow delete: if false;
+    }
+  }
+}
