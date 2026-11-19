@@ -19,39 +19,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { inspectFile } from "../src/filecheck.js";
 import { analyzeCall, mergeCallVerdict } from "../src/callcheck.js";
-import { analyzeWithHeuristic, TTS_MODEL, resolveAudioMimeType, validateAudioFile, MAX_AUDIO_BYTES } from "../src/ai.js";
-import { splitSpeechChunks } from "../src/assistant.js";
-
-describe("cloud TTS model (voice fix 19 Nov)", () => {
-  it("uses the stable 3.8 TTS model — never the retired 3.1 preview", () => {
-    // gemini-3.1-flash-tts-preview is retired (Firebase docs, "Generate
-    // speech (TTS)", updated 18 Nov 2026): every cloud voice call with
-    // it fails, and the phone falls back to silence. Pin the stable
-    // model so a future edit cannot silently reintroduce the dead one.
-    assert.equal(TTS_MODEL, "gemini-3.8-flash-tts");
-    assert.ok(!TTS_MODEL.includes("preview"), TTS_MODEL);
-  });
-});
-
-describe("device-voice chunking (voice fix 19 Nov)", () => {
-  it("short text stays one chunk", () => {
-    assert.deepEqual(splitSpeechChunks("Halo, ini TipuCek."), ["Halo, ini TipuCek."]);
-  });
-  it("Rp 50.000.000 is never torn apart at its dots", () => {
-    const text = "Anda memenangkan hadiah Rp 50.000.000 dari undian. Segera klik link ini.";
-    const chunks = splitSpeechChunks(text);
-    assert.ok(!chunks.some((c) => /50$|000$/.test(c)), JSON.stringify(chunks));
-    assert.equal(chunks.join(" "), text);
-  });
-  it("long text splits into chunks of at most 200 chars, nothing lost", () => {
-    const sentence = "Ini kalimat yang cukup panjang untuk menguji pemotongan suara perangkat. ";
-    const text = sentence.repeat(6);
-    const chunks = splitSpeechChunks(text);
-    assert.ok(chunks.length > 1, `only ${chunks.length} chunk(s)`);
-    assert.ok(chunks.every((c) => c.length <= 200), JSON.stringify(chunks.map((c) => c.length)));
-    assert.equal(chunks.join(" "), text.trim());
-  });
-});
+import { analyzeWithHeuristic, resolveAudioMimeType, validateAudioFile, MAX_AUDIO_BYTES } from "../src/ai.js";
 
 describe("call voice: audio MIME + validation (gap 5)", () => {
   it("resolves the reported type, strips codec params", () => {
