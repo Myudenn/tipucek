@@ -747,6 +747,26 @@ export async function transcribeAudioWithAI(file, lang = "en") {
 }
 
 /**
+ * Preload the Firebase SDK chunks (app, app-check, AI) in the
+ * background — no account, no token, no model, no verdict; just the
+ * JavaScript files, from the same hosting origin. The first check
+ * otherwise pays for these downloads inside ensureAIReady (measured
+ * ~17s of a ~30s first check in the VM): preloading them on page
+ * load (idle) means the check path's identical imports resolve from
+ * the module cache. Safe to call repeatedly; never throws.
+ */
+export async function preloadAiModules() {
+  if (!isFirebaseConfigured()) return;
+  await Promise.all(
+    [
+      import("firebase/app"),
+      import("firebase/app-check"),
+      import("firebase/ai"),
+    ].map((p) => p.catch(() => {})),
+  );
+}
+
+/**
  * Best-effort background warm-up: prepare the Firebase app, an App Check
  * token and the on-device model after the user's first gesture (textarea
  * focus or sample click). Never throws and never blocks the UI — the

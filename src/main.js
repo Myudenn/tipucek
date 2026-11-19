@@ -1,7 +1,7 @@
 // TipuCek — UI wiring (single page).
 
 import "./styles.css";
-import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseConfigured, warmUpAI, analyzeWithHeuristic, MAX_MESSAGE_CHARS } from "./ai.js";
+import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseConfigured, warmUpAI, preloadAiModules, analyzeWithHeuristic, MAX_MESSAGE_CHARS } from "./ai.js";
 import { analyzeLinks, extractNumbers } from "./risks.js";
 import { analyzeFiles } from "./files.js";
 import { buildWarningCard, shareWarningCard } from "./sharecard.js";
@@ -62,6 +62,50 @@ let recheckAfterCheck = false;
 // Monotonic run id: a newer check/re-check invalidates an older one's
 // render, so a stale async result can never overwrite a newer card.
 let checkRunId = 0;
+
+// Verdict cache (speed optimization, 19 Nov): the same input in the
+// same language always gets the same genuine AI verdict, so a repeated
+// check — or a language round-trip (EN -> ID -> EN) — reuses the
+// verdict from this session instead of re-running the full AI check.
+// In-memory only, never persisted: nothing extra is stored anywhere,
+// and the cache dies with the page. Only genuine verdicts are cached
+// (never a demo result, never a failure) — cache writes are skipped
+// entirely in demo mode (isFirebaseConfigured() false), where the
+// check is a ~350ms local heuristic anyway. Each entry keeps the
+// original check's elapsed time, so the "Checked in Xs" line stays
+// honest. Email/call verdicts are local and near-instant already, so
+// only the AI message/image verdicts are cached.
+const VERDICT_CACHE_MAX = 50;
+const verdictCache = new Map();
+function normalizeCheckInput(text) {
+  return String(text || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+function verdictCacheKey(kind, input, langCode) {
+  return `${kind}|${langCode}|${normalizeCheckInput(input)}`;
+}
+function verdictCacheGet(kind, input, langCode) {
+  const key = verdictCacheKey(kind, input, langCode);
+  const hit = verdictCache.get(key);
+  if (!hit) return null;
+  // LRU touch: the oldest entry stays the eviction victim.
+  verdictCache.delete(key);
+  verdictCache.set(key, hit);
+  return hit;
+}
+function verdictCacheSet(kind, input, langCode, entry) {
+  const key = verdictCacheKey(kind, input, langCode);
+  if (verdictCache.has(key)) verdictCache.delete(key);
+  verdictCache.set(key, entry);
+  while (verdictCache.size > VERDICT_CACHE_MAX) {
+    verdictCache.delete(verdictCache.keys().next().value);
+  }
+}
+// Last rendered result card (exact renderResult arguments): a language
+// change re-renders this card's static strings instantly (see the
+// language picker handler) while the AI text waits for the re-check.
+let lastRenderArgs = null;
 
 export const SAMPLES = [
   {
@@ -125,6 +169,17 @@ function sourceBadge(source) {
     return `<span class="badge badge-local">${escapeHtml(t("badgeLocal", lang))}</span>`;
   }
   return `<span class="badge badge-unknown">${escapeHtml(t("badgeUnknown", lang))}</span>`;
+}
+
+// Plain-language source label (text only, no badge markup) for the
+// history list: the raw source code (IN_CLOUD / ON_DEVICE) must never
+// reach the UI — audit 19 Nov caught it leaking in history items.
+function sourceLabel(source) {
+  if (source === "ON_DEVICE") return t("badgeDevice", lang);
+  if (source === "IN_CLOUD") return t("badgeCloud", lang);
+  if (source === "DEMO") return t("badgeDemo", lang);
+  if (source === "LOCAL") return t("badgeLocal", lang);
+  return t("badgeUnknown", lang);
 }
 
 // Map a raw failure to a short, plain-language message. The raw
@@ -205,6 +260,9 @@ function fillPrintReport(verdict, links, phones, accounts) {
 
 function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) {
   const el = $("result");
+  // Remember the exact render arguments for the instant static
+  // re-label on language change (see the language picker handler).
+  lastRenderArgs = { verdict, message, elapsedSec, imageText, extra };
   const flags =
     verdict.redFlags.length > 0
       ? `<ul class="flags">${verdict.redFlags.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`
@@ -646,7 +704,7 @@ function renderHistory(entries) {
       return `<li class="history-item status-${escapeHtml(e.status || "safe")}">
         <span class="history-status">${escapeHtml(statusLabel)}</span>
         <span class="history-score">${Number(e.riskScore ?? 0)}/100</span>
-        <span class="history-source">${escapeHtml(e.source || "")}</span>
+        <span class="history-source">${escapeHtml(sourceLabel(e.source))}</span>
         <span class="history-text">${escapeHtml(text.slice(0, 90))}${text.length > 90 ? "…" : ""}</span>
         <time>${escapeHtml(when)}</time>
       </li>`;
@@ -772,6 +830,32 @@ function warmUpOnce() {
   warmUpAI().catch(() => {});
 }
 
+// Interim panel shown while the AI verdict is still loading (speed
+// optimization, 19 Nov): the deterministic code check is instant, so
+// show it right away instead of a blank "Checking…" wait. It is a
+// supporting signal only — clearly labeled, never a verdict (no score
+// ring, no status heading, no verdict color). Replaced by the full
+// result card when the AI verdict arrives; kept (with the error) if
+// the AI check fails, so the user still has a real signal. Production
+// only: in demo mode the verdict IS this heuristic and arrives in
+// ~350ms anyway.
+function renderCheckingPreview(message) {
+  if (!isFirebaseConfigured()) return;
+  const el = $("result");
+  const local = analyzeWithHeuristic(message, lang);
+  const localStatus =
+    local.status === "scam"
+      ? t("statusScam", lang)
+      : local.status === "suspicious"
+        ? t("statusSuspicious", lang)
+        : t("statusSafe", lang);
+  el.innerHTML = `
+    <article class="result-card result-checking">
+      <div class="local-signal"><h3>${escapeHtml(t("localSignalTitle", lang))}</h3><p>${escapeHtml(t("checkingPreviewNote", lang, { score: local.riskScore, status: localStatus, n: local.redFlags.length }))}</p></div>
+    </article>`;
+  el.hidden = false;
+}
+
 async function onCheck() {
   const message = $("message-input").value.trim();
   const errorEl = $("error");
@@ -796,23 +880,44 @@ async function onCheck() {
     : t("checkingDemo", lang);
   const t0 = performance.now();
   try {
-    const verdict = await analyzeMessage(
-      message,
-      ({ stage, progress }) => {
-        if (stage === "downloading-model") {
-          progressEl.textContent = t("preparingModel", lang, {
-            p: Math.round((progress || 0) * 100),
-          });
-        } else if (stage === "cloud") {
-          progressEl.textContent = t("cloudFallback", lang);
-        }
-      },
-      lang,
-    );
+    // Speed: a repeated check of the same message in the same language
+    // reuses the genuine AI verdict from the session cache (instant);
+    // otherwise show the deterministic code check right away while the
+    // AI verdict loads.
+    const cached = verdictCacheGet("message", message, lang);
+    let verdict;
+    let elapsedSec;
+    if (cached) {
+      verdict = cached.verdict;
+      elapsedSec = cached.elapsedSec;
+    } else {
+      renderCheckingPreview(message);
+      verdict = await analyzeMessage(
+        message,
+        ({ stage, progress }) => {
+          if (stage === "downloading-model") {
+            progressEl.textContent = t("preparingModel", lang, {
+              p: Math.round((progress || 0) * 100),
+            });
+          } else if (stage === "cloud") {
+            progressEl.textContent = t("cloudFallback", lang);
+          }
+        },
+        lang,
+      );
+      elapsedSec = (performance.now() - t0) / 1000;
+      if (isFirebaseConfigured()) {
+        verdictCacheSet("message", message, lang, {
+          verdict,
+          elapsedSec,
+          imageText: "",
+          extra: {},
+        });
+      }
+    }
     // A newer check/re-check superseded this one: never render or save
     // a stale result over the newer card.
     if (runId !== checkRunId) return;
-    const elapsedSec = (performance.now() - t0) / 1000;
     renderResult(verdict, message, elapsedSec, "");
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
@@ -879,6 +984,8 @@ async function recheckLastCheck() {
     let verdict;
     let message;
     let imageText = "";
+    let elapsedSec = null;
+    let freshVerdict = false;
     if (kind === "email") {
       message = lastCheck.body;
       verdict = analyzeEmail(
@@ -906,25 +1013,44 @@ async function recheckLastCheck() {
       // the text is unchanged, only the verdict language changes.
       message = lastCheck.message;
       imageText = lastCheck.imageText || "";
-      verdict = await analyzeMessage(
-        message,
-        ({ stage, progress }) => {
-          if (stage === "downloading-model") {
-            progressEl.textContent = t("preparingModel", lang, {
-              p: Math.round((progress || 0) * 100),
-            });
-          } else if (stage === "cloud") {
-            progressEl.textContent = t("cloudFallback", lang);
-          }
-        },
-        lang,
-      );
+      // Speed: a language already checked for this input reuses its
+      // genuine verdict from the session cache (instant round-trip).
+      const cached = verdictCacheGet(kind, message, lang);
+      if (cached) {
+        verdict = cached.verdict;
+        imageText = cached.imageText || "";
+        elapsedSec = cached.elapsedSec;
+      } else {
+        verdict = await analyzeMessage(
+          message,
+          ({ stage, progress }) => {
+            if (stage === "downloading-model") {
+              progressEl.textContent = t("preparingModel", lang, {
+                p: Math.round((progress || 0) * 100),
+              });
+            } else if (stage === "cloud") {
+              progressEl.textContent = t("cloudFallback", lang);
+            }
+          },
+          lang,
+        );
+        elapsedSec = (performance.now() - t0) / 1000;
+        freshVerdict = true;
+      }
     }
     // A newer check/re-check started meanwhile, or the language changed
     // again: do not render — the newer run (or its follow-up re-check)
     // owns the card now.
     if (runId !== checkRunId || recheckAfterCheck) return;
-    const elapsedSec = (performance.now() - t0) / 1000;
+    if (elapsedSec == null) elapsedSec = (performance.now() - t0) / 1000;
+    if (freshVerdict && isFirebaseConfigured()) {
+      verdictCacheSet(kind, message, lang, {
+        verdict,
+        elapsedSec,
+        imageText,
+        extra: {},
+      });
+    }
     renderResult(verdict, message, elapsedSec, imageText);
     enrichResult(message);
   } catch (err) {
@@ -976,6 +1102,18 @@ async function onImageCheck() {
       return;
     }
     lastCheck = { kind: "image", message, imageText: message };
+    // Speed: the OCR verdict is a genuine verdict for this exact
+    // extracted text in this language — cache it so a later language
+    // re-check reuses it instead of re-running the AI on the same text.
+    // Production only (see the cache comment above).
+    if (isFirebaseConfigured()) {
+      verdictCacheSet("image", message, lang, {
+        verdict,
+        elapsedSec,
+        imageText: message,
+        extra: {},
+      });
+    }
     renderResult(verdict, message, elapsedSec, message);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
@@ -1585,6 +1723,24 @@ function init() {
     lang = select.value;
     saveLanguage(lang);
     applyStaticLanguage();
+    // Speed: re-render the current result card's static strings in
+    // the new language right away (labels, headings, badge, code
+    // check) — the AI-written summary + red flags stay in the old
+    // language until the re-check below returns the new-language
+    // verdict. Never a translation of the verdict itself. Skipped
+    // while a check is running: the card on screen is then the
+    // interim panel, not a verdict, and the running check's own
+    // completion + follow-up re-check own the card.
+    if (lastRenderArgs && !checkBusy && !$("result").hidden) {
+      renderResult(
+        lastRenderArgs.verdict,
+        lastRenderArgs.message,
+        lastRenderArgs.elapsedSec,
+        lastRenderArgs.imageText,
+        lastRenderArgs.extra,
+      );
+      enrichResult(lastRenderArgs.message);
+    }
     // Bug 2 fix: when a result card is displayed, the language change
     // re-runs the same check in the new language (see
     // recheckLastCheck). With no result on screen, static strings are
@@ -1603,6 +1759,18 @@ function init() {
   $("message-input").addEventListener("focus", () => {
     warmUpOnce();
   });
+  // Speed: warm the AI on ANY first tap/click on the page (not only
+  // the input or a sample) so the warm-up has the longest possible
+  // head start before the user presses Check.
+  document.addEventListener("pointerdown", warmUpOnce, { once: true });
+  // Speed: download the Firebase SDK chunks while the page is idle
+  // (same-origin JavaScript only — no token, no model, no verdict),
+  // so the first check does not pay for them inside ensureAIReady.
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(() => preloadAiModules().catch(() => {}), { timeout: 5000 });
+  } else {
+    setTimeout(() => preloadAiModules().catch(() => {}), 1500);
+  }
   // Ctrl+Enter (or Cmd+Enter) checks without reaching for the button.
   $("message-input").addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
