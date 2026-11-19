@@ -348,4 +348,4 @@ tool.
 ## Links
 
 - Live demo: https://tipucek.web.app
-- Source code (Apache-2.0): https://github.com/kyleweb3/tipucek
+- Source code (MIT): https://github.com/kyleweb3/tipucek

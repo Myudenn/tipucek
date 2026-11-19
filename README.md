@@ -15,7 +15,7 @@ own language, in one tap.
 
 - **Live demo:** https://tipucek.web.app
 - **Devpost description:** [DEVPOST-DESCRIPTION.md](./DEVPOST-DESCRIPTION.md)
-- **License:** Apache License 2.0 — see `LICENSE`
+- **License:** MIT License — see `LICENSE`
 
 ## What it does
 
@@ -347,4 +347,4 @@ Numbers we can stand behind (all re-runnable from this repo):
 
 ## License
 
-Apache License 2.0 — see `LICENSE`.
+MIT License — see `LICENSE`.
