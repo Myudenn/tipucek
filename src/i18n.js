@@ -173,11 +173,6 @@ const STRINGS = {
     assistantNote:
       "Aman answers with the same AI that checks messages. He never asks for personal data.",
     assistantCheckThis: "Check this message",
-    voiceOn: "Voice: on",
-    voiceOff: "Voice: off",
-    speakAnswer: "Listen",
-    voiceUnavailable:
-      "Voice is not available on this device — install a text-to-speech voice (for example, Google Text-to-Speech) and try again.",
     chipOtp: "What is OTP fraud?",
     chipLink: "How do I spot a fake link?",
     chipPrize: "I got a prize message — is it a scam?",
@@ -552,11 +547,6 @@ const STRINGS = {
     assistantNote:
       "Aman menjawab dengan AI yang sama dengan pemeriksa pesan. Dia tidak pernah meminta data pribadi.",
     assistantCheckThis: "Periksa pesan ini",
-    voiceOn: "Suara: nyala",
-    voiceOff: "Suara: mati",
-    speakAnswer: "Dengar",
-    voiceUnavailable:
-      "Suara tidak tersedia di perangkat ini — pasang suara text-to-speech (misalnya Google Text-to-Speech) lalu coba lagi.",
     chipOtp: "Apa itu penipuan OTP?",
     chipLink: "Bagaimana mengenali tautan palsu?",
     chipPrize: "Saya dapat pesan hadiah — apakah itu penipuan?",
@@ -909,11 +899,6 @@ const STRINGS = {
     assistantNote:
       "Aman responde con la misma IA que revisa los mensajes. Nunca pide datos personales.",
     assistantCheckThis: "Revisar este mensaje",
-    voiceOn: "Voz: sí",
-    voiceOff: "Voz: no",
-    speakAnswer: "Escuchar",
-    voiceUnavailable:
-      "La voz no está disponible en este dispositivo. Instala una voz de texto a voz (por ejemplo, Google Text-to-Speech) e inténtalo de nuevo.",
     chipOtp: "¿Qué es el fraude OTP?",
     chipLink: "¿Cómo detecto un enlace falso?",
     chipPrize: "Recibí un mensaje de premio — ¿es una estafa?",
@@ -1096,7 +1081,7 @@ const STRINGS = {
     "checkText": "Mensajes de texto — SMS, WhatsApp, DM o correo, cualquier texto pegado",
     "checksHeading": "Qué puede revisar TipuCek",
     "checksIntro": "Un solo verificador para todas las formas en que puede llegarle una estafa.",
-    "checksNote": "No se revisan: llamadas de voz ni códigos QR — TipuCek aún no los revisa.",
+    "checksNote": "No se revisan: imágenes de códigos QR ni códigos de pago — TipuCek no los escanea. Una llamada de voz sí se puede revisar: grábala o sube una grabación y TipuCek la transcribe.",
     "contactsAll": "Todos",
     "contactsBank": "Bancos",
     "contactsEwallet": "Billeteras",
@@ -1222,11 +1207,6 @@ const STRINGS = {
     assistantNote:
       "Aman répond avec la même IA que le vérificateur. Il ne demande jamais de données personnelles.",
     assistantCheckThis: "Vérifier ce message",
-    voiceOn: "Voix : oui",
-    voiceOff: "Voix : non",
-    speakAnswer: "Écouter",
-    voiceUnavailable:
-      "La voix n'est pas disponible sur cet appareil. Installez une voix de synthèse vocale (par exemple Google Text-to-Speech) puis réessayez.",
     chipOtp: "C'est quoi la fraude OTP ?",
     chipLink: "Comment repérer un faux lien ?",
     chipPrize: "J'ai reçu un message de prix — est-ce une arnaque ?",
@@ -1409,7 +1389,7 @@ const STRINGS = {
     "checkText": "Messages texte — SMS, WhatsApp, DM ou e-mail, tout texte collé",
     "checksHeading": "Ce que TipuCek peut vérifier",
     "checksIntro": "Un seul vérificateur pour toutes les façons dont une arnaque peut vous atteindre.",
-    "checksNote": "Non vérifiés : appels vocaux et codes QR — TipuCek ne les vérifie pas (encore).",
+    "checksNote": "Non vérifiés : images de codes QR et codes de paiement — TipuCek ne les scanne pas. Un appel vocal peut être vérifié : enregistrez-le ou envoyez un enregistrement, TipuCek le transcrit.",
     "contactsAll": "Tous",
     "contactsBank": "Banques",
     "contactsEwallet": "Portefeuilles",
@@ -1535,11 +1515,6 @@ const STRINGS = {
     assistantNote:
       "Aman antwortet mit derselben KI wie der Prüfer. Er fragt nie nach persönlichen Daten.",
     assistantCheckThis: "Diese Nachricht prüfen",
-    voiceOn: "Stimme: an",
-    voiceOff: "Stimme: aus",
-    speakAnswer: "Anhören",
-    voiceUnavailable:
-      "Sprache ist auf diesem Gerät nicht verfügbar. Installiere eine Text-to-Speech-Stimme (zum Beispiel Google Text-to-Speech) und versuche es erneut.",
     chipOtp: "Was ist OTP-Betrug?",
     chipLink: "Wie erkenne ich einen falschen Link?",
     chipPrize: "Ich habe eine Gewinnnachricht bekommen — ist das Betrug?",
@@ -1722,7 +1697,7 @@ const STRINGS = {
     "checkText": "Textnachrichten — SMS, WhatsApp, DM oder E-Mail, jeder eingefügte Text",
     "checksHeading": "Was TipuCek prüfen kann",
     "checksIntro": "Ein Prüfer für jeden Weg, auf dem ein Betrug Sie erreichen kann.",
-    "checksNote": "Nicht geprüft: Sprachanrufe und QR-Codes — TipuCek prüft diese (noch) nicht.",
+    "checksNote": "Nicht geprüft: QR-Code-Bilder und Zahlungscodes — TipuCek scannt diese nicht. Ein Sprachanruf kann geprüft werden: nehmen Sie ihn auf oder laden Sie eine Aufnahme hoch, TipuCek transkribiert sie.",
     "contactsAll": "Alle",
     "contactsBank": "Banken",
     "contactsEwallet": "E-Wallets",
@@ -1848,11 +1823,6 @@ const STRINGS = {
     assistantNote:
       "Aman responde com a mesma IA do verificador. Ele nunca pede dados pessoais.",
     assistantCheckThis: "Verificar esta mensagem",
-    voiceOn: "Voz: ligada",
-    voiceOff: "Voz: desligada",
-    speakAnswer: "Ouvir",
-    voiceUnavailable:
-      "A voz não está disponível neste dispositivo. Instale uma voz de texto para fala (por exemplo, Google Text-to-Speech) e tente novamente.",
     chipOtp: "O que é fraude de OTP?",
     chipLink: "Como identificar um link falso?",
     chipPrize: "Recebi uma mensagem de prêmio — é golpe?",
@@ -2035,7 +2005,7 @@ const STRINGS = {
     "checkText": "Mensagens de texto — SMS, WhatsApp, DM ou e-mail, qualquer texto colado",
     "checksHeading": "O que o TipuCek pode verificar",
     "checksIntro": "Um só verificador para todas as formas pelas quais um golpe pode chegar até você.",
-    "checksNote": "Não verificados: chamadas de voz e códigos QR — o TipuCek ainda não os verifica.",
+    "checksNote": "Não verificados: imagens de códigos QR e códigos de pagamento — o TipuCek não os verifica. Uma chamada de voz pode ser verificada: grave-a ou envie uma gravação, e o TipuCek a transcreve.",
     "contactsAll": "Todos",
     "contactsBank": "Bancos",
     "contactsEwallet": "Carteiras digitais",
@@ -2161,11 +2131,6 @@ const STRINGS = {
     assistantNote:
       "アマンはメッセージチェッカーと同じAIで回答します。個人データを聞くことは決してありません。",
     assistantCheckThis: "このメッセージをチェック",
-    voiceOn: "音声：オン",
-    voiceOff: "音声：オフ",
-    speakAnswer: "聞く",
-    voiceUnavailable:
-      "このデバイスでは音声が利用できません。テキスト読み上げ音声（Google Text-to-Speechなど）をインストールして、もう一度お試しください。",
     chipOtp: "OTP詐欺とは？",
     chipLink: "偽のリンクを見分けるには？",
     chipPrize: "賞金のメッセージが届いた — 詐欺ですか？",
@@ -2348,7 +2313,7 @@ const STRINGS = {
     "checkText": "テキストメッセージ — SMS、WhatsApp、DM、メールなど、貼り付けたテキスト",
     "checksHeading": "TipuCekでチェックできるもの",
     "checksIntro": "詐欺が届くあらゆる方法に対応する、ひとつのチェッカーです。",
-    "checksNote": "チェック対象外：音声通話とQRコード — TipuCekでは（まだ）チェックできません。",
+    "checksNote": "チェック対象外：QRコード画像と支払いコード — TipuCekではスキャンしません。音声通話はチェックできます：録音するか録音をアップロードすると、TipuCekが文字に起こします。",
     "contactsAll": "すべて",
     "contactsBank": "銀行",
     "contactsEwallet": "電子ウォレット",
@@ -2467,11 +2432,6 @@ const STRINGS = {
     assistantNote:
       "Aman 使用与消息检查器相同的 AI 回答问题。他从不索要个人数据。",
     assistantCheckThis: "检查这条消息",
-    voiceOn: "语音：开",
-    voiceOff: "语音：关",
-    speakAnswer: "收听",
-    voiceUnavailable:
-      "此设备上没有可用的语音 — 请安装文字转语音（例如 Google Text-to-Speech）后重试。",
     chipOtp: "什么是 OTP 诈骗？",
     chipLink: "如何识别假链接？",
     chipPrize: "我收到了一条中奖消息——是诈骗吗？",
@@ -2654,7 +2614,7 @@ const STRINGS = {
     "checkText": "文字消息 — 短信、WhatsApp、DM 或邮件，任何粘贴的文本",
     "checksHeading": "TipuCek 可以检查什么",
     "checksIntro": "一个检查器，应对诈骗可能到达您的各种方式。",
-    "checksNote": "不检查：语音通话和二维码 — TipuCek（目前）还不检查这些。",
+    "checksNote": "不检查：二维码图片和支付码 — TipuCek 不扫描这些。语音通话可以检查：录音或上传录音，TipuCek 会将其转录。",
     "contactsAll": "全部",
     "contactsBank": "银行",
     "contactsEwallet": "电子钱包",

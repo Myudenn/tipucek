@@ -370,9 +370,8 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .assistant-title { flex: 1 1 auto; min-width: 140px; }
 .assistant-title h2 { margin: 0; }
 .assistant-sub { color: var(--muted); font-size: 0.9rem; margin: 0; }
-/* Aman is a round photo avatar: he floats, nods while he talks and
-   waves on greeting (CSS motion — see aman-float / aman-talk /
-   aman-wave below). */
+/* Aman is a round photo avatar: he floats and waves on greeting
+   (CSS motion — see aman-float / aman-wave below). */
 .avatar {
   width: 88px; height: 88px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
   box-shadow: var(--shadow);
@@ -389,15 +388,6 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
   0%, 100% { transform: translateY(0) rotate(0deg); box-shadow: var(--avatar-shadow-rest); }
   50% { transform: translateY(-10px) rotate(-1.5deg); box-shadow: var(--avatar-shadow-high); }
 }
-/* Talking nod: a smooth rhythmic nod while Aman "talks" — starts and
-   ends at rest so it hands back to the float without a jump. */
-@keyframes aman-talk {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  20% { transform: translateY(-5px) rotate(1.4deg); }
-  40% { transform: translateY(-1px) rotate(-1deg); }
-  60% { transform: translateY(-5px) rotate(1.1deg); }
-  80% { transform: translateY(-2px) rotate(-0.7deg); }
-}
 /* Greeting wave: one friendly rock side to side — the peace-sign hand
    visibly waves because the whole character rocks with it. Runs once. */
 @keyframes aman-wave {
@@ -408,21 +398,12 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
   80% { transform: translateY(-2px) rotate(2deg); }
 }
 .avatar.thinking { animation: aman-float 4.5s ease-in-out infinite, aman-pulse 1.2s ease-in-out infinite; }
-.avatar.speaking { animation: aman-talk 0.9s ease-in-out infinite, aman-ring 1s ease-in-out infinite; }
 .avatar.waving { animation: aman-wave 1.2s ease-in-out 1; }
 @media (prefers-reduced-motion: reduce) {
-  .avatar, .avatar.thinking, .avatar.speaking, .avatar.waving { animation: none; }
+  .avatar, .avatar.thinking, .avatar.waving { animation: none; }
 }
 @keyframes aman-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(26, 86, 219, 0.35); } 50% { box-shadow: 0 0 0 8px rgba(26, 86, 219, 0); } }
-@keyframes aman-ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.45); } 50% { box-shadow: 0 0 0 10px rgba(109, 40, 217, 0); } }
 
-/* "Listen" button on each Aman answer: hear that answer out loud. */
-.assistant-speak-btn {
-  margin-top: 6px; padding: 4px 10px; font-size: 0.85rem;
-  background: transparent; color: var(--accent);
-  border: 1px solid var(--accent); border-radius: 999px; cursor: pointer;
-}
-.assistant-speak-btn:hover { background: var(--accent-soft); }
 .assistant-greeting { background: var(--accent-soft); border-radius: 12px; padding: 10px 14px; margin: 14px 0 10px; }
 .assistant-log { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; }
 .assistant-log:empty { display: none; }
@@ -555,7 +536,7 @@ body.senior-mode .result-status { font-size: 2.8rem; }
    zooms the page on focus. */
 @media (pointer: coarse) {
   .primary, .secondary, .sample-btn, .checker-tab-btn, .assistant-chip,
-  .assistant-speak-btn, .assistant-check-btn, .lang-select { min-height: 44px; }
+  .assistant-check-btn, .lang-select { min-height: 44px; }
   textarea, input[type="text"], input[type="email"], input[type="tel"],
   input[type="search"], .assistant-input-row input { font-size: 16px; }
 }

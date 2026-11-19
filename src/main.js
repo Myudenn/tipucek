@@ -5,7 +5,7 @@ import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseCo
 import { analyzeLinks, extractNumbers } from "./risks.js";
 import { analyzeFiles } from "./files.js";
 import { buildWarningCard, shareWarningCard } from "./sharecard.js";
-import { initAssistant, refreshAssistantLanguage, speakNow } from "./assistant.js";
+import { initAssistant, refreshAssistantLanguage } from "./assistant.js";
 import { saveCheck, loadHistory, clearLocalHistory, isLocalOnly, setLocalOnly } from "./history.js";
 import { inspectFile } from "./filecheck.js";
 import { filterContacts } from "./contacts.js";
@@ -31,7 +31,7 @@ let lang = detectLanguage();
 let lastHistory = [];
 let lastStorageWhere = "local";
 let selectedImage = null;
-// Senior mode (big text + buttons, results read aloud) — saved per device.
+// Senior mode (big text + buttons) — saved per device.
 let seniorMode = false;
 try {
   seniorMode = localStorage.getItem("tipucek_senior_mode") === "1";
@@ -150,8 +150,8 @@ function showCheckError(errorEl, err, onRetry) {
   }
 }
 
-// Senior mode: big text + buttons, one big check button, results read
-// aloud with the existing voice. Saved per device (localStorage).
+// Senior mode: big text + buttons, one big check button.
+// Saved per device (localStorage).
 function checkBtnLabel() {
   return seniorMode ? t("seniorCheckBtn", lang) : t("checkBtn", lang);
 }
@@ -357,7 +357,6 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
       <div id="report-counts" class="report-counts"></div>
       <div id="link-track" class="link-track"></div>
       <div class="result-actions">
-        <button id="listen-result-btn" type="button" class="secondary">${escapeHtml(t("speakAnswer", lang))}</button>
         <button id="copy-result-btn" type="button" class="secondary">${escapeHtml(t("copyResult", lang))}</button>
         <button id="share-card-btn" type="button" class="secondary">${escapeHtml(t("shareCardBtn", lang))}</button>
         <button id="download-card-btn" type="button" class="secondary">${escapeHtml(t("downloadCardBtn", lang))}</button>
@@ -376,12 +375,6 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
     </article>`;
   el.hidden = false;
 
-  // Listen to this verdict out loud (same voice as Aman's answers).
-  // This is the "Dengar" button users look for on the result card —
-  // previously it only existed under Aman's answers.
-  $("listen-result-btn").addEventListener("click", () => {
-    speakNow(`${statusLabel}. ${verdict.summary}`);
-  });
   $("copy-result-btn").addEventListener("click", async (ev) => {
     const lines = [
       `TipuCek — ${statusLabel} ${verdict.riskScore}/100`,
@@ -518,10 +511,6 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
     });
   }
 
-  // Senior mode: read the verdict out loud with the existing voice.
-  if (seniorMode) {
-    speakNow(`${statusLabel}. ${verdict.summary}`);
-  }
 }
 
 // After a verdict renders, fill the two async boxes: community report
