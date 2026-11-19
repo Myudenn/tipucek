@@ -7,7 +7,7 @@
 //  1. Fresh profile: live site shows the NEW shell (tabs, OJK hero stat,
 //     Bahasa Indonesia, mode label set by JS to the real mode, no console
 //     errors of substance).
-//  2. JS disabled: mode label stays static "…" (neutral), hero Indonesian,
+//  2. JS disabled: mode label stays static "Mode AI" (production value), hero Indonesian,
 //     NO visible "Demo mode"/"Mode demo" anywhere (the only "Mode demo"
 //     string lives inside the hidden demo banner).
 //  3. STALE-CACHE SIMULATION (core): persistent profile. First load serves
@@ -27,7 +27,7 @@
 //     reloads prove: v6 serves the stale shell once -> v7 installs,
 //     takes over (skipWaiting + clients.claim) -> v6 cache deleted ->
 //     new shell displayed, v7 controlling.
-//  4. Slow JS: bundle delayed 4s; the mode label must stay "…" until
+//  4. Slow JS: bundle delayed 4s; the mode label must stay "Mode AI" until
 //     the JS arrives and sets the real status (no demo-mode flash).
 //
 // Output: JSON summary on stdout + screenshots in video/raw/ +
@@ -45,7 +45,13 @@ const PROXY_PORT = parseInt(process.env.LOCAL_PROXY_PORT || "18080", 10);
 const LIVE = "https://tipucek.web.app/";
 const OLD_INDEX = execSync("git -C " + ROOT + " show 0bbff67:index.html", { encoding: "utf8" });
 const OLD_SW = execSync("git -C " + ROOT + " show 0bbff67:public/sw.js", { encoding: "utf8" });
-const OLD_CSS = fs.readFileSync("/tmp/old-styles.css", "utf8");
+// Old-shell plant CSS (cosmetic only): prefer the saved fixture, else fall
+// back to the current built CSS so /tmp cleanups cannot break the run.
+let OLD_CSS = "";
+try { OLD_CSS = fs.readFileSync("/tmp/old-styles.css", "utf8"); } catch (_) {
+  const cssFiles = fs.readdirSync(path.join(ROOT, "dist/assets")).filter((f) => f.endsWith(".css"));
+  if (cssFiles.length) OLD_CSS = fs.readFileSync(path.join(ROOT, "dist/assets", cssFiles[0]), "utf8");
+}
 
 const results = [];
 function check(name, ok, detail = "") {
@@ -155,7 +161,7 @@ async function main() {
       await page.waitForTimeout(5000);
       const s = await snapshot(page, "step1-fresh-live");
       await page.screenshot({ path: path.join(RAW, "stale-step1-fresh.png") });
-      check("1 bundle: live serves index-Bu2kVI-9.js", bundles.includes("index-Bu2kVI-9.js"), `bundles=${bundles.join(",") || "(none)"}`);
+      check("1 bundle: live serves index-mJ9znPGE.js", bundles.includes("index-mJ9znPGE.js"), `bundles=${bundles.join(",") || "(none)"}`);
       check("1 lang=id", s.lang === "id", `lang=${s.lang}`);
       check("1 hero: Indonesian title", /Apakah pesan ini penipuan\?/.test(s.heroTitle || ""), `heroTitle=${JSON.stringify(s.heroTitle)}`);
       check("1 hero: OJK stat present", /OJK/.test(s.heroStat || "") && /Rp 9,1 triliun/.test(s.heroStat || ""), `heroStat=${JSON.stringify(s.heroStat)}`);
@@ -187,7 +193,7 @@ async function main() {
       const demoLines = bodyText.split("\n").filter((l) => /demo/i.test(l)).slice(0, 5);
       const s = { lang, heroTitle, heroStat, modeLabel, bannerHiddenAttr, bannerVisible, bannerText, bodyHasDemoMode: /Demo mode/i.test(bodyText), bodyHasModeDemo: /Mode demo/i.test(bodyText), demoLines };
       await page.screenshot({ path: path.join(RAW, "stale-step2-nojs.png") });
-      check("2 no-JS mode-label is neutral '…'", s.modeLabel === "…", `label=${JSON.stringify(s.modeLabel)}`);
+      check("2 no-JS mode-label is production 'Mode AI'", s.modeLabel === "Mode AI", `label=${JSON.stringify(s.modeLabel)}`);
       check("2 no-JS hero Indonesian", /Apakah pesan ini penipuan\?/.test(s.heroTitle || ""), `heroTitle=${JSON.stringify(s.heroTitle)}`);
       check("2 no-JS hero OJK stat present", /OJK/.test(s.heroStat || ""), `heroStat=${JSON.stringify(s.heroStat)}`);
       check("2 no-JS: no visible 'Demo mode'/'Mode demo'", !s.bodyHasDemoMode && !s.bodyHasModeDemo, `demoLines=${JSON.stringify(s.demoLines)}`);
@@ -219,7 +225,7 @@ async function main() {
       samples.push({ atMs: Date.now() - t0, label: labelAfter, afterBundle: true });
       await page.screenshot({ path: path.join(RAW, "stale-step4-slowjs.png") });
       const preBundle = samples.filter((x) => !x.afterBundle);
-      check("4 slow-JS: label stays '…' while bundle delayed", preBundle.every((x) => x.label === "…"), JSON.stringify(samples));
+      check("4 slow-JS: label stays 'Mode AI' while bundle delayed", preBundle.every((x) => x.label === "Mode AI"), JSON.stringify(samples));
       note("4 slow-JS label after bundle loads", `label=${JSON.stringify(labelAfter)}`);
       await ctx.close();
     }

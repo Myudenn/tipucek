@@ -40,7 +40,7 @@ const PROXY_PORT = parseInt(process.env.LOCAL_PROXY_PORT || "18086", 10);
 const LIVE = "https://tipucek.web.app/";
 // Bundle live saat ini (terverifikasi curl 19 Nov); override lewat env
 // bila deploy baru sudah jalan: EXPECTED_BUNDLE=index-XXXX.js node ...
-const EXPECTED_BUNDLE = process.env.EXPECTED_BUNDLE || "index-Dne9n-lV.js";
+const EXPECTED_BUNDLE = process.env.EXPECTED_BUNDLE || "index-mJ9znPGE.js";
 const RAW = path.join(ROOT, "video/raw");
 fs.mkdirSync(RAW, { recursive: true });
 

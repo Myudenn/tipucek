@@ -17,7 +17,7 @@ const HOME = process.env.HOME;
 const ROOT = path.join(HOME, "workspace/pesanaman");
 const PROXY_PORT = parseInt(process.env.LOCAL_PROXY_PORT || "18086", 10);
 const LIVE = "https://tipucek.web.app/";
-const EXPECTED_BUNDLE = "index-Dne9n-lV.js";
+const EXPECTED_BUNDLE = "index-mJ9znPGE.js";
 const RAW = path.join(ROOT, "video/raw");
 fs.mkdirSync(RAW, { recursive: true });
 
@@ -86,7 +86,7 @@ async function main() {
     await page.goto(LIVE, { waitUntil: "load", timeout: 60000 });
     await page.waitForTimeout(5000);
     const bundle = bundleUrls.map((u) => u.split("/").pop()).join(",");
-    check("bundle: live serves index-Dne9n-lV.js", bundle.includes(EXPECTED_BUNDLE), `bundles=${bundle || "(none seen)"}`);
+    check("bundle: live serves index-mJ9znPGE.js", bundle.includes(EXPECTED_BUNDLE), `bundles=${bundle || "(none seen)"}`);
 
     // --- (1) image check: select screenshot, button must enable, vision verdict IN_CLOUD ---
     await page.setInputFiles("#image-input", path.join(ROOT, "test-samples/screenshot-penipu.png"));
