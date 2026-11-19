@@ -1,4 +1,4 @@
-// PesanAman — scam-message analysis.
+// TipuCek — scam-message analysis.
 //
 // Two paths, one result shape:
 //  1. PRODUCTION: Firebase AI Logic, hybrid inference
@@ -17,8 +17,170 @@
 //     source: "ON_DEVICE" | "IN_CLOUD" | "DEMO" | "Unknown" }
 
 import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
+import { languageName, demoSummary, demoFlag } from "./i18n.js";
 
 export const CLOUD_MODEL = "gemini-3.5-flash-lite";
+
+// Longest message accepted for a check. A pasted chat export can be
+// huge — sending it whole to the cloud wastes tokens and risks a
+// misleading "input is too large" error, so reject it up front with a
+// clear message instead (the UI maps it to a friendly string).
+export const MAX_MESSAGE_CHARS = 4000;
+
+// Cloud calls must never hang the UI forever: only the on-device init
+// used to be raced against a timeout. Every generateContent now has
+// one too — 30 s for a verdict (cloud answers in ~2-4 s in practice;
+// 30 s is still 7x the normal time, and it keeps the worst case
+// — 5 s init + 30 s hybrid + 30 s cloud fallback = 65 s — under the
+// 90 s a user will tolerate before giving up), 30 s for a chat
+// answer, 30 s for a screenshot (vision + OCR).
+export const CLOUD_CHECK_TIMEOUT_MS = 30000;
+export const ASSISTANT_TIMEOUT_MS = 30000;
+export const IMAGE_CHECK_TIMEOUT_MS = 30000;
+// Transcription of a phone recording can take longer than a text
+// check (a 2-minute clip); 60 s is the cap, with an honest error
+// after it instead of a silent hang.
+export const AUDIO_CHECK_TIMEOUT_MS = 60000;
+// Longest recording accepted for transcription (10 MB). A 2-minute
+// voice clip is ~1-2 MB, so this is generous without letting a huge
+// file waste the user's time and tokens.
+export const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
+
+/** Race a promise against a timeout; the loser is ignored. */
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+      ms,
+    );
+  });
+  return Promise.race([
+    Promise.resolve(promise).finally(() => clearTimeout(timer)),
+    timeout,
+  ]);
+}
+
+// On-device model prep is the slow step (first download can take 10-20s).
+// Give it a short window: when the model is already on the device it is
+// ready in ~1s, and when it is not, the cloud model answers in ~2s —
+// waiting longer only delays the verdict.
+export const ON_DEVICE_INIT_TIMEOUT_MS = 5000;
+
+// Structured-output schema for the verdict (shared by the check path and
+// the background warm-up). Takes the Schema namespace as an argument
+// because firebase/ai is imported dynamically.
+function makeVerdictSchema(Schema) {
+  return Schema.object({
+    description: "Scam verdict for a suspicious message",
+    properties: {
+      status: Schema.enumString({
+        description: "Overall verdict",
+        enum: ["safe", "suspicious", "scam"],
+      }),
+      riskScore: Schema.integer({
+        description: "Risk score from 0 (harmless) to 100 (certain scam)",
+      }),
+      redFlags: Schema.array({
+        description: "Warning signs found in the message",
+        items: Schema.string({ description: "One red flag, short phrase" }),
+      }),
+      summary: Schema.string({
+        description: "One or two sentences explaining the verdict",
+      }),
+    },
+  });
+}
+
+function makeHybridModel(ai, getGenerativeModel, InferenceMode, verdictSchema) {
+  return getGenerativeModel(ai, {
+    mode: InferenceMode.PREFER_ON_DEVICE,
+    inCloudParams: {
+      model: CLOUD_MODEL,
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: verdictSchema,
+      },
+    },
+    onDeviceParams: {
+      promptOptions: { responseConstraint: verdictSchema },
+    },
+  });
+}
+
+// Verdict schema for screenshot analysis: the four verdict fields plus
+// the text the model read from the image (OCR), so the UI can show what
+// was actually analyzed.
+function makeImageVerdictSchema(Schema) {
+  return Schema.object({
+    description: "Scam verdict for a screenshot of a message",
+    properties: {
+      status: Schema.enumString({
+        description: "Overall verdict",
+        enum: ["safe", "suspicious", "scam"],
+      }),
+      riskScore: Schema.integer({
+        description: "Risk score from 0 (harmless) to 100 (certain scam)",
+      }),
+      redFlags: Schema.array({
+        description: "Warning signs found in the message",
+        items: Schema.string({ description: "One red flag, short phrase" }),
+      }),
+      summary: Schema.string({
+        description: "One or two sentences explaining the verdict",
+      }),
+      extractedText: Schema.string({
+        description: "The exact text read from the image (OCR); empty if none visible",
+      }),
+    },
+  });
+}
+
+// Shared start-up for every production AI call: Firebase app + App Check
+// pre-flight (fail fast with the real reason instead of a bare 401) +
+// the AI client. Used by the check path, the assistant chat and the
+// screenshot path alike.
+async function ensureAIReady() {
+  const app = await getFirebaseApp();
+  let tokenInfo = "";
+
+  // Pre-flight: make sure App Check can actually mint a token before the
+  // AI call. Without a token the server rejects the request with a bare
+  // 401, so fail here with the real reason instead.
+  if (appCheckInitError) {
+    throw new Error(`App Check failed to initialize: ${appCheckInitError}`);
+  }
+  if (appCheckInstance) {
+    const { getToken } = await import("firebase/app-check");
+    try {
+      const { token } = await getToken(appCheckInstance, false);
+      // Decode the JWT payload (best effort) so a later failure can say
+      // exactly which token was presented: app, audience, issue/expiry.
+      try {
+        const payload = JSON.parse(
+          atob(
+            token
+              .split(".")[1]
+              .replace(/-/g, "+")
+              .replace(/_/g, "/"),
+          ),
+        );
+        tokenInfo = `app_id=${payload.app_id || payload.sub || "?"} aud=${payload.aud || "?"} iat=${payload.iat ? new Date(payload.iat * 1000).toISOString() : "?"} exp=${payload.exp ? new Date(payload.exp * 1000).toISOString() : "?"}`;
+      } catch {
+        tokenInfo = `unparseable token (length ${token.length})`;
+      }
+    } catch (e) {
+      throw new Error(
+        `App Check could not obtain a token: ${e?.message || e}`,
+      );
+    }
+  }
+
+  const { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, Schema } =
+    await import("firebase/ai");
+  const ai = getAI(app, { backend: new GoogleAIBackend() });
+  return { ai, getGenerativeModel, InferenceMode, Schema, tokenInfo };
+}
 
 // ---------------------------------------------------------------------------
 // Demo-mode heuristic analyzer (local, no network, no AI).
@@ -48,7 +210,7 @@ const SCAM_PATTERNS = [
   { re: /\b(verifikasi.*(akun|data)|update.*(data|akun)|konfirmasi.*(akun|data)|verify.*(account|identity|details)|update your (account|details)|confirm your (account|identity))\b/i, weight: 12, flag: "Phishing-style account verification request" },
 ];
 
-export function analyzeWithHeuristic(message) {
+export function analyzeWithHeuristic(message, lang = "en") {
   const text = (message || "").trim();
   const redFlags = [];
   let score = 0;
@@ -68,13 +230,15 @@ export function analyzeWithHeuristic(message) {
   }
   score = Math.max(0, Math.min(100, score));
   const status = score >= 60 ? "scam" : score >= 30 ? "suspicious" : "safe";
-  const summary =
-    status === "scam"
-      ? "This message shows several strong scam indicators. Do not click any link, do not send money or codes, and block/report the sender."
-      : status === "suspicious"
-        ? "This message has some warning signs but is not conclusive. Be cautious: verify the sender through an official channel before acting."
-        : "No clear scam indicators were found in this message. Stay alert anyway — never share OTPs, PINs or passwords with anyone.";
-  return { status, riskScore: score, redFlags, summary, source: "DEMO" };
+  // Demo verdicts speak the UI language too (fixed strings, translated
+  // through the i18n table — the AI path gets it from the model instead).
+  return {
+    status,
+    riskScore: score,
+    redFlags: redFlags.map((f) => demoFlag(f, lang)),
+    summary: demoSummary(status, lang),
+    source: "DEMO",
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -138,19 +302,23 @@ async function getFirebaseApp() {
         });
       } else {
         console.info(
-          "[PesanAman] App Check skipped: no reCAPTCHA Enterprise site key configured.",
+          "[TipuCek] App Check skipped: no reCAPTCHA Enterprise site key configured.",
         );
       }
     } catch (e) {
       appCheckInitError = e?.message || String(e);
-      console.warn("[PesanAman] App Check init skipped:", appCheckInitError);
+      console.warn("[TipuCek] App Check init skipped:", appCheckInitError);
     }
     return app;
   })();
   return appPromise;
 }
 
-function buildPrompt(message) {
+function buildPrompt(message, lang = "en") {
+  // The verdict itself (summary + red flags) comes back in the UI
+  // language, so the result card speaks the user's language. The
+  // machine fields (status enum, riskScore) stay language-independent.
+  const answerLang = languageName(lang);
   return [
     "You are a scam-message detector. Analyze the user message below,",
     "which may be in Indonesian or English (SMS, WhatsApp, DM or email).",
@@ -162,9 +330,9 @@ function buildPrompt(message) {
     '- "suspicious" if it has warning signs but is not conclusive;',
     '- "safe" if it looks like a normal legitimate message.',
     "- riskScore: integer 0-100, how likely the message is a scam.",
-    "- redFlags: short English phrases naming each warning sign found",
+    `- redFlags: short phrases in ${answerLang} naming each warning sign found`,
     "  (empty array when the message is safe).",
-    "- summary: one or two sentences in English explaining the verdict.",
+    `- summary: one or two sentences in ${answerLang} explaining the verdict.`,
     "",
     "Message to analyze:",
     '"""',
@@ -174,102 +342,99 @@ function buildPrompt(message) {
 }
 
 /**
+ * Parse the model's verdict JSON. Models sometimes wrap the JSON in a
+ * markdown fence (```json ... ```) even when a JSON response schema was
+ * requested — strip the fence before parsing so the check still works
+ * instead of failing on a valid verdict.
+ */
+function parseVerdictJson(text) {
+  const trimmed = (text || "").trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  return JSON.parse(fenced ? fenced[1] : trimmed);
+}
+
+/**
  * Analyze a message with Firebase AI Logic (hybrid inference).
  * `onProgress` receives { stage, progress } while the on-device model
  * downloads (stage "downloading-model", progress 0-1).
  */
-export async function analyzeWithAI(message, onProgress) {
-  const app = await getFirebaseApp();
-  let tokenInfo = "";
-
-  // Pre-flight: make sure App Check can actually mint a token before the
-  // AI call. Without a token the server rejects the request with a bare
-  // 401, so fail here with the real reason instead.
-  if (appCheckInitError) {
-    throw new Error(`App Check failed to initialize: ${appCheckInitError}`);
-  }
-  if (appCheckInstance) {
-    const { getToken } = await import("firebase/app-check");
-    try {
-      const { token } = await getToken(appCheckInstance, false);
-      // Decode the JWT payload (best effort) so a later failure can say
-      // exactly which token was presented: app, audience, issue/expiry.
-      try {
-        const payload = JSON.parse(
-          atob(
-            token
-              .split(".")[1]
-              .replace(/-/g, "+")
-              .replace(/_/g, "/"),
-          ),
-        );
-        tokenInfo = `app_id=${payload.app_id || payload.sub || "?"} aud=${payload.aud || "?"} iat=${payload.iat ? new Date(payload.iat * 1000).toISOString() : "?"} exp=${payload.exp ? new Date(payload.exp * 1000).toISOString() : "?"}`;
-      } catch {
-        tokenInfo = `unparseable token (length ${token.length})`;
-      }
-    } catch (e) {
-      throw new Error(
-        `App Check could not obtain a token: ${e?.message || e}`,
-      );
-    }
-  }
-
-  const { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, Schema } =
-    await import("firebase/ai");
-
-  const ai = getAI(app, { backend: new GoogleAIBackend() });
+export async function analyzeWithAI(message, onProgress, lang = "en") {
+  const { ai, getGenerativeModel, InferenceMode, Schema, tokenInfo } =
+    await ensureAIReady();
 
   // Structured-output schema for the verdict (shared by both paths).
-  const verdictSchema = Schema.object({
-    description: "Scam verdict for a suspicious message",
-    properties: {
-      status: Schema.enumString({
-        description: "Overall verdict",
-        enum: ["safe", "suspicious", "scam"],
-      }),
-      riskScore: Schema.integer({
-        description: "Risk score from 0 (harmless) to 100 (certain scam)",
-      }),
-      redFlags: Schema.array({
-        description: "Warning signs found in the message",
-        items: Schema.string({ description: "One red flag, short phrase" }),
-      }),
-      summary: Schema.string({
-        description: "One or two sentences explaining the verdict",
-      }),
-    },
-  });
+  const verdictSchema = makeVerdictSchema(Schema);
 
-  const model = getGenerativeModel(ai, {
-    mode: InferenceMode.PREFER_ON_DEVICE,
-    inCloudParams: {
+  const model = makeHybridModel(
+    ai,
+    getGenerativeModel,
+    InferenceMode,
+    verdictSchema,
+  );
+
+  // On-device model prep is the slow step: the first download can take
+  // 10-20s. Give it a short window — when the model is already on the
+  // device it is ready in about a second; when it is not, the cloud
+  // model answers in ~2s, so waiting longer only delays the verdict.
+  // (The download keeps running in the background, so a later check can
+  // still answer on-device.)
+  let result;
+  try {
+    await Promise.race([
+      model.initializeDeviceModel((progress) => {
+        onProgress?.({ stage: "downloading-model", progress });
+      }),
+      new Promise((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "On-device model not ready in time — using the cloud model.",
+              ),
+            ),
+          ON_DEVICE_INIT_TIMEOUT_MS,
+        ),
+      ),
+    ]);
+    result = await withTimeout(
+      model.generateContent(buildPrompt(message, lang)),
+      CLOUD_CHECK_TIMEOUT_MS,
+      "Check",
+    );
+  } catch (e) {
+    onProgress?.({ stage: "cloud" });
+    // On-device generation can fail even after initializeDeviceModel
+    // resolves — e.g. headless browsers, or a model that cannot run the
+    // request (the SDK reports this as a misleading "input is too
+    // large" error, even for a four-word message). PREFER_ON_DEVICE
+    // does not fall back to the cloud on its own for this error class,
+    // so retry once with a cloud-only model instead of failing the
+    // check. The verdict still comes from the real model, and its
+    // source badge (IN_CLOUD) says so.
+    console.warn(
+      "[TipuCek] On-device generation failed, falling back to cloud:",
+      e?.message || e,
+    );
+    const cloudModel = getGenerativeModel(ai, {
       model: CLOUD_MODEL,
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: verdictSchema,
       },
-    },
-    onDeviceParams: {
-      promptOptions: { responseConstraint: verdictSchema },
-    },
-  });
-
-  // REQUIRED: download/prepare the on-device model after a user gesture
-  // (the Check button click) and BEFORE generateContent().
-  await model.initializeDeviceModel((progress) => {
-    onProgress?.({ stage: "downloading-model", progress });
-  });
-
-  let result;
-  try {
-    result = await model.generateContent(buildPrompt(message));
-  } catch (e) {
-    // Attach the App Check token's claims so the failure says which token
-    // was presented when the server rejected the request.
-    const detail = tokenInfo
-      ? ` [App Check token presented: ${tokenInfo}]`
-      : " [no App Check token was obtained]";
-    throw new Error(`${e?.message || e}${detail}`);
+    });
+    try {
+      result = await withTimeout(
+        cloudModel.generateContent(buildPrompt(message, lang)),
+        CLOUD_CHECK_TIMEOUT_MS,
+        "Check",
+      );
+    } catch (e2) {
+      // The App Check token's claims are debug info only: log them for
+      // diagnosis, never attach them to the user-facing error (the old
+      // code pasted app_id/aud/iat/exp into the message the UI showed).
+      if (tokenInfo) console.warn("[TipuCek] App Check token:", tokenInfo);
+      throw new Error(e2?.message || e2);
+    }
   }
   const response = result.response;
   const text = response.text();
@@ -286,7 +451,7 @@ export async function analyzeWithAI(message, onProgress) {
 
   let verdict;
   try {
-    verdict = JSON.parse(text);
+    verdict = parseVerdictJson(text);
   } catch {
     throw new Error("AI returned a response that is not valid JSON.");
   }
@@ -315,14 +480,441 @@ export async function analyzeWithAI(message, onProgress) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Aman — the virtual assistant (chat) + screenshot analysis.
+// Both are cloud-only: the on-device model does single-turn text only, so
+// it cannot hold a conversation or read images. The UI says so honestly.
+// ---------------------------------------------------------------------------
+
+function assistantSystemPrompt(lang) {
+  const answerLang = languageName(lang);
+  return [
+    "You are Aman, the friendly AI assistant of TipuCek, a scam-message scanner.",
+    `Answer in ${answerLang}. Keep answers short: 2-4 sentences, plain words, no jargon.`,
+    "You help people recognize scam messages (fake prizes, fake couriers, fake bank warnings, OTP theft, fake APK invitations, fake jobs).",
+    "Never ask for personal data (no phone numbers, OTPs, PINs, passwords, bank accounts).",
+    "If the user pastes a suspicious message, give a quick judgment (scam / suspicious / safe) with the strongest warning sign, then tell them to check it with the TipuCek checker for a full verdict.",
+    "If you are unsure, say so and tell them to verify the sender through an official channel.",
+    "Never claim to be human. Never give legal or financial advice beyond general safety tips.",
+  ].join("\n");
+}
+
+/**
+ * Ask Aman a question. `history` is the recent chat ({ role: "user" |
+ * "aman", text }[]), kept short (last 6 turns) so the prompt stays small.
+ * Cloud-only; throws when Firebase is not configured or the call fails.
+ */
+export async function askAssistant(question, lang = "en", history = []) {
+  const { ai, getGenerativeModel } = await ensureAIReady();
+  const model = getGenerativeModel(ai, { model: CLOUD_MODEL });
+  const turns = (history || [])
+    .slice(-6)
+    .map((m) => `${m.role === "user" ? "User" : "Aman"}: ${m.text}`)
+    .join("\n");
+  const prompt = [
+    assistantSystemPrompt(lang),
+    "",
+    turns ? `Conversation so far:\n${turns}\n` : "",
+    `User: ${question}`,
+    "Aman:",
+  ].join("\n");
+  const result = await withTimeout(
+    model.generateContent(prompt),
+    ASSISTANT_TIMEOUT_MS,
+    "Assistant",
+  );
+  const answer = (result.response.text() || "").trim();
+  if (!answer) throw new Error("The assistant returned an empty answer.");
+  return { answer, source: "IN_CLOUD" };
+}
+
+// ---------------------------------------------------------------------------
+// Cloud text-to-speech (Aman's voice that works on any device).
+//
+// The device speechSynthesis voice depends on a TTS engine installed
+// on the phone — often missing or incomplete. The cloud TTS model
+// speaks from Firebase AI Logic instead, so Voice works even on a
+// device with no local voices at all. The model returns 24 kHz 16-bit
+// PCM audio, which is wrapped in a WAV container and played with a
+// plain <audio> element. Any failure here throws, and the caller falls
+// back to the device voice (speechSynthesis).
+// ---------------------------------------------------------------------------
+
+// MIGRATION (19 Nov 2026): the legacy preview model
+// gemini-3.1-flash-tts-preview is retired — the official Firebase
+// docs ("Generate speech (TTS)", updated 18 Nov 2026) order a move
+// to the stable gemini-3.8-flash-tts / gemini-3.8-flash-lite-tts.
+// Same request structure, but: the prompt must be the VERBATIM
+// transcript (a "Say: ..." prefix would be read aloud), and unary
+// responses now return a complete WAV file instead of raw PCM.
+export const TTS_MODEL = "gemini-3.8-flash-tts";
+const TTS_VOICE = "Kore"; // clear, neutral Gemini voice
+const TTS_TIMEOUT_MS = 25000;
+
+const TTS_LANG = {
+  en: "en-US",
+  id: "id-ID",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+  pt: "pt-BR",
+  ja: "ja-JP",
+  zh: "zh-CN",
+};
+
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+// Wrap raw 16-bit PCM (mono) in a minimal WAV container so it can be
+// played with <audio>. Sample rate comes from the audio mime type
+// ("audio/L16;codec=pcm;rate=24000"), default 24 kHz.
+function pcmToWavUrl(base64, sampleRate = 24000) {
+  const pcm = base64ToBytes(base64);
+  const header = new ArrayBuffer(44);
+  const v = new DataView(header);
+  const writeStr = (off, s) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  v.setUint32(4, 36 + pcm.length, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true); // byte rate
+  v.setUint16(32, 2, true); // block align
+  v.setUint16(34, 16, true); // bits per sample
+  writeStr(36, "data");
+  v.setUint32(40, pcm.length, true);
+  return URL.createObjectURL(new Blob([header, pcm], { type: "audio/wav" }));
+}
+
+/**
+ * Speak text with the cloud TTS model. Returns { audioUrl, bytes } —
+ * a playable object URL the caller must revoke after playback.
+ * Throws on any failure (model unavailable, quota, network, no audio
+ * in the response) so the caller can fall back to the device voice.
+ */
+export async function synthesizeSpeech(text, lang = "en") {
+  const clean = String(text || "").trim();
+  if (!clean) throw new Error("Nothing to speak.");
+  const { ai, getGenerativeModel } = await ensureAIReady();
+  const { ResponseModality } = await import("firebase/ai");
+  const model = getGenerativeModel(ai, {
+    model: TTS_MODEL,
+    generationConfig: {
+      responseModalities: [ResponseModality.AUDIO],
+      speechConfig: {
+        languageCode: TTS_LANG[lang] || "en-US",
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: TTS_VOICE } },
+      },
+    },
+  });
+  // Verbatim transcript only: the 3.8 TTS models speak the TextPart
+  // text exactly as given — a "Say: ..." prefix would be read aloud.
+  const result = await Promise.race([
+    model.generateContent(clean),
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Cloud voice timed out.")),
+        TTS_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+  const parts = result.response.inlineDataParts() || [];
+  const audioPart = parts.find(
+    (p) =>
+      p.inlineData &&
+      typeof p.inlineData.mimeType === "string" &&
+      p.inlineData.mimeType.startsWith("audio/"),
+  );
+  if (!audioPart || !audioPart.inlineData.data) {
+    throw new Error("Cloud voice returned no audio.");
+  }
+  const { data, mimeType } = audioPart.inlineData;
+  const bytes = base64ToBytes(data).length;
+  if (/wav/i.test(mimeType)) {
+    return {
+      audioUrl: URL.createObjectURL(
+        new Blob([base64ToBytes(data)], { type: "audio/wav" }),
+      ),
+      bytes,
+    };
+  }
+  const rateMatch = /rate=(\d+)/.exec(mimeType || "");
+  const rate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+  return { audioUrl: pcmToWavUrl(data, rate), bytes };
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const base64 = dataUrl.split(",")[1] || "";
+      resolve({ base64, mimeType: file.type || "image/png" });
+    };
+    reader.onerror = () =>
+      reject(new Error("Could not read the image file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Analyze a screenshot of a chat/message with the cloud model's vision:
+ * read the visible text (OCR) and judge it as a scam message. Returns the
+ * usual verdict shape plus `extractedText` (what the model read).
+ * Cloud-only — the on-device model cannot read images.
+ */
+export async function analyzeImageWithAI(file, lang = "en") {
+  const { ai, getGenerativeModel, Schema, tokenInfo } =
+    await ensureAIReady();
+  const { base64, mimeType } = await fileToBase64(file);
+  const answerLang = languageName(lang);
+  const model = getGenerativeModel(ai, {
+    model: CLOUD_MODEL,
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: makeImageVerdictSchema(Schema),
+    },
+  });
+  const prompt = [
+    "You are a scam-message detector. The user uploaded a screenshot of a chat or message.",
+    "First read all visible text in the image (OCR, Indonesian or English). Then analyze that text as a scam message.",
+    "Return ONLY a JSON object matching the provided schema, nothing else.",
+    '- status: "scam" if it is clearly a scam (phishing link, fake prize, impersonation, demand for money/OTP/PIN, malware APK);',
+    '- "suspicious" if it has warning signs but is not conclusive;',
+    '- "safe" if it looks like a normal legitimate message.',
+    "- riskScore: integer 0-100, how likely the message is a scam.",
+    `- redFlags: short phrases in ${answerLang} naming each warning sign found (empty array when the message is safe).`,
+    `- summary: one or two sentences in ${answerLang} explaining the verdict.`,
+    `- extractedText: the exact text you read from the image, in its original language (empty string if no text is visible).`,
+  ].join("\n");
+  let result;
+  try {
+    result = await withTimeout(
+      model.generateContent([
+        { text: prompt },
+        { inlineData: { mimeType, data: base64 } },
+      ]),
+      IMAGE_CHECK_TIMEOUT_MS,
+      "Image check",
+    );
+  } catch (e) {
+    // Token claims are debug info only — log, never show to the user.
+    if (tokenInfo) console.warn("[TipuCek] App Check token:", tokenInfo);
+    throw new Error(e?.message || e);
+  }
+  let verdict;
+  try {
+    verdict = parseVerdictJson(result.response.text());
+  } catch {
+    throw new Error("AI returned a response that is not valid JSON.");
+  }
+  const riskScore = Math.max(
+    0,
+    Math.min(100, Math.round(Number(verdict.riskScore) || 0)),
+  );
+  const status =
+    verdict.status === "scam" ||
+    verdict.status === "suspicious" ||
+    verdict.status === "safe"
+      ? verdict.status
+      : riskScore >= 60
+        ? "scam"
+        : riskScore >= 30
+          ? "suspicious"
+          : "safe";
+  return {
+    status,
+    riskScore,
+    redFlags: Array.isArray(verdict.redFlags)
+      ? verdict.redFlags.map(String)
+      : [],
+    summary: String(verdict.summary || ""),
+    extractedText: String(verdict.extractedText || ""),
+    source: "IN_CLOUD",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Phone-call voice transcription (cloud-only).
+//
+// A web page cannot tap a phone call directly — the user records the
+// call themselves (loudspeaker + microphone) or uploads a recording
+// file, and the cloud model transcribes the speech. The transcript is
+// then scored like a pasted message by the normal checker. The audio
+// itself is never stored anywhere: it is sent to the model once and
+// discarded (the transcript is treated like any other checked message).
+// Demo mode has no AI at all, so transcription honestly refuses there
+// instead of pretending — the UI maps the DEMO_NO_TRANSCRIBE error to
+// a clear message.
+// ---------------------------------------------------------------------------
+
+/** Audio MIME types the cloud model accepts (extension fallback included). */
+export const SUPPORTED_AUDIO_TYPES = [
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/ogg",
+  "audio/flac",
+  "audio/webm",
+];
+
+const AUDIO_EXT_MIME = {
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  m4a: "audio/mp4",
+  ogg: "audio/ogg",
+  flac: "audio/flac",
+  webm: "audio/webm",
+};
+
+/**
+ * Resolve the MIME type for an audio file: the browser-reported type
+ * when it is supported, otherwise the file extension (some browsers
+ * report an empty type for .m4a/.webm). Returns null when neither
+ * identifies a supported format. Pure — unit-tested.
+ */
+export function resolveAudioMimeType(file) {
+  const reported = String(file?.type || "")
+    .toLowerCase()
+    .split(";")[0]
+    .trim();
+  if (SUPPORTED_AUDIO_TYPES.includes(reported)) return reported;
+  const ext = String(file?.name || "")
+    .split(".")
+    .pop()
+    .toLowerCase();
+  return AUDIO_EXT_MIME[ext] || null;
+}
+
+/**
+ * Validate an audio file before transcription. Returns null when the
+ * file is fine, otherwise the i18n error key for the UI
+ * ("callAudioTooBig" | "callAudioType"). Pure — unit-tested.
+ */
+export function validateAudioFile(file) {
+  if (!file) return "callAudioType";
+  if (typeof file.size === "number" && file.size > MAX_AUDIO_BYTES) {
+    return "callAudioTooBig";
+  }
+  if (!resolveAudioMimeType(file)) return "callAudioType";
+  return null;
+}
+
+function audioFileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const base64 = dataUrl.split(",")[1] || "";
+      resolve({ base64, mimeType: resolveAudioMimeType(file) });
+    };
+    reader.onerror = () =>
+      reject(new Error("Could not read the audio file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Transcribe speech in an audio recording with the cloud model.
+ * `file` is a Blob/File (microphone recording or uploaded file).
+ * Returns { transcript, source: "IN_CLOUD" }.
+ * Throws Error("DEMO_NO_TRANSCRIBE") in demo mode, Error("NO_SPEECH")
+ * when no speech is audible, Error("AUDIO_TOO_BIG") / Error("AUDIO_TYPE")
+ * for rejected files, or the model's error otherwise. Never returns a
+ * made-up transcript: an empty or failed transcription is an error.
+ */
+export async function transcribeAudioWithAI(file, lang = "en") {
+  const problem = validateAudioFile(file);
+  if (problem === "callAudioTooBig") throw new Error("AUDIO_TOO_BIG");
+  if (problem === "callAudioType") throw new Error("AUDIO_TYPE");
+  if (!isFirebaseConfigured()) throw new Error("DEMO_NO_TRANSCRIBE");
+  const { ai, getGenerativeModel, tokenInfo } = await ensureAIReady();
+  const { base64, mimeType } = await audioFileToBase64(file);
+  const answerLang = languageName(lang);
+  const model = getGenerativeModel(ai, { model: CLOUD_MODEL });
+  const prompt = [
+    "Transcribe the speech in this audio recording verbatim, in its",
+    "original language (Indonesian or English). The speaker may be a",
+    `phone scammer — transcribe what they actually said, in ${answerLang} only if the speech itself is in that language; otherwise keep the original language.`,
+    "Return ONLY the transcript text, nothing else — no verdict, no summary, no labels.",
+    "If no speech is audible, return an empty string.",
+  ].join("\n");
+  let result;
+  try {
+    result = await withTimeout(
+      model.generateContent([
+        { text: prompt },
+        { inlineData: { mimeType, data: base64 } },
+      ]),
+      AUDIO_CHECK_TIMEOUT_MS,
+      "Audio transcription",
+    );
+  } catch (e) {
+    if (tokenInfo) console.warn("[TipuCek] App Check token:", tokenInfo);
+    throw new Error(e?.message || e);
+  }
+  const transcript = (result.response.text() || "").trim();
+  if (!transcript) throw new Error("NO_SPEECH");
+  return { transcript, source: "IN_CLOUD" };
+}
+
+/**
+ * Best-effort background warm-up: prepare the Firebase app, an App Check
+ * token and the on-device model after the user's first gesture (textarea
+ * focus or sample click). Never throws and never blocks the UI — the
+ * check path re-does whatever is still missing. A warmed-up device
+ * answers the next check on-device in ~2s instead of waiting on a
+ * first-time model download.
+ */
+export async function warmUpAI() {
+  if (!isFirebaseConfigured()) return;
+  try {
+    const app = await getFirebaseApp();
+    if (appCheckInstance) {
+      const { getToken } = await import("firebase/app-check");
+      await getToken(appCheckInstance, false).catch(() => {});
+    }
+    const { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, Schema } =
+      await import("firebase/ai");
+    const ai = getAI(app, { backend: new GoogleAIBackend() });
+    const model = makeHybridModel(
+      ai,
+      getGenerativeModel,
+      InferenceMode,
+      makeVerdictSchema(Schema),
+    );
+    await model.initializeDeviceModel(() => {}).catch(() => {});
+  } catch {
+    // Warm-up is optional; the check path handles everything itself.
+  }
+}
+
 /** Public entry point: production AI when configured, demo heuristic otherwise. */
-export async function analyzeMessage(message, onProgress) {
+export async function analyzeMessage(message, onProgress, lang = "en") {
+  const text = (message || "").trim();
+  if (text.length > MAX_MESSAGE_CHARS) {
+    throw new Error(
+      `Message too long: ${text.length} chars (max ${MAX_MESSAGE_CHARS})`,
+    );
+  }
   if (!isFirebaseConfigured()) {
     // Small async tick so the UI can show its "checking" state first.
     await new Promise((r) => setTimeout(r, 350));
-    return analyzeWithHeuristic(message);
+    return analyzeWithHeuristic(message, lang);
   }
-  return analyzeWithAI(message, onProgress);
+  return analyzeWithAI(message, onProgress, lang);
 }
 
 export { isFirebaseConfigured };

@@ -1,4 +1,4 @@
-// Firebase configuration for PesanAman.
+// Firebase configuration for TipuCek.
 //
 // Real values live in `.env.local` (Vite reads VITE_FIREBASE_*; the file
 // is git-ignored, so real credentials never reach the public repo).
