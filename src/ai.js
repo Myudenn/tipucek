@@ -21,6 +21,12 @@ import { languageName, demoSummary, demoFlag } from "./i18n.js";
 
 export const CLOUD_MODEL = "gemini-3.5-flash-lite";
 
+// Backup cloud model (failover, Myuden 20 Nov 02:46): tried once when
+// the primary model fails or times out. Live test 20 Nov ~02:32:
+// 44/54 (81%) success, 3 false positives — slightly less accurate
+// than the primary, but far better than no AI verdict at all.
+export const BACKUP_CLOUD_MODEL = "gemini-3.1-flash-lite";
+
 // Longest message accepted for a check. A pasted chat export can be
 // huge — sending it whole to the cloud wastes tokens and risks a
 // misleading "input is too large" error, so reject it up front with a
@@ -30,10 +36,14 @@ export const MAX_MESSAGE_CHARS = 4000;
 // Cloud calls must never hang the UI forever: only the on-device init
 // used to be raced against a timeout. Every generateContent now has
 // one too — 30 s for a verdict (cloud answers in ~2-4 s in practice;
-// 30 s is still 7x the normal time, and it keeps the worst case
-// — 5 s init + 30 s hybrid + 30 s cloud fallback = 65 s — under the
-// 90 s a user will tolerate before giving up), 30 s for a chat
-// answer, 30 s for a screenshot (vision + OCR).
+// 30 s is still 7x the normal time). Worst case for a verdict is
+// 5 s init + 30 s hybrid + 30 s primary cloud + 30 s backup model
+// = ~95 s before the code-only card appears — but only when every
+// leg hangs the full 30 s; in practice the hybrid leg fails fast
+// (on-device not ready) and the measured failover worst case is
+// ~36 s (live, 20 Nov). Each attempt keeps its own 30 s budget
+// (Myuden 19 Nov 23:43). 30 s also for a chat answer, 30 s for a
+// screenshot (vision + OCR).
 export const CLOUD_CHECK_TIMEOUT_MS = 30000;
 export const ASSISTANT_TIMEOUT_MS = 30000;
 export const IMAGE_CHECK_TIMEOUT_MS = 30000;
@@ -59,6 +69,37 @@ function withTimeout(promise, ms, label) {
     Promise.resolve(promise).finally(() => clearTimeout(timer)),
     timeout,
   ]);
+}
+
+/**
+ * Try the cloud models in order (primary, then the backup once) for a
+ * single generateContent call. `makeCall(modelName)` builds the model
+ * and returns its generateContent promise — same prompt, same schema,
+ * only the model name differs. Each attempt gets its own timeout
+ * (30 s in production). `onBackup` fires before the backup attempt so
+ * the UI can say so honestly. Returns { result, model } — the model
+ * that answered. Throws the last error when every attempt fails. The
+ * backup is only ever reached when the primary fails or times out; a
+ * successful primary never triggers a backup call.
+ */
+export async function generateWithFailover(
+  makeCall,
+  { timeoutMs = CLOUD_CHECK_TIMEOUT_MS, label = "Check", onBackup } = {},
+) {
+  const attempts = [CLOUD_MODEL, BACKUP_CLOUD_MODEL];
+  let lastError;
+  for (let i = 0; i < attempts.length; i++) {
+    const model = attempts[i];
+    if (i > 0) onBackup?.();
+    try {
+      const result = await withTimeout(makeCall(model), timeoutMs, label);
+      return { result, model };
+    } catch (e) {
+      lastError = e;
+      console.warn(`[TipuCek] Cloud model ${model} failed:`, e?.message || e);
+    }
+  }
+  throw lastError;
 }
 
 // On-device model prep is the slow step (first download can take 10-20s).
@@ -252,7 +293,7 @@ export function analyzeWithHeuristic(message, lang = "en") {
  */
 export function codeOnlyVerdict(message, lang = "en") {
   const local = analyzeWithHeuristic(message, lang);
-  return { ...local, source: "CODE" };
+  return { ...local, source: "CODE", model: "code" };
 }
 
 // ---------------------------------------------------------------------------
@@ -369,8 +410,10 @@ function parseVerdictJson(text) {
 
 /**
  * Analyze a message with Firebase AI Logic (hybrid inference).
- * `onProgress` receives { stage, progress } while the on-device model
- * downloads (stage "downloading-model", progress 0-1).
+ * `onProgress` receives { stage, progress }: "downloading-model"
+ * while the on-device model downloads (progress 0-1), "cloud" when
+ * the hybrid path falls back to the cloud-only model, "backup" when
+ * the primary cloud model failed and the backup model is tried.
  */
 export async function analyzeWithAI(message, onProgress, lang = "en") {
   const { ai, getGenerativeModel, InferenceMode, Schema, tokenInfo } =
@@ -393,6 +436,9 @@ export async function analyzeWithAI(message, onProgress, lang = "en") {
   // (The download keeps running in the background, so a later check can
   // still answer on-device.)
   let result;
+  // Cloud model that answered via the cloud-only retry (primary or
+  // backup); null when the hybrid path answered directly.
+  let answeredModel = null;
   try {
     await Promise.race([
       model.initializeDeviceModel((progress) => {
@@ -429,19 +475,27 @@ export async function analyzeWithAI(message, onProgress, lang = "en") {
       "[TipuCek] On-device generation failed, falling back to cloud:",
       e?.message || e,
     );
-    const cloudModel = getGenerativeModel(ai, {
-      model: CLOUD_MODEL,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: verdictSchema,
-      },
-    });
     try {
-      result = await withTimeout(
-        cloudModel.generateContent(buildPrompt(message, lang)),
-        CLOUD_CHECK_TIMEOUT_MS,
-        "Check",
-      );
+      // Failover: the primary cloud model first, the backup once when
+      // it fails or times out. The on-device leg already had its
+      // chance above, so this is the last AI attempt before the
+      // caller's code-only fallback.
+      const { result: cloudResult, model: cloudModelName } =
+        await generateWithFailover(
+          (modelName) => {
+            const m = getGenerativeModel(ai, {
+              model: modelName,
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: verdictSchema,
+              },
+            });
+            return m.generateContent(buildPrompt(message, lang));
+          },
+          { onBackup: () => onProgress?.({ stage: "backup" }) },
+        );
+      result = cloudResult;
+      answeredModel = cloudModelName;
     } catch (e2) {
       // The App Check token's claims are debug info only: log them for
       // diagnosis, never attach them to the user-facing error (the old
@@ -491,6 +545,17 @@ export async function analyzeWithAI(message, onProgress, lang = "en") {
       : [],
     summary: String(verdict.summary || ""),
     source,
+    // Which model answered: the backup when the failover ran, the
+    // primary cloud model when the hybrid cloud leg or the cloud-only
+    // retry answered, "on-device" when the device model did. The UI
+    // receipt + history show this; the badge stays "Answered in the cloud".
+    model:
+      answeredModel ||
+      (source === "ON_DEVICE"
+        ? "on-device"
+        : source === "IN_CLOUD"
+          ? CLOUD_MODEL
+          : undefined),
   };
 }
 
@@ -560,20 +625,15 @@ function fileToBase64(file) {
  * Analyze a screenshot of a chat/message with the cloud model's vision:
  * read the visible text (OCR) and judge it as a scam message. Returns the
  * usual verdict shape plus `extractedText` (what the model read).
- * Cloud-only — the on-device model cannot read images.
+ * Cloud-only — the on-device model cannot read images. Failover like
+ * the message check: primary model first, backup once on failure;
+ * `onProgress` reports stage "backup" while the backup is tried.
  */
-export async function analyzeImageWithAI(file, lang = "en") {
+export async function analyzeImageWithAI(file, lang = "en", onProgress) {
   const { ai, getGenerativeModel, Schema, tokenInfo } =
     await ensureAIReady();
   const { base64, mimeType } = await fileToBase64(file);
   const answerLang = languageName(lang);
-  const model = getGenerativeModel(ai, {
-    model: CLOUD_MODEL,
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: makeImageVerdictSchema(Schema),
-    },
-  });
   const prompt = [
     "You are a scam-message detector. The user uploaded a screenshot of a chat or message.",
     "First read all visible text in the image (OCR, Indonesian or English). Then analyze that text as a scam message.",
@@ -587,15 +647,30 @@ export async function analyzeImageWithAI(file, lang = "en") {
     `- extractedText: the exact text you read from the image, in its original language (empty string if no text is visible).`,
   ].join("\n");
   let result;
+  let answeredModel;
   try {
-    result = await withTimeout(
-      model.generateContent([
-        { text: prompt },
-        { inlineData: { mimeType, data: base64 } },
-      ]),
-      IMAGE_CHECK_TIMEOUT_MS,
-      "Image check",
+    // Failover, same as the message check: primary first, backup once.
+    const { result: r, model } = await generateWithFailover(
+      (modelName) => {
+        const m = getGenerativeModel(ai, {
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: makeImageVerdictSchema(Schema),
+          },
+        });
+        return m.generateContent([
+          { text: prompt },
+          { inlineData: { mimeType, data: base64 } },
+        ]);
+      },
+      {
+        label: "Image check",
+        onBackup: () => onProgress?.({ stage: "backup" }),
+      },
     );
+    result = r;
+    answeredModel = model;
   } catch (e) {
     // Token claims are debug info only — log, never show to the user.
     if (tokenInfo) console.warn("[TipuCek] App Check token:", tokenInfo);
@@ -630,6 +705,7 @@ export async function analyzeImageWithAI(file, lang = "en") {
     summary: String(verdict.summary || ""),
     extractedText: String(verdict.extractedText || ""),
     source: "IN_CLOUD",
+    model: answeredModel,
   };
 }
 

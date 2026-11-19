@@ -17,7 +17,7 @@ import {
   loadLocalReports,
   recordLocalReport,
 } from "../src/crowdreport.js";
-import { analyzeWithHeuristic, codeOnlyVerdict } from "../src/ai.js";
+import { analyzeWithHeuristic, codeOnlyVerdict, generateWithFailover, CLOUD_MODEL, BACKUP_CLOUD_MODEL } from "../src/ai.js";
 import { analyzeLink, analyzeLinks, extractNumbers } from "../src/risks.js";
 import { maskDigits, analyzeOutgoing } from "../src/outbound.js";
 import { parseChatExport, scanChatLog, CHATLOG_MAX_BYTES } from "../src/chatlog.js";
@@ -26,6 +26,7 @@ import { getQuizQuestions } from "../src/quiz.js";
 import { registrableDomain, resolveShortLink } from "../src/domain.js";
 import { analyzeEmail } from "../src/emailcheck.js";
 import { analyzeCall, mergeCallVerdict } from "../src/callcheck.js";
+import { saveCheck, loadHistory } from "../src/history.js";
 
 const SCAM_PRIZE =
   "SELAMAT! Anda memenangkan hadiah Rp 50.000.000 dari undian Telkomsel. Segera klik link ini http://bit.ly/hadiah-telkomsel-2026 dan bayar biaya admin Rp 150.000 untuk klaim hadiah Anda sebelum 24 jam. Hubungi customer service kami segera!";
@@ -1017,5 +1018,147 @@ describe("code-only fallback verdict (AI timeout fallback, 19 Nov)", () => {
     assert.ok(SRC.includes("codeOnlyVerdict(message, lang)"), "onCheck must build the fallback from the message");
     assert.ok(SRC.includes("Never cache the fallback"), "fallback must not be cached (retry must ask the AI again)");
     assert.ok(SRC.includes('$("result").hidden = true;'), "a failed fresh check must hide #result so no 'still loading' panel survives");
+  });
+});
+
+describe("model failover (primary 3.5-flash-lite, backup 3.1-flash-lite, 20 Nov)", () => {
+  // The failover loop is pure w.r.t. the model call: tests inject a
+  // stub makeCall(modelName). The live browser test proves the same
+  // loop against the real endpoint (primary blocked -> backup answers).
+  it("primary error -> backup answers once, model recorded as backup", async () => {
+    let backupCalls = 0;
+    let onBackupCalls = 0;
+    const { result, model } = await generateWithFailover(
+      async (name) => {
+        if (name === CLOUD_MODEL) throw new Error("429 quota exhausted");
+        backupCalls++;
+        return { ok: true };
+      },
+      { timeoutMs: 1000, onBackup: () => { onBackupCalls++; } },
+    );
+    assert.deepEqual(result, { ok: true });
+    assert.equal(model, BACKUP_CLOUD_MODEL);
+    assert.equal(backupCalls, 1);
+    assert.equal(onBackupCalls, 1);
+  });
+
+  it("both fail -> throws the last (backup) error, each tried exactly once", async () => {
+    const calls = [];
+    let onBackupCalls = 0;
+    await assert.rejects(
+      generateWithFailover(
+        async (name) => {
+          calls.push(name);
+          throw new Error(`fail ${name}`);
+        },
+        { timeoutMs: 1000, onBackup: () => { onBackupCalls++; } },
+      ),
+      /gemini-3\.1-flash-lite/,
+    );
+    assert.deepEqual(calls, [CLOUD_MODEL, BACKUP_CLOUD_MODEL]);
+    assert.equal(onBackupCalls, 1);
+  });
+
+  it("primary success -> backup never called, model recorded as primary", async () => {
+    const calls = [];
+    let onBackupCalls = 0;
+    const { result, model } = await generateWithFailover(
+      async (name) => {
+        calls.push(name);
+        return { ok: true };
+      },
+      { timeoutMs: 1000, onBackup: () => { onBackupCalls++; } },
+    );
+    assert.deepEqual(result, { ok: true });
+    assert.equal(model, CLOUD_MODEL);
+    assert.deepEqual(calls, [CLOUD_MODEL]);
+    assert.equal(onBackupCalls, 0);
+  });
+
+  it("primary timeout -> backup tried (short timeout proves the timeout path)", async () => {
+    const calls = [];
+    const { result, model } = await generateWithFailover(
+      async (name) => {
+        calls.push(name);
+        if (name === CLOUD_MODEL) return new Promise(() => {}); // never resolves
+        return { ok: true };
+      },
+      { timeoutMs: 50 },
+    );
+    assert.deepEqual(result, { ok: true });
+    assert.equal(model, BACKUP_CLOUD_MODEL);
+    assert.deepEqual(calls, [CLOUD_MODEL, BACKUP_CLOUD_MODEL]);
+  });
+
+  it("failover strings exist in all 8 languages, honest, model filled", () => {
+    for (const code of LANG_CODES) {
+      const trying = t("tryingBackupModel", code);
+      assert.ok(typeof trying === "string" && trying.trim().length > 0, `tryingBackupModel empty in ${code}`);
+      assert.notEqual(trying, "tryingBackupModel", `tryingBackupModel untranslated in ${code}`);
+      assert.doesNotMatch(trying, /undefined/, `tryingBackupModel has undefined in ${code}`);
+      for (const key of ["receiptModelPrimary", "receiptModelBackup"]) {
+        const s = t(key, code, { model: BACKUP_CLOUD_MODEL });
+        assert.ok(typeof s === "string" && s.length > 0, `${key} empty in ${code}`);
+        assert.notEqual(s, key, `${key} untranslated in ${code}`);
+        assert.doesNotMatch(s, /undefined/, `${key} has undefined in ${code}`);
+        assert.doesNotMatch(s, /\{model\}/, `${key} left {model} unfilled in ${code}`);
+        assert.ok(s.includes(BACKUP_CLOUD_MODEL), `${key} must name the model in ${code}`);
+        if (code !== "en") {
+          assert.notEqual(s, t(key, "en", { model: BACKUP_CLOUD_MODEL }), `${key} untranslated in ${code}`);
+        }
+      }
+      if (code !== "en") {
+        assert.notEqual(trying, t("tryingBackupModel", "en"), `tryingBackupModel untranslated in ${code}`);
+      }
+    }
+  });
+
+  it("codeOnlyVerdict records model 'code'; mergeCallVerdict keeps the AI slot's model", async () => {
+    const c = codeOnlyVerdict(SCAM_PRIZE, "en");
+    assert.equal(c.model, "code");
+    const { verdict: localSafe } = await analyzeCall({ number: "", said: "rapat besok jam 10" }, "en");
+    const merged = mergeCallVerdict(c, localSafe);
+    assert.equal(merged.model, "code");
+    const aiPrimary = { status: "scam", riskScore: 95, redFlags: ["x"], summary: "s", source: "IN_CLOUD", model: CLOUD_MODEL };
+    assert.equal(mergeCallVerdict(aiPrimary, localSafe).model, CLOUD_MODEL);
+    assert.equal(mergeCallVerdict({ ...aiPrimary, model: BACKUP_CLOUD_MODEL }, localSafe).model, BACKUP_CLOUD_MODEL);
+  });
+
+  it("main.js wires the failover: backup stage, receipt model line, history model, image onProgress", () => {
+    const SRC = readFileSync(new URL("../src/main.js", import.meta.url), "utf8");
+    assert.ok(SRC.includes('stage === "backup"'), "main.js must handle the backup progress stage");
+    assert.ok(SRC.includes('t("tryingBackupModel"'), "main.js must show the backup status text");
+    assert.ok(SRC.includes('"receiptModelBackup"'), "receipt must name the backup model");
+    assert.ok(SRC.includes('"receiptModelPrimary"'), "receipt must name the primary model");
+    assert.ok(SRC.includes("e.model"), "history must record the answering model");
+    assert.ok(SRC.includes("analyzeImageWithAI(selectedImage, lang,"), "image check must pass onProgress for the backup stage");
+    assert.ok(SRC.includes("BACKUP_CLOUD_MODEL"), "main.js must import the backup model constant");
+  });
+
+  it("history round-trip (local-only) preserves the answering model", async () => {
+    const store = new Map();
+    globalThis.localStorage = {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => { store.set(k, String(v)); },
+      removeItem: (k) => { store.delete(k); },
+    };
+    try {
+      const where = await saveCheck({
+        message: "x",
+        status: "scam",
+        riskScore: 95,
+        redFlags: ["x"],
+        summary: "s",
+        source: "IN_CLOUD",
+        model: BACKUP_CLOUD_MODEL,
+      });
+      assert.equal(where, "local");
+      const entries = await loadHistory();
+      assert.equal(entries.length, 1);
+      assert.equal(entries[0].model, BACKUP_CLOUD_MODEL);
+      assert.equal(entries[0].source, "IN_CLOUD");
+    } finally {
+      delete globalThis.localStorage;
+    }
   });
 });

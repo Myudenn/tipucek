@@ -1,7 +1,7 @@
 // TipuCek — UI wiring (single page).
 
 import "./styles.css";
-import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseConfigured, warmUpAI, preloadAiModules, analyzeWithHeuristic, codeOnlyVerdict, MAX_MESSAGE_CHARS } from "./ai.js";
+import { analyzeMessage, analyzeImageWithAI, transcribeAudioWithAI, isFirebaseConfigured, warmUpAI, preloadAiModules, analyzeWithHeuristic, codeOnlyVerdict, BACKUP_CLOUD_MODEL, MAX_MESSAGE_CHARS } from "./ai.js";
 import { analyzeLinks, extractNumbers } from "./risks.js";
 import { analyzeFiles } from "./files.js";
 import { buildWarningCard, shareWarningCard } from "./sharecard.js";
@@ -390,13 +390,20 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
     (links.length > 0 || phones.length > 0 || accounts.length > 0)
       ? `<p>${escapeHtml(t("receiptSkipped", lang))}</p>`
       : "";
+  // Which cloud model answered (primary / backup): the badge stays
+  // "Answered in the cloud" — the receipt records the model, so a
+  // backup verdict is never silently presented as a primary one.
+  const receiptModel =
+    verdict.source === "IN_CLOUD" && verdict.model
+      ? `<p>${escapeHtml(t(verdict.model === BACKUP_CLOUD_MODEL ? "receiptModelBackup" : "receiptModelPrimary", lang, { model: verdict.model }))}</p>`
+      : "";
   // Audio verdicts (transcribed phone call): the recording was sent to
   // the cloud for transcription — say so in the receipt, next to the
   // message-to-cloud line. The recording itself is never stored.
   const receiptAudio = extra.audio
     ? `<p>${escapeHtml(t("receiptAudio", lang))}</p>`
     : "";
-  const receipt = `<details class="privacy-receipt" open><summary>${escapeHtml(t("receiptTitle", lang))}</summary><p>${escapeHtml(receiptSent)}</p>${receiptAudio}<p>${escapeHtml(t("receiptTime", lang, { s: elapsedSec != null ? elapsedSec.toFixed(1) : "—" }))}</p><p>${escapeHtml(receiptStored)}</p>${receiptSkipped}</details>`;
+  const receipt = `<details class="privacy-receipt" open><summary>${escapeHtml(t("receiptTitle", lang))}</summary><p>${escapeHtml(receiptSent)}</p>${receiptModel}${receiptAudio}<p>${escapeHtml(t("receiptTime", lang, { s: elapsedSec != null ? elapsedSec.toFixed(1) : "—" }))}</p><p>${escapeHtml(receiptStored)}</p>${receiptSkipped}</details>`;
   // Report channels (official): phone numbers to Komdigi's aduannomor.id,
   // accounts to cekrekening.id. Shown for scam/suspicious verdicts even
   // when the message contains no number at all.
@@ -736,10 +743,16 @@ function renderHistory(entries) {
       // Cloud records carry no message text (privacy) — show the
       // verdict summary for those; local records show the message.
       const text = e.message || e.summary || "";
+      // Which cloud model answered (primary / backup): the model name
+      // is an identifier, shown as-is. Code-only and on-device entries
+      // already say so in their source label and need no tag; entries
+      // recorded before this change have no model and show none.
+      const modelTag =
+        e.source === "IN_CLOUD" && e.model ? ` · ${escapeHtml(e.model)}` : "";
       return `<li class="history-item status-${escapeHtml(e.status || "safe")}">
         <span class="history-status">${escapeHtml(statusLabel)}</span>
         <span class="history-score">${Number(e.riskScore ?? 0)}/100</span>
-        <span class="history-source">${escapeHtml(sourceLabel(e.source))}</span>
+        <span class="history-source">${escapeHtml(sourceLabel(e.source))}${modelTag}</span>
         <span class="history-text">${escapeHtml(text.slice(0, 90))}${text.length > 90 ? "…" : ""}</span>
         <time>${escapeHtml(when)}</time>
       </li>`;
@@ -938,6 +951,10 @@ async function onCheck() {
               });
             } else if (stage === "cloud") {
               progressEl.textContent = t("cloudFallback", lang);
+            } else if (stage === "backup") {
+              // Failover: the primary cloud model failed or timed out
+              // and the backup model is being tried — say so, honestly.
+              progressEl.textContent = t("tryingBackupModel", lang);
             }
           },
           lang,
@@ -1091,6 +1108,10 @@ async function recheckLastCheck() {
               });
             } else if (stage === "cloud") {
               progressEl.textContent = t("cloudFallback", lang);
+            } else if (stage === "backup") {
+              // Failover: the primary cloud model failed or timed out
+              // and the backup model is being tried — say so, honestly.
+              progressEl.textContent = t("tryingBackupModel", lang);
             }
           },
           lang,
@@ -1160,7 +1181,12 @@ async function onImageCheck() {
   progressEl.textContent = t("imageAnalyzing", lang);
   const t0 = performance.now();
   try {
-    const verdict = await analyzeImageWithAI(selectedImage, lang);
+    const verdict = await analyzeImageWithAI(selectedImage, lang, ({ stage }) => {
+      // Failover honesty: when the primary model fails and the backup
+      // is tried, say so in the progress line (same text as the
+      // message check).
+      if (stage === "backup") progressEl.textContent = t("tryingBackupModel", lang);
+    });
     if (runId !== checkRunId) return;
     const elapsedSec = (performance.now() - t0) / 1000;
     const message = verdict.extractedText || "";
