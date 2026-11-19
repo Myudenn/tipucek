@@ -249,9 +249,6 @@ async function main() {
     check("how: heading is not a raw i18n key", (await page.locator("#how-heading").innerText()).trim() !== "howHeading");
     check("desktop: hero shows TipuCek", await page.locator(".brand h1").innerText().then((t) => t.trim() === "TipuCek"), await page.locator(".brand h1").innerText());
     check("desktop: 4 checker tabs", (await page.locator(".checker-tab-btn").count()) === 4);
-    // Voice defaults to ON on first visit (19 Nov fix) — the toggle
-    // is saved, so a fresh context shows "Voice: on".
-    check("voice: toggle defaults to on (first visit)", (await page.locator("#voice-toggle").innerText()).trim() === "Voice: on", await page.locator("#voice-toggle").innerText());
     for (const id of ["checks-heading", "filecheck-heading", "linktrack-heading", "contacts-heading", "aid-heading", "chatlog-heading", "quiz-heading"]) {
       check(`desktop: section #${id} present`, await page.locator(`#${id}`).count() === 1);
     }
@@ -279,13 +276,8 @@ async function main() {
     check("check: scam sample verdict is Scam", /Scam|Penipuan/.test(verdictText), `${verdictText} ${scoreText}/100`);
     check("check: scam sample score >= 60", parseInt(scoreText, 10) >= 60, scoreText);
     check("check: badge shown", /ON_DEVICE|IN_CLOUD|DEMO|LOCAL/.test(badgeText), badgeText.replace(/\n/g, " "));
-    // "Dengar" (Listen) button on the result card (19 Nov fix) — it
-    // used to exist only under Aman's answers.
-    check("result: Listen button exists on the result card", (await page.locator("#listen-result-btn").count()) === 1);
-    const errBeforeListen = errors.length;
-    await page.click("#listen-result-btn");
-    await page.waitForTimeout(3000);
-    check("result: Listen click causes no page errors", errors.length === errBeforeListen, errors.slice(errBeforeListen).join(" | ").slice(0, 200));
+    // (Voice output was removed 19 Nov — Myuden: it never sounded on
+    // the user's phone — so the old voice-output checks are gone.)
     check("check: result has family + PDF buttons", (await page.locator("#warn-family-btn").count()) === 1 && (await page.locator("#pdf-btn").count()) === 1);
     check("check: no report button when no identifiers (scam sample has none)", (await page.locator("#report-btn").count()) === 0);
     check("privacy: 0 Firestore requests during first check (local-only ON)", firestoreReqs.length === fsBefore, `${firestoreReqs.length - fsBefore} requests`);
@@ -555,7 +547,7 @@ async function main() {
     check("senior: check button becomes 'Check this message'", (await page.locator("#check-btn").innerText()).trim() === "Check this message", await page.locator("#check-btn").innerText());
     check("senior: choice saved in localStorage", await page.evaluate(() => localStorage.getItem("tipucek_senior_mode") === "1"));
     check("senior: note shown", await page.locator("#senior-note").isVisible());
-    // A LOCAL check while senior mode is on must not throw (voice readout runs).
+    // A LOCAL check while senior mode is on must not throw.
     const errBefore = errors.length;
     await page.click("#tab-btn-email");
     await page.fill("#email-from-name", "BCA");
@@ -564,14 +556,8 @@ async function main() {
     await page.click("#email-btn");
     await page.waitForSelector("#result .result-card", { timeout: 15000 });
     await page.waitForTimeout(3000);
-    check("senior: verdict read-aloud causes no page errors", errors.length === errBefore, errors.slice(errBefore).join(" | ").slice(0, 200));
+    check("senior: local check causes no page errors", errors.length === errBefore, errors.slice(errBefore).join(" | ").slice(0, 200));
     await page.click("#senior-toggle"); // restore off
-
-    // --- (13) voice toggle (headless: no voices -> falls back off, honestly) ---
-    await page.click("#voice-toggle");
-    await page.waitForTimeout(2500);
-    const voiceText = await page.locator("#voice-toggle").innerText();
-    check("voice: toggle handled without page error", /Voice/.test(voiceText), voiceText);
 
     // --- (14) share target: ?text= fills checker + auto-checks ---
     const sharePage = await ctx.newPage();

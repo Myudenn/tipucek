@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Local verification of the un-deployed build (vite preview, :4173):
 // (1) app loads, scam sample check works, badge recorded;
-// (2) voice toggle -> cloud TTS attempt: read window.__pesanamanLastTts
-//     (ok + bytes) or the failure reason; (3) Firestore write/read
-//     request bodies contain ownerUid (proves the new code paths);
-// (4) 0 page errors. Output: JSON on stdout.
+// (2) Firestore write/read request bodies contain ownerUid (proves
+//     the new code paths); (3) 0 page errors. Output: JSON on stdout.
+// (The old (2) — voice-output probe — was removed
+// 19 Nov with the whole voice-output feature: it never sounded on
+// the user's phone, Myuden's order.)
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
@@ -52,7 +53,7 @@ async function main() {
     page.on("pageerror", (e) => report.errors.push("PAGEERROR: " + String(e && e.message || e)));
     page.on("console", (m) => {
       const txt = m.text();
-      if (m.type() === "error" || /PesanAman|Cloud voice|On-device/i.test(txt)) {
+      if (m.type() === "error" || /PesanAman|On-device/i.test(txt)) {
         report.console.push(`[${m.type()}] ${txt.slice(0, 300)}`);
       }
     });
@@ -91,23 +92,7 @@ async function main() {
     report.check = { ms: Date.now() - t0, badge };
     await page.waitForTimeout(3000); // let the history write finish
 
-    // (2) Voice toggle -> cloud TTS.
-    const vt0 = Date.now();
-    await page.click("#voice-toggle");
-    let tts = null;
-    for (let i = 0; i < 40; i++) {
-      await page.waitForTimeout(1000);
-      tts = await page.evaluate(() => window.__pesanamanLastTts || null);
-      if (tts) break;
-    }
-    report.voice = {
-      ms: Date.now() - vt0,
-      tts,
-      toggleText: await page.evaluate(() => (document.getElementById("voice-toggle") || {}).textContent || null),
-      noteText: await page.evaluate(() => (document.getElementById("assistant-note") || {}).textContent || null),
-    };
-
-    // (3) History UI shows the check (local + remote merge).
+    // (2) History UI shows the check (local + remote merge).
     report.historyUi = await page.evaluate(() => {
       const el = document.getElementById("history-list") || document.querySelector(".history");
       return el ? el.textContent.slice(0, 200) : "no-history-element";

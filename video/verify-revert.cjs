@@ -2,11 +2,11 @@
 // PesanAman revert verification (desktop 1280x800 + mobile 390x844).
 // Checks: (1) NO <video> avatar anywhere, avatar + roamer are <img>
 // anime /aman.png, roamer 64px desktop / 48px mobile and moves;
-// (2) voice toggle off->on without JS errors — headless Chromium has
-// no TTS voices, so the HONEST outcome is toggle falls back to off +
-// voiceUnavailable note appears; (3) ask Aman -> answer + Listen
-// button, click Listen without JS errors; (4) scam sample still
-// scores; (5) old video files 404 + SW cache is pesanaman-v4.
+// (2) ask Aman -> answer arrives; (3) scam sample still
+// scores; (4) old video files 404 + SW cache is pesanaman-v4.
+// (Voice output was removed 19 Nov — Myuden: it never sounded on the
+// user's phone — so the old voice-output checks are
+// gone. The Aman chat check above only asserts an answer arrives.)
 // Screenshots: 1 per viewport, to video/raw/.
 const fs = require("fs");
 const path = require("path");
@@ -66,11 +66,6 @@ async function amanState(page) {
       avatarBox: (() => { const el = document.getElementById("aman-avatar"); if (!el) return null; const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { w: Math.round(r.width), h: Math.round(r.height), borderRadius: cs.borderRadius }; })(),
       roamImg: imgInfo("#aman-roam img"),
       roamBtn: roam ? { hidden: roam.hidden, rect: rr ? { x: Math.round(rr.x), y: Math.round(rr.y), w: Math.round(rr.width), h: Math.round(rr.height) } : null } : null,
-      voiceToggle: (document.getElementById("voice-toggle") || {}).textContent || null,
-      voiceNote: (document.getElementById("assistant-note") || {}).textContent || null,
-      hasSpeechSynthesis: "speechSynthesis" in window,
-      voices: ("speechSynthesis" in window) ? window.speechSynthesis.getVoices().length : -1,
-      speaking: ("speechSynthesis" in window) ? window.speechSynthesis.speaking : null,
       swCaches: cacheNames,
       gone: { idle: idle404, talking: talking404, fullbody: fullbody404 },
     };
@@ -107,13 +102,7 @@ async function main() {
     await page.waitForTimeout(8000);
     report.desktop.at20s = await amanState(page);
 
-    // Voice toggle ON (headless has no TTS voices: honest outcome =
-    // toggle falls back to off + voiceUnavailable note).
-    await page.click("#voice-toggle");
-    await page.waitForTimeout(4000);
-    report.desktop.afterVoiceToggle = await amanState(page);
-
-    // Chat with Aman, then click Listen on the answer.
+    // Chat with Aman (answer arrives).
     await page.fill("#assistant-input", "halo, apa itu penipuan OTP?");
     await page.click("#assistant-send");
     let answered = false;
@@ -123,12 +112,6 @@ async function main() {
       if (n > 0) { answered = true; break; }
     }
     report.desktop.chatAnswered = answered;
-    report.desktop.listenBtn = await page.evaluate(() => !!document.querySelector("#assistant-log .assistant-msg.aman .assistant-speak-btn"));
-    if (report.desktop.listenBtn) {
-      await page.click("#assistant-log .assistant-msg.aman .assistant-speak-btn");
-      await page.waitForTimeout(4000);
-    }
-    report.desktop.afterListen = await amanState(page);
 
     // Scam sample check still scores.
     await page.fill("#message-input", "Selamat! Nomor Anda terpilih memenangkan Rp 50.000.000 dari undian berhadiah. Segera klaim dengan klik bit.ly/hadiah123 dan kirim kode OTP Anda sekarang juga.");

@@ -9,17 +9,20 @@
 // Starts a local proxy (:18086) and opens the LIVE site in a fresh
 // Chromium context (no cookies, no cache, no service worker from any
 // earlier run). Asserts the exact bundle loaded, then tests:
-//   1. voice toggle defaults to ON on first visit
-//   2. link-tracker module is visible
-//   3. scam message -> verdict + Dengar button on the result card
-//   4. .txt file -> read + scored (not "not recognized")
-//   5. phone number alone -> verdict, no "paste a message first" error
-//   6. QRIS is GONE (removed 19 Nov, Myuden's order): pasting a QRIS
+//   1. link-tracker module is visible
+//   2. scam message -> verdict
+//   3. .txt file -> read + scored (not "not recognized")
+//   4. phone number alone -> verdict, no "paste a message first" error
+//   5. QRIS is GONE (removed 19 Nov, Myuden's order): pasting a QRIS
 //      payload produces NO QRIS box and NO QRIS wording anywhere
-//   7. call voice (live, real cloud AI): upload an MP3 of a scam call
+//   6. call voice (live, real cloud AI): upload an MP3 of a scam call
 //      -> transcript appears, transcript scored like a message
 //      (Scam), privacy receipt says the audio went to the cloud only
 //      for transcription
+// (Voice output was removed 19 Nov — Myuden: it never sounded on the
+// user's phone — so there is no voice-output check
+// here anymore. Call voice above is INPUT: record/upload -> transcribe
+// -> score, and it stays.)
 // Output: JSON summary on stdout + screenshots in video/raw/.
 // Usage: node video/verify-live-fresh.cjs
 const fs = require("fs");
@@ -31,7 +34,7 @@ const HOME = process.env.HOME;
 const ROOT = path.join(HOME, "workspace/pesanaman");
 const PROXY_PORT = parseInt(process.env.LOCAL_PROXY_PORT || "18086", 10);
 const LIVE = "https://tipucek.web.app/";
-const EXPECTED_BUNDLE = "index-Cy5R8RGb.js"; // bundle of the QRIS-removal + call-voice commit
+const EXPECTED_BUNDLE = "index-DwpaKias.js"; // bundle of the voice-output removal commit (19 Nov ~16:52)
 const RAW = path.join(ROOT, "video/raw");
 fs.mkdirSync(RAW, { recursive: true });
 
@@ -114,16 +117,12 @@ async function main() {
     const bodyText = await page.evaluate(() => document.body.innerText);
     check("shell: 0 PesanAman in UI text", !bodyText.includes("PesanAman"), bodyText.includes("PesanAman") ? "FOUND" : "clean");
 
-    // --- (1) voice toggle defaults ON on first visit ---
-    const toggleText = await page.locator("#voice-toggle").innerText();
-    check("voice: toggle defaults to on (first visit)", /on|nyala/i.test(toggleText) && !/off|mati/i.test(toggleText), toggleText.trim());
-
-    // --- (2) link-tracker module visible ---
+    // --- (1) link-tracker module visible ---
     check("linktrack: module heading present", (await page.locator("#linktrack-heading").count()) === 1);
     check("linktrack: input visible", await page.locator("#linktrack-input").isVisible());
     check("linktrack: heading reads Track/Lacak a link", await page.locator("#linktrack-heading").innerText().then((t) => /Lacak|Track/i.test(t)), await page.locator("#linktrack-heading").innerText());
 
-    // --- (3) scam message -> verdict + Dengar on result card ---
+    // --- (2) scam message -> verdict ---
     await page.fill("#message-input", SCAM_SAMPLE);
     await page.click("#check-btn");
     await page.waitForSelector("#result .result-card", { timeout: 90000 });
@@ -131,10 +130,9 @@ async function main() {
     const score1 = await page.locator("#result .ring-value strong").innerText();
     const badge1 = await page.locator("#result .result-badge").innerText();
     check("scam: verdict is Scam with high score", /Scam|Penipuan/i.test(status1) && parseInt(score1, 10) >= 80, `${status1} ${score1} ${badge1}`);
-    check("scam: Dengar button exists on the result card", (await page.locator("#listen-result-btn").count()) === 1);
     await page.screenshot({ path: path.join(RAW, "live-fresh-scam.png") });
 
-    // --- (4) .txt file -> read + scored ---
+    // --- (3) .txt file -> read + scored ---
     await page.setInputFiles("#filecheck-input", path.join(ROOT, "test-samples/pesan-penipu.txt"));
     await page.click("#filecheck-btn");
     // inspectFile is async (SHA-256 + content read): wait for the AI
@@ -157,7 +155,7 @@ async function main() {
     }
     await page.screenshot({ path: path.join(RAW, "live-fresh-txt.png") });
 
-    // --- (5) phone number alone -> verdict, no error ---
+    // --- (4) phone number alone -> verdict, no error ---
     await page.click("#tab-btn-call");
     await page.fill("#call-number", "081234567890");
     await page.fill("#call-said", "");
@@ -174,7 +172,7 @@ async function main() {
     check("call-number-only: verdict without 'paste a message first' error", callErrHidden && /Suspicious|Mencurigakan/.test(status5) && parseInt(score5, 10) === 30, `${status5} ${score5} errHidden=${callErrHidden}`);
     await page.screenshot({ path: path.join(RAW, "live-fresh-call.png") });
 
-    // --- (6) QRIS is GONE (removed 19 Nov, Myuden's order) ---
+    // --- (5) QRIS is GONE (removed 19 Nov, Myuden's order) ---
     // A pasted QRIS payload is ordinary text now: no QRIS box, no
     // QRIS wording anywhere in the result or on the page.
     await page.click("#tab-btn-message");
@@ -201,7 +199,7 @@ async function main() {
     );
     check("qris-gone: no QRIS wording in the app UI chrome", !/QRIS/i.test(chromeText), chromeText.replace(/\n/g, " | ").slice(0, 200));
 
-    // --- (7) call voice, live (real cloud AI) ---
+    // --- (6) call voice, live (real cloud AI) ---
     // Upload an MP3 of a scam call (Indonesian, fake): the cloud must
     // transcribe real speech — never a made-up transcript — and the
     // transcript is scored like a message (Scam), with the audio

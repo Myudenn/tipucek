@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // PesanAman v2.5 live verification (desktop 1280x800 + mobile 390x844).
 // Checks: full-body video roamer + card avatar playing (currentTime
-// advances), idle->talking clip switch on an Aman answer, voice toggle,
+// advances), idle->talking clip switch on an Aman answer,
 // scam sample still scores, 0 JS errors. Screenshots to video/raw/.
+// (Voice output was removed 19 Nov — Myuden: it never sounded on the
+// user's phone — so the old voice-toggle check is gone.)
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
@@ -60,9 +62,6 @@ async function amanState(page) {
       avatarFallback: fb("aman-avatar-fallback"),
       roamFallback: fb("aman-roam-fallback"),
       roamBtn: roam ? { hidden: roam.hidden, rect: rr ? { x: Math.round(rr.x), y: Math.round(rr.y), w: Math.round(rr.width), h: Math.round(rr.height) } : null } : null,
-      voiceToggle: (document.getElementById("voice-toggle") || {}).textContent || null,
-      voices: ("speechSynthesis" in window) ? window.speechSynthesis.getVoices().length : -1,
-      speaking: ("speechSynthesis" in window) ? window.speechSynthesis.speaking : null,
       swCache: null,
     };
   });
@@ -101,7 +100,7 @@ async function main() {
     await page.screenshot({ path: shotD1 });
     report.desktop.shot1 = shotD1;
 
-    // Chat with Aman (voice OFF): answer arrives -> talkBriefly should
+    // Chat with Aman: answer arrives -> talkBriefly should
     // switch both videos to the talking clip for ~2.6s.
     await page.fill("#assistant-input", "halo, apa itu penipuan OTP?");
     await page.click("#assistant-send");
@@ -119,13 +118,6 @@ async function main() {
     report.desktop.shotTalking = shotD2;
     await page.waitForTimeout(4000);
     report.desktop.afterAnswer = await amanState(page);
-
-    // Voice toggle ON: greeting utterance should switch to talking clip.
-    await page.click("#voice-toggle");
-    await page.waitForTimeout(3000);
-    report.desktop.voiceOn = await amanState(page);
-    await page.click("#voice-toggle"); // back off
-    await page.waitForTimeout(1500);
 
     // Scam sample check still scores.
     await page.fill("#message-input", "Selamat! Nomor Anda terpilih memenangkan Rp 50.000.000 dari undian berhadiah. Segera klaim dengan klik bit.ly/hadiah123 dan kirim kode OTP Anda sekarang juga.");

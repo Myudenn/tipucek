@@ -79,9 +79,7 @@ async function main() {
       rect: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
       inViewport: r.x >= 0 && r.y >= 0 && r.x + r.width <= window.innerWidth && r.y + r.height <= window.innerHeight,
       innerW: window.innerWidth, innerH: window.innerHeight,
-      voiceToggle: (document.getElementById("voice-toggle") || {}).textContent || null,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      hasSpeechSynthesis: "speechSynthesis" in window,
     };
   });
   const shot = path.join(OUT, `roam-mobile-${stamp()}.png`);
