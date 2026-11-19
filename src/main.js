@@ -48,42 +48,51 @@ let selectedChatlog = null;
 let contactsCat = "all";
 let quizState = null;
 
+// Last displayed check, for the language re-check (Bug 2 fix, 19 Nov):
+// { kind: "message", message } | { kind: "image", message, imageText }
+// | { kind: "email", fromName, fromEmail, body }
+// | { kind: "call", number, said }.
+// Set when a check STARTS (input captured), so a language change during
+// a running check can re-run the same input afterwards.
+let lastCheck = null;
+// A check or re-check is currently running (async AI call in flight).
+let checkBusy = false;
+// The language changed while a check was running: re-check once it ends.
+let recheckAfterCheck = false;
+// Monotonic run id: a newer check/re-check invalidates an older one's
+// render, so a stale async result can never overwrite a newer card.
+let checkRunId = 0;
+
 export const SAMPLES = [
   {
     labelKey: "sampleScam",
     noteKey: "sampleNoteScam",
-    text: "SELAMAT! Anda memenangkan hadiah Rp 50.000.000 dari undian Telkomsel. Segera klik link ini http://bit.ly/hadiah-telkomsel-2026 dan bayar biaya admin Rp 150.000 untuk klaim hadiah Anda sebelum 24 jam. Hubungi customer service kami segera!",
-    note: "Clear scam: fake prize, shortened link, fee to claim, urgency.",
+    textKey: "sampleTextScam",
   },
   {
     labelKey: "sampleSuspicious",
     noteKey: "sampleNoteSuspicious",
-    text: "Hi, this is DHL courier. Your package is held at customs and needs a small clearance fee. Please verify your details here: https://dhl-track-parcel-verify.xyz/update — thanks.",
-    note: "Suspicious: courier impersonation + odd tracking domain.",
+    textKey: "sampleTextSuspicious",
   },
   {
     labelKey: "sampleSafe",
     noteKey: "sampleNoteSafe",
-    text: "Hi Budi, this is Sari from the office. The team meeting is moved to Thursday 10:00 in room 3B. Please bring the Q3 report. See you there!",
-    note: "Safe: ordinary work message, no links, no demands.",
+    textKey: "sampleTextSafe",
   },
   {
     labelKey: "sampleApk",
     noteKey: "sampleNoteApk",
-    text: "Halo, ini undangan pernikahan kami! Silakan download aplikasinya di sini: https://undangan-nikah-2026.xyz/invite.apk — mohon kehadirannya ya, terima kasih!",
-    note: "Classic Indonesian APK scam: fake wedding invitation asking to install an .apk.",
+    textKey: "sampleTextApk",
   },
   {
     labelKey: "sampleJob",
     noteKey: "sampleNoteJob",
-    text: "LOWONGAN KERJA PARUH WAKTU! Gaji Rp 500.000/hari, kerja dari rumah, hanya like & subscribe video YouTube. Daftar sekarang, bayar deposit Rp 100.000 untuk aktivasi akun. Hubungi WA 0812-3456-7890.",
-    note: "Fake part-time job: huge daily pay for likes, deposit to activate.",
+    textKey: "sampleTextJob",
   },
   {
     labelKey: "sampleOtp",
     noteKey: "sampleNoteOtp",
-    text: "BCA: Kode OTP Anda 482916. Jangan berikan kode ini ke siapapun termasuk petugas bank. Jika Anda tidak merasa melakukan transaksi, segera hubungi 0812-9876-5432.",
-    note: "OTP phishing: looks like a bank warning, but the contact number is a random mobile, not the bank.",
+    textKey: "sampleTextOtp",
   },
 ];
 
@@ -580,9 +589,13 @@ async function enrichResult(message) {
         let finalLine = "";
         if (l.reasons.includes("linkRiskShortener")) {
           const r = await resolveShortLink(l.url);
+          // Honest label: only call it the final destination when the
+          // redirect was actually followed (r.resolved). When the
+          // follow was blocked, the URL shown is just the link the
+          // user entered — say so instead of "final destination".
           finalLine = r.finalUrl
             ? `<span>${escapeHtml(t("linkFinal", lang))}: ${escapeHtml(r.finalUrl)}</span>`
-            : `<span>${escapeHtml(t("linkFinal", lang))}: ${escapeHtml(t("linkUnresolvable", lang))}</span>`;
+            : `<span>${escapeHtml(t("linkFinalUnresolved", lang))}: ${escapeHtml(l.url)}</span>`;
         }
         const d = domain ? await lookupDomain(domain) : { error: "unavailable" };
         let domainLine = "";
@@ -770,6 +783,9 @@ async function onCheck() {
     $("message-input").focus();
     return;
   }
+  lastCheck = { kind: "message", message };
+  const runId = ++checkRunId;
+  checkBusy = true;
   const btn = $("check-btn");
   const progressEl = $("progress");
   btn.disabled = true;
@@ -793,6 +809,9 @@ async function onCheck() {
       },
       lang,
     );
+    // A newer check/re-check superseded this one: never render or save
+    // a stale result over the newer card.
+    if (runId !== checkRunId) return;
     const elapsedSec = (performance.now() - t0) / 1000;
     renderResult(verdict, message, elapsedSec, "");
     enrichResult(message);
@@ -805,11 +824,123 @@ async function onCheck() {
     renderHistory(await loadHistory());
   } catch (err) {
     console.error(err);
+    if (runId !== checkRunId) return;
     showCheckError(errorEl, err, () => onCheck());
   } finally {
+    if (runId !== checkRunId) return;
+    checkBusy = false;
     btn.disabled = false;
     btn.textContent = checkBtnLabel();
     progressEl.hidden = true;
+    if (recheckAfterCheck) {
+      recheckAfterCheck = false;
+      recheckLastCheck();
+    }
+  }
+}
+
+// Language re-check (Bug 2 fix, 19 Nov): when the user changes the UI
+// language while a result card is displayed, the card must follow —
+// the verdict (summary + red flags) is produced IN the new language,
+// not merely re-labeled. The check is re-run with the same input and
+// the new language (the AI prompt asks for the answer in the UI
+// language; the demo heuristic translates its fixed strings), the
+// card is replaced only when the new verdict arrives, and the old card
+// stays untouched if the re-check fails (honest error + retry, never
+// a half-translated card).
+// History: deliberately NOT re-recorded. The original check already
+// saved one entry; a language re-check is a re-display of the same
+// check, not a new check — re-saving would double-count it in the
+// history list and stats.
+async function recheckLastCheck() {
+  if (!lastCheck || checkBusy) return;
+  const runId = ++checkRunId;
+  checkBusy = true;
+  const kind = lastCheck.kind;
+  const progressEl = $("progress");
+  const errorEl =
+    kind === "email"
+      ? $("email-error")
+      : kind === "call"
+        ? $("call-error")
+        : $("error");
+  errorEl.hidden = true;
+  errorEl.textContent = "";
+  // The message/image paths are async (AI) — show a short status while
+  // they re-run. Email/call verdicts are local and near-instant, so
+  // they re-render without a progress line.
+  const showProgress = kind === "message" || kind === "image";
+  if (showProgress) {
+    progressEl.hidden = false;
+    progressEl.textContent = t("rechecking", lang);
+  }
+  const t0 = performance.now();
+  try {
+    let verdict;
+    let message;
+    let imageText = "";
+    if (kind === "email") {
+      message = lastCheck.body;
+      verdict = analyzeEmail(
+        {
+          fromName: lastCheck.fromName,
+          fromEmail: lastCheck.fromEmail,
+          body: lastCheck.body,
+        },
+        lang,
+      );
+    } else if (kind === "call") {
+      const { verdict: v } = await analyzeCall(
+        { number: lastCheck.number, said: lastCheck.said },
+        lang,
+        { allowReports: !isLocalOnly() },
+      );
+      verdict = v;
+      message =
+        lastCheck.number && lastCheck.said
+          ? `${lastCheck.number}: ${lastCheck.said}`
+          : lastCheck.number || lastCheck.said;
+    } else {
+      // message | image: same input, new language. For an image check
+      // the verdict is re-derived from the extracted text — no re-OCR:
+      // the text is unchanged, only the verdict language changes.
+      message = lastCheck.message;
+      imageText = lastCheck.imageText || "";
+      verdict = await analyzeMessage(
+        message,
+        ({ stage, progress }) => {
+          if (stage === "downloading-model") {
+            progressEl.textContent = t("preparingModel", lang, {
+              p: Math.round((progress || 0) * 100),
+            });
+          } else if (stage === "cloud") {
+            progressEl.textContent = t("cloudFallback", lang);
+          }
+        },
+        lang,
+      );
+    }
+    // A newer check/re-check started meanwhile, or the language changed
+    // again: do not render — the newer run (or its follow-up re-check)
+    // owns the card now.
+    if (runId !== checkRunId || recheckAfterCheck) return;
+    const elapsedSec = (performance.now() - t0) / 1000;
+    renderResult(verdict, message, elapsedSec, imageText);
+    enrichResult(message);
+  } catch (err) {
+    console.error(err);
+    if (runId !== checkRunId) return;
+    // The old card stays exactly as it was (one language, intact) and
+    // the error offers a retry that re-runs this same re-check.
+    showCheckError(errorEl, err, () => recheckLastCheck());
+  } finally {
+    if (runId !== checkRunId) return;
+    checkBusy = false;
+    if (showProgress) progressEl.hidden = true;
+    if (recheckAfterCheck) {
+      recheckAfterCheck = false;
+      recheckLastCheck();
+    }
   }
 }
 
@@ -829,11 +960,14 @@ async function onImageCheck() {
   }
   const btn = $("image-btn");
   btn.disabled = true;
+  const runId = ++checkRunId;
+  checkBusy = true;
   progressEl.hidden = false;
   progressEl.textContent = t("imageAnalyzing", lang);
   const t0 = performance.now();
   try {
     const verdict = await analyzeImageWithAI(selectedImage, lang);
+    if (runId !== checkRunId) return;
     const elapsedSec = (performance.now() - t0) / 1000;
     const message = verdict.extractedText || "";
     if (!message) {
@@ -841,6 +975,7 @@ async function onImageCheck() {
       errorEl.hidden = false;
       return;
     }
+    lastCheck = { kind: "image", message, imageText: message };
     renderResult(verdict, message, elapsedSec, message);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
@@ -852,10 +987,17 @@ async function onImageCheck() {
     renderHistory(await loadHistory());
   } catch (err) {
     console.error(err);
+    if (runId !== checkRunId) return;
     showCheckError(errorEl, err, () => onImageCheck());
   } finally {
+    if (runId !== checkRunId) return;
+    checkBusy = false;
     btn.disabled = false;
     progressEl.hidden = true;
+    if (recheckAfterCheck) {
+      recheckAfterCheck = false;
+      recheckLastCheck();
+    }
   }
 }
 
@@ -948,6 +1090,7 @@ async function onEmailCheck() {
   const btn = $("email-btn");
   btn.disabled = true;
   try {
+    lastCheck = { kind: "email", fromName, fromEmail, body };
     const verdict = analyzeEmail({ fromName, fromEmail, body }, lang);
     renderResult(verdict, body, null);
     enrichResult(body);
@@ -982,8 +1125,12 @@ async function onCallCheck() {
   }
   const btn = $("call-btn");
   btn.disabled = true;
+  const runId = ++checkRunId;
+  checkBusy = true;
   try {
+    lastCheck = { kind: "call", number, said };
     const { verdict } = await analyzeCall({ number, said }, lang, { allowReports: !isLocalOnly() });
+    if (runId !== checkRunId) return;
     const message = number && said ? `${number}: ${said}` : number || said;
     renderResult(verdict, message, null);
     enrichResult(message);
@@ -996,10 +1143,17 @@ async function onCallCheck() {
     renderHistory(await loadHistory());
   } catch (err) {
     console.error(err);
+    if (runId !== checkRunId) return;
     errorEl.textContent = `${t("errorFailed", lang, { msg: err?.message || err })}`;
     errorEl.hidden = false;
   } finally {
+    if (runId !== checkRunId) return;
+    checkBusy = false;
     btn.disabled = false;
+    if (recheckAfterCheck) {
+      recheckAfterCheck = false;
+      recheckLastCheck();
+    }
   }
 }
 
@@ -1350,12 +1504,17 @@ function buildSamples() {
     label.textContent = t(s.labelKey, lang);
     const preview = document.createElement("span");
     preview.className = "sample-preview";
+    // Bug 1 fix: the sample MESSAGE BODY follows the active language
+    // (sampleText* keys in src/i18n.js, one natural text per language),
+    // not a single hard-coded text — an English UI never shows an
+    // Indonesian sample body, and vice versa.
+    const text = t(s.textKey, lang);
     preview.textContent =
-      s.text.length > 90 ? `${s.text.slice(0, 90)}…` : s.text;
+      text.length > 90 ? `${text.slice(0, 90)}…` : text;
     b.append(label, preview);
     b.addEventListener("click", () => {
       warmUpOnce();
-      $("message-input").value = s.text;
+      $("message-input").value = text;
       $("message-input").focus();
     });
     samplesEl.appendChild(b);
@@ -1426,6 +1585,13 @@ function init() {
     lang = select.value;
     saveLanguage(lang);
     applyStaticLanguage();
+    // Bug 2 fix: when a result card is displayed, the language change
+    // re-runs the same check in the new language (see
+    // recheckLastCheck). With no result on screen, static strings are
+    // enough. While a check is running, the re-check waits for it.
+    if (!lastCheck) return;
+    if (checkBusy) recheckAfterCheck = true;
+    else recheckLastCheck();
   });
 
   // Demo-mode banner: visible, honest, always in the UI while unconfigured.
@@ -1445,6 +1611,14 @@ function init() {
     }
   });
   $("check-btn").addEventListener("click", onCheck);
+  // Floating "Tanya Aman" shortcut: same destination as the assistant
+  // tab in "Alat lainnya" — open the tab, scroll it into view, and put
+  // the cursor in the question box so the user can type at once.
+  $("aman-fab").addEventListener("click", () => {
+    switchModuleTab("assistant");
+    $("assistant").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("assistant-input").focus({ preventScroll: true });
+  });
   // Senior mode toggle (top bar).
   $("senior-toggle").addEventListener("click", () => {
     seniorMode = !seniorMode;
@@ -1636,6 +1810,12 @@ function init() {
     box.hidden = false;
     try {
       const short = await resolveShortLink(input);
+      // Honest label: only call it the final destination when the
+      // redirect was actually followed. When the follow was blocked
+      // (CORS / mixed content / network), finalUrl below is just the
+      // input URL — label it as the link that was entered, never as
+      // a destination that was never reached.
+      const resolved = short.resolved === true;
       const finalUrl = short.finalUrl || input;
       let host = "";
       try {
@@ -1651,7 +1831,7 @@ function init() {
         ${info.ageDays != null ? `<p><span class="numbers-label">${escapeHtml(t("linktrackAge", lang, { n: info.ageDays }))}</span></p>` : ""}`
           : `<p class="muted">${escapeHtml(t("linktrackNoInfo", lang))}</p>`;
       box.innerHTML = `<div class="links-box">
-        <p><span class="numbers-label">${escapeHtml(t("linktrackFinal", lang))}:</span> <span class="links-url">${escapeHtml(finalUrl)}</span></p>
+        <p><span class="numbers-label">${escapeHtml(t(resolved ? "linktrackFinal" : "linktrackFinalUnresolved", lang))}:</span> <span class="links-url">${escapeHtml(finalUrl)}</span></p>
         ${rdap}
         <p class="links-warn">${escapeHtml(t("linksWarn", lang))}</p>
       </div>`;

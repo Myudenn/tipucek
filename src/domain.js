@@ -87,7 +87,14 @@ export async function lookupDomain(domain) {
 
 /**
  * Follow a short link to its final destination (best effort).
- * Returns { finalUrl } or { error: "unresolvable" }.
+ * Returns { finalUrl, resolved: true } when the redirect chain was
+ * actually followed: the fetch succeeded, so the final URL is the
+ * real destination — even when it equals the input because the URL
+ * did not redirect at all. Returns { error: "unresolvable",
+ * resolved: false } when the follow was blocked (CORS, mixed
+ * content, network failure) and the destination was never seen:
+ * callers must NOT present the input URL as a "final destination"
+ * in that case — it is only the link that was entered.
  */
 export async function resolveShortLink(url) {
   const { signal, done } = withTimeout();
@@ -98,9 +105,9 @@ export async function resolveShortLink(url) {
       signal,
     });
     done();
-    return { finalUrl: res.url || url };
+    return { finalUrl: res.url || url, resolved: true };
   } catch {
     done();
-    return { error: "unresolvable" };
+    return { error: "unresolvable", resolved: false };
   }
 }
