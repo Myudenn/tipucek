@@ -187,7 +187,7 @@ const STRINGS = {
       "TipuCek gives a risk assessment, not a guarantee. When in doubt, verify the sender through an official channel and never share OTPs, PINs or passwords.",
     demoTitle: "Demo mode — the AI is not connected yet.",
     demoText:
-      "This build uses a local checker so the full flow can be tested without an account. Follow SETUP-MYUDEN.md to connect the AI.",
+      "This build uses a local checker so the full flow can be tested without an account. Follow the setup guide to connect the AI.",
     offlineNote:
       "You are offline (or in airplane mode). Only the on-device AI can run now — the cloud AI is unreachable, and the on-device AI must already be downloaded on this device.",
     netOnline: "Online",
@@ -622,7 +622,7 @@ const STRINGS = {
       "TipuCek memberi penilaian risiko, bukan jaminan. Bila ragu, verifikasi pengirim lewat jalur resmi dan jangan pernah membagikan OTP, PIN, atau kata sandi.",
     demoTitle: "Mode demo — AI belum tersambung.",
     demoText:
-      "Build ini memakai pemeriksa lokal agar seluruh alur bisa diuji tanpa akun. Ikuti SETUP-MYUDEN.md untuk menyambungkan AI.",
+      "Build ini memakai pemeriksa lokal agar seluruh alur bisa diuji tanpa akun. Ikuti panduan setup untuk menyambungkan AI.",
     offlineNote:
       "Anda sedang offline (atau mode pesawat). Hanya AI di perangkat yang bisa jalan sekarang — AI cloud tidak terjangkau, dan AI di perangkat harus sudah diunduh di perangkat ini.",
     netOnline: "Daring",
@@ -1057,7 +1057,7 @@ const STRINGS = {
       "TipuCek da una evaluación de riesgo, no una garantía. Ante la duda, verifica al remitente por un canal oficial y nunca compartas OTP, PIN ni contraseñas.",
     demoTitle: "Modo demo — la IA aún no está conectada.",
     demoText:
-      "Esta versión usa un verificador local para probar todo el flujo sin cuenta. Sigue SETUP-MYUDEN.md para conectar la IA.",
+      "Esta versión usa un verificador local para probar todo el flujo sin cuenta. Sigue la guía de configuración para conectar la IA.",
     offlineNote:
       "Estás sin conexión (o en modo avión). Solo puede funcionar la IA en el dispositivo — la IA en la nube no es accesible y la IA local debe estar ya descargada.",
     netOnline: "En línea",
@@ -1492,7 +1492,7 @@ const STRINGS = {
       "TipuCek donne une évaluation du risque, pas une garantie. En cas de doute, vérifiez l'expéditeur par un canal officiel et ne partagez jamais vos OTP, PIN ou mots de passe.",
     demoTitle: "Mode démo — l'IA n'est pas encore connectée.",
     demoText:
-      "Cette version utilise un vérificateur local pour tester tout le flux sans compte. Suivez SETUP-MYUDEN.md pour connecter l'IA.",
+      "Cette version utilise un vérificateur local pour tester tout le flux sans compte. Suivez le guide de configuration pour connecter l'IA.",
     offlineNote:
       "Vous êtes hors ligne (ou en mode avion). Seule l'IA sur l'appareil peut fonctionner — l'IA cloud est inaccessible et l'IA locale doit déjà être téléchargée.",
     netOnline: "En ligne",
@@ -1927,7 +1927,7 @@ const STRINGS = {
       "TipuCek gibt eine Risikoeinschätzung, keine Garantie. Im Zweifel prüfen Sie den Absender über einen offiziellen Kanal und teilen Sie niemals OTPs, PINs oder Passwörter.",
     demoTitle: "Demo-Modus — die KI ist noch nicht verbunden.",
     demoText:
-      "Diese Version nutzt einen lokalen Prüfer, um den gesamten Ablauf ohne Konto zu testen. Folgen Sie SETUP-MYUDEN.md, um die KI zu verbinden.",
+      "Diese Version nutzt einen lokalen Prüfer, um den gesamten Ablauf ohne Konto zu testen. Folgen Sie der Einrichtungsanleitung, um die KI zu verbinden.",
     offlineNote:
       "Sie sind offline (oder im Flugmodus). Nur die KI auf dem Gerät kann jetzt laufen — die Cloud-KI ist nicht erreichbar und die lokale KI muss bereits heruntergeladen sein.",
     netOnline: "Online",
@@ -2362,7 +2362,7 @@ const STRINGS = {
       "O TipuCek dá uma avaliação de risco, não uma garantia. Na dúvida, verifique o remetente por um canal oficial e nunca compartilhe OTP, PIN ou senhas.",
     demoTitle: "Modo demonstração — a IA ainda não está conectada.",
     demoText:
-      "Esta versão usa um verificador local para testar todo o fluxo sem conta. Siga SETUP-MYUDEN.md para conectar a IA.",
+      "Esta versão usa um verificador local para testar todo o fluxo sem conta. Siga o guia de configuração para conectar a IA.",
     offlineNote:
       "Você está offline (ou em modo avião). Só a IA no dispositivo pode funcionar agora — a IA na nuvem está inacessível e a IA local precisa já estar baixada.",
     netOnline: "Online",
@@ -2797,7 +2797,7 @@ const STRINGS = {
       "TipuCekはリスク評価を提供するもので、保証ではありません。疑わしい場合は、公式チャネルで送信者を確認し、OTP、PIN、パスワードを絶対に共有しないでください。",
     demoTitle: "デモモード — AIはまだ接続されていません。",
     demoText:
-      "このビルドはローカルチェッカーを使って、アカウントなしで全体の流れをテストできます。AIへの接続方法はSETUP-MYUDEN.mdをご覧ください。",
+      "このビルドはローカルチェッカーを使って、アカウントなしで全体の流れをテストできます。AIに接続するには、セットアップガイドに従ってください。",
     offlineNote:
       "オフラインです（または機内モード）。デバイス上のAIのみ実行できます — クラウドAIには到達できず、デバイス上のAIは事前にダウンロードされている必要があります。",
     netOnline: "オンライン",
@@ -3228,7 +3228,7 @@ const STRINGS = {
       "TipuCek 提供的是风险评估，而非保证。如有疑问，请通过官方渠道核实发件人，切勿分享一次性验证码、PIN 或密码。",
     demoTitle: "演示模式——AI 尚未连接。",
     demoText:
-      "此版本使用本地检查器，无需帐户即可测试完整流程。请按 SETUP-MYUDEN.md 连接 AI。",
+      "此版本使用本地检查器，无需帐户即可测试完整流程。请按照设置指南连接 AI。",
     offlineNote:
       "您已离线（或处于飞行模式）。目前只能使用设备端 AI——无法访问云端 AI，且设备端 AI 必须已下载。",
     netOnline: "在线",
