@@ -308,6 +308,39 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .badge-demo { background: var(--warn-bg); color: var(--warn); }
 .badge-unknown { background: var(--border); color: var(--muted); }
 @media (prefers-color-scheme: dark) { .badge-cloud { background: #1c2c52; color: #9dbfff; } }
+/* Completion mark + toast (round 6): the CHECK finished — never a claim
+   the message is safe. The score + status above carry the verdict. */
+.check-complete {
+  display: flex; align-items: center; gap: 8px;
+  margin: 12px 0 0; padding: 8px 12px; border-radius: 8px;
+  background: var(--safe-bg); color: var(--safe);
+  font-weight: 700; font-size: 0.95rem;
+}
+.check-complete-icon {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--safe); color: #fff;
+  display: grid; place-items: center; font-size: 0.85rem; line-height: 1;
+}
+@media (prefers-color-scheme: dark) { .check-complete-icon { color: #06281a; } }
+/* Toast: fixed at the bottom edge, above the floating Aman button
+   (bottom: 88px clears it). Only the toast itself takes taps (its ×
+   button); it never covers the full width, so page buttons stay
+   tappable underneath. Auto-hides after ~5 s. */
+.toast {
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+  z-index: 60; width: min(480px, calc(100vw - 32px));
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.toast-text { flex: 1; font-size: 0.95rem; }
+.toast-text strong { display: block; }
+.toast-close {
+  flex: none; background: none; border: none; color: var(--muted);
+  font-size: 1.4rem; line-height: 1; padding: 4px 8px; cursor: pointer;
+}
+.toast-close:hover { color: var(--text); }
 .result-next {
   margin-top: 16px; padding: 10px 14px; border-radius: 10px;
   background: var(--accent-soft); font-size: 0.95rem;

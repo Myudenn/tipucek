@@ -263,7 +263,33 @@ function fillPrintReport(verdict, links, phones, accounts) {
     <p>${escapeHtml(t("printFooter", lang))}</p>`;
 }
 
-function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) {
+// Completion toast (round 6): "Pemeriksaan selesai" + verdict summary
+// (translated status + score), bottom edge. Shows ONLY when a final
+// result card renders — AI primary, backup, or code-only — never for an
+// error with no verdict. Auto-hides after ~5 s; the × button hides it
+// at once. Hidden when a new check starts or the language changes (the
+// re-check shows a fresh toast in the new language).
+const TOAST_MS = 5000;
+let toastTimer = null;
+function showCheckCompleteToast(verdict) {
+  const el = $("toast");
+  if (!el) return;
+  const statusLabel = t(STATUS_KEY[verdict.status] || "statusSafe", lang);
+  el.innerHTML = `<span class="check-complete-icon" aria-hidden="true">✓</span><span class="toast-text"><strong>${escapeHtml(t("checkComplete", lang))}</strong>${escapeHtml(statusLabel)} ${verdict.riskScore}/100</span><button type="button" class="toast-close" aria-label="${escapeHtml(t("toastClose", lang))}">×</button>`;
+  el.hidden = false;
+  el.querySelector(".toast-close").addEventListener("click", hideCheckCompleteToast);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideCheckCompleteToast, TOAST_MS);
+}
+function hideCheckCompleteToast() {
+  const el = $("toast");
+  if (!el) return;
+  el.hidden = true;
+  clearTimeout(toastTimer);
+  toastTimer = null;
+}
+
+function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}, showToast = false) {
   const el = $("result");
   // Remember the exact render arguments for the instant static
   // re-label on language change (see the language picker handler).
@@ -444,6 +470,7 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
         </div>
         <div class="result-badge">${sourceBadge(verdict.source)}${elapsed}</div>
       </div>
+      <p class="check-complete"><span class="check-complete-icon" aria-hidden="true">✓</span>${escapeHtml(t("checkComplete", lang))}</p>
       ${codeOnlyNote}
       <p class="result-next"><strong>${escapeHtml(t("whatToDo", lang))}</strong> ${escapeHtml(t(NEXT_KEY[verdict.status], lang))}</p>
       ${reportLine}
@@ -478,6 +505,10 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}) 
       </details>
     </article>`;
   el.hidden = false;
+  // The card is final (AI primary/backup or code-only): announce
+  // completion with the toast — never for the interim preview, which
+  // uses renderCheckingPreview and never reaches this function.
+  if (showToast) showCheckCompleteToast(verdict);
 
   // Code-only fallback card: "Try again" re-runs the full check, so a
   // successful retry replaces this card with the real AI verdict.
@@ -905,6 +936,7 @@ function renderCheckingPreview(message) {
 }
 
 async function onCheck() {
+  hideCheckCompleteToast();
   const message = $("message-input").value.trim();
   const errorEl = $("error");
   errorEl.hidden = true;
@@ -991,7 +1023,7 @@ async function onCheck() {
     // A newer check/re-check superseded this one: never render or save
     // a stale result over the newer card.
     if (runId !== checkRunId) return;
-    renderResult(verdict, message, elapsedSec, "");
+    renderResult(verdict, message, elapsedSec, "", {}, true);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
     lastStorageWhere = where;
@@ -1037,6 +1069,7 @@ async function onCheck() {
 // history list and stats.
 async function recheckLastCheck() {
   if (!lastCheck || checkBusy) return;
+  hideCheckCompleteToast();
   const runId = ++checkRunId;
   checkBusy = true;
   const kind = lastCheck.kind;
@@ -1133,7 +1166,7 @@ async function recheckLastCheck() {
         extra: {},
       });
     }
-    renderResult(verdict, message, elapsedSec, imageText);
+    renderResult(verdict, message, elapsedSec, imageText, {}, true);
     enrichResult(message);
   } catch (err) {
     console.error(err);
@@ -1164,6 +1197,7 @@ async function recheckLastCheck() {
 // model cannot read images, and demo mode has no AI at all.
 async function onImageCheck() {
   if (!selectedImage) return;
+  hideCheckCompleteToast();
   const progressEl = $("image-progress");
   const errorEl = $("image-error");
   errorEl.hidden = true;
@@ -1208,7 +1242,7 @@ async function onImageCheck() {
         extra: {},
       });
     }
-    renderResult(verdict, message, elapsedSec, message);
+    renderResult(verdict, message, elapsedSec, message, {}, true);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
     lastStorageWhere = where;
@@ -1303,6 +1337,7 @@ function onOutboundCheck() {
 // Email phishing check: sender name vs domain, free mailbox, links,
 // pressure language — rendered as a normal verdict (LOCAL badge).
 async function onEmailCheck() {
+  hideCheckCompleteToast();
   const body = $("email-body").value.trim();
   const fromEmail = $("email-from-email").value.trim();
   const fromName = $("email-from-name").value.trim();
@@ -1324,7 +1359,7 @@ async function onEmailCheck() {
   try {
     lastCheck = { kind: "email", fromName, fromEmail, body };
     const verdict = analyzeEmail({ fromName, fromEmail, body }, lang);
-    renderResult(verdict, body, null);
+    renderResult(verdict, body, null, "", {}, true);
     enrichResult(body);
     const where = await saveCheck({ message: body, ...verdict });
     lastStorageWhere = where;
@@ -1345,6 +1380,7 @@ async function onEmailCheck() {
 // Phone-call check: caller number + what was said, against the
 // community reports (hash lookup) + known phone-scam scripts.
 async function onCallCheck() {
+  hideCheckCompleteToast();
   const number = $("call-number").value.trim();
   const said = $("call-said").value.trim();
   const errorEl = $("call-error");
@@ -1364,7 +1400,7 @@ async function onCallCheck() {
     const { verdict } = await analyzeCall({ number, said }, lang, { allowReports: !isLocalOnly() });
     if (runId !== checkRunId) return;
     const message = number && said ? `${number}: ${said}` : number || said;
-    renderResult(verdict, message, null);
+    renderResult(verdict, message, null, "", {}, true);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
     lastStorageWhere = where;
@@ -1444,13 +1480,16 @@ function callAudioErrorText(err) {
  * privacy receipt line and shows the transcript.
  */
 async function scoreTranscribedCall(audioBlob) {
+  hideCheckCompleteToast();
   const number = $("call-number").value.trim();
   lastCallAudioBlob = audioBlob;
   hideCallAudioError();
   setCallAudioProgress(t("callTranscribing", lang));
   const t0 = performance.now();
   try {
-    const { transcript } = await transcribeAudioWithAI(audioBlob, lang);
+    const { transcript } = await transcribeAudioWithAI(audioBlob, lang, () =>
+      setCallAudioProgress(t("tryingBackupModel", lang)),
+    );
     const scoredText = transcript.slice(0, MAX_MESSAGE_CHARS);
     // Show the transcript where the user can read it — and fill the
     // "what was said" field so the typed flow stays consistent.
@@ -1488,7 +1527,7 @@ async function scoreTranscribedCall(audioBlob) {
     renderResult(verdict, message, elapsedSec, "", {
       audio: true,
       onRetry: () => scoreTranscribedCall(lastCallAudioBlob),
-    });
+    }, true);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
     lastStorageWhere = where;
@@ -1844,6 +1883,7 @@ function init() {
     lang = select.value;
     saveLanguage(lang);
     applyStaticLanguage();
+    hideCheckCompleteToast();
     // Speed: re-render the current result card's static strings in
     // the new language right away (labels, headings, badge, code
     // check) — the AI-written summary + red flags stay in the old
