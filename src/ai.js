@@ -801,7 +801,7 @@ function audioFileToBase64(file) {
  * for rejected files, or the model's error otherwise. Never returns a
  * made-up transcript: an empty or failed transcription is an error.
  */
-export async function transcribeAudioWithAI(file, lang = "en") {
+export async function transcribeAudioWithAI(file, lang = "en", onBackup) {
   const problem = validateAudioFile(file);
   if (problem === "callAudioTooBig") throw new Error("AUDIO_TOO_BIG");
   if (problem === "callAudioType") throw new Error("AUDIO_TYPE");
@@ -809,7 +809,6 @@ export async function transcribeAudioWithAI(file, lang = "en") {
   const { ai, getGenerativeModel, tokenInfo } = await ensureAIReady();
   const { base64, mimeType } = await audioFileToBase64(file);
   const answerLang = languageName(lang);
-  const model = getGenerativeModel(ai, { model: CLOUD_MODEL });
   const prompt = [
     "Transcribe the speech in this audio recording verbatim, in its",
     "original language (Indonesian or English). The speaker may be a",
@@ -819,14 +818,24 @@ export async function transcribeAudioWithAI(file, lang = "en") {
   ].join("\n");
   let result;
   try {
-    result = await withTimeout(
-      model.generateContent([
-        { text: prompt },
-        { inlineData: { mimeType, data: base64 } },
-      ]),
-      AUDIO_CHECK_TIMEOUT_MS,
-      "Audio transcription",
+    // Failover, same as the message/image check: primary first, backup
+    // once (round 6 — before this, a 429 on the primary killed the whole
+    // call-audio check with no verdict at all).
+    const { result: r } = await generateWithFailover(
+      (modelName) => {
+        const m = getGenerativeModel(ai, { model: modelName });
+        return m.generateContent([
+          { text: prompt },
+          { inlineData: { mimeType, data: base64 } },
+        ]);
+      },
+      {
+        timeoutMs: AUDIO_CHECK_TIMEOUT_MS,
+        label: "Audio transcription",
+        onBackup: () => onBackup?.(),
+      },
     );
+    result = r;
   } catch (e) {
     if (tokenInfo) console.warn("[TipuCek] App Check token:", tokenInfo);
     throw new Error(e?.message || e);

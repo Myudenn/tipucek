@@ -21,7 +21,7 @@ tool for that decision — and the messages themselves are private, so
 pasting them into a random website to check is its own privacy problem.
 
 In Indonesia alone, the scale is staggering: the OJK's Indonesia
-Anti-Scam Centre (IASC) recorded about **Rp 9.1 trillion in losses
+Anti-Scam Centre (IASC) recorded about **Rp 9.1 trillion (~US$500 million) in losses
 from 411,000+ scam reports between November 2024 and December 2025**,
 and the Global Anti-Scam Alliance's 2025 report found **66% of
 Indonesians have experienced a scam attempt**. The people scammers
@@ -48,7 +48,9 @@ Paste a suspicious message, tap **Check message**, and get a verdict card:
   numbers, with links to the official checkers — report a number at
   Komdigi's aduannomor.id, check an account at cekrekening.id
 - **A badge showing where the answer came from:** `ON_DEVICE`
-  (answered on the device), `IN_CLOUD` (answered in the cloud), `LOCAL`
+  (answered on the device), `IN_CLOUD` (answered in the cloud), `CODE`
+  (code-only fallback — the AI did not answer, so the deterministic
+  on-device rules answered instead), `LOCAL`
   (answered by on-device rules, no AI), or `DEMO` (demo mode) — plus the
   time the check took
 - **Copy result:** one tap copies the whole verdict as plain text
@@ -204,7 +206,13 @@ TipuCek is a single-page web app (Vite + vanilla JavaScript) using
 - The message is analyzed **on the device first**, by a Gemini Nano-class
   model downloaded to the browser.
 - If the on-device model cannot answer, the request **falls back to the
-  cloud** model `gemini-3.5-flash-lite`.
+  cloud** model `gemini-3.5-flash-lite`. If that model fails or times
+  out, the **backup model** `gemini-3.1-flash-lite` is tried once —
+  each attempt with its own 30-second timeout — and the result card
+  and history name the model that actually answered. If both cloud
+  models fail, the check still returns a real verdict from the
+  deterministic on-device code rules, honestly labelled as a
+  code-only result (no AI verdict) with a Try again button.
 - The SDK reports where the answer came from via
   `response.inferenceSource`, shown as the `ON_DEVICE` / `IN_CLOUD`
   badge — so the privacy claim is visible on every single result, not
@@ -233,10 +241,13 @@ TipuCek is a single-page web app (Vite + vanilla JavaScript) using
   result is stored — plus an honest note when community counts and
   link tracing were skipped because local-only mode is on.
 - **Fail-safe UX:** messages are capped at 4,000 characters, every
-  cloud call has a timeout (60 s for a check, 30 s for the assistant,
-  60 s for a screenshot), failures show a plain-language sentence
+  cloud call has a timeout (30 s per attempt for a check — primary,
+  then the backup model once — 30 s for the assistant, 30 s for a
+  screenshot, 60 s for audio transcription), failures show a plain-language sentence
   with a retry button and the technical detail collapsed — never a
-  raw token or stack trace.
+  raw token or stack trace. When the AI does not answer at all, the
+  check falls back to an honestly labelled code-only verdict instead
+  of a dead error.
 - Everything that can run locally does: link-risk analysis, file-name
   detection, email/call/outbound/chat-log checks, the quiz and first
   aid are plain client-side modules with no network calls. Without a
@@ -271,15 +282,16 @@ tool.
   screenshot, link, number, account, file, email, call and chat export —
   in 8 languages, with a privacy model enforced by code *and* by
   Firestore rules.
-- **59 tests passing** (`npm test` — 43 unit tests in
+- **137 tests passing** (`npm test` — 29 suites: unit tests in
   `tests/unit.test.mjs`, covering the local detectors, link-risk
-  rules, email brand checks and the privacy gates, plus 4 structural
+  rules, email brand checks and the privacy gates, plus structural
   tests for `firestore.rules` in `tests/rules.test.mjs` proving the
   verdict-only field list, the owner-only read, and the hash-only
-  report shape, plus 12 gap-fix tests in `tests/gaps.test.mjs` for the
+  report shape, plus gap-fix tests in `tests/gaps.test.mjs` for the
   holes live testing found on 19 Nov — text files, number-only
   call checks, call-voice transcription helpers + verdict merge, the
-  standalone link tracker). No
+  standalone link tracker — plus the model-failover and code-only
+  fallback suites). No
   Firestore emulator is available on this machine
   (no Java), so the rules tests assert on the rules text itself and
   say so.
