@@ -455,6 +455,11 @@
       <span data-i18n="moduleTabAssistant">Tanya Aman</span>
     </button>
 
+    <!-- Completion toast (round 6): shown when a final result card
+         renders. role=status + aria-live announces it to screen
+         readers; hidden until a check completes. -->
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
     <script type="module" src="/src/main.js"></script>
     <!-- Print-only report (V4): filled by JS before window.print(),
          hidden on screen, the only thing visible on paper. -->

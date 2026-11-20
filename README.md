@@ -36,6 +36,8 @@ own language, in one tap.
      numbers, with links to the official checkers
    - **A badge showing where the answer came from:** `ON_DEVICE`
      (answered on the device), `IN_CLOUD` (answered in the cloud),
+     `CODE` (code-only fallback — the AI did not answer, so the
+     deterministic on-device rules answered instead),
      `LOCAL` (answered by on-device rules, no AI) or `DEMO` (demo mode),
      plus the time the check took
    - **Copy result:** one tap copies the whole verdict as plain text
@@ -67,7 +69,7 @@ own language, in one tap.
 | WhatsApp chat export | `.txt` export scan (max 2 MB / 5,000 messages), per-message local scores, risky messages listed |
 | Messages you are about to send | Outbound guard: warns locally, with values masked, if the message contains an OTP, password, card number, ID number, account number or PIN |
 
-### Twelve modules around the checker
+### Eleven modules around the checker
 
 | Module (`src/`) | What it does |
 |---|---|
@@ -115,11 +117,37 @@ fall back to English.)
 TipuCek uses **Firebase AI Logic** with hybrid inference
 (`InferenceMode.PREFER_ON_DEVICE`):
 
+```mermaid
+flowchart TD
+    User["User pastes a message"] --> Check["Check button (user gesture)"]
+    Check --> Warm["Warm-up: App Check token + on-device model\n(background, after first gesture)"]
+    Check --> Init["On-device init raced against 5 s"]
+    Init -->|ready| Nano["On-device Gemini Nano\nverdict (ON_DEVICE)"]
+    Init -->|not ready / fails| Cloud["Cloud model gemini-3.5-flash-lite\n(primary, 30 s timeout)"]
+    Cloud -->|fails / times out| Backup["Backup model gemini-3.1-flash-lite\n(once, 30 s timeout)"]
+    Cloud -->|answers| Card["Result card: status + score + red flags\n+ privacy receipt + model line"]
+    Backup -->|answers| Card
+    Backup -->|fails / times out| Code["Code-only fallback (CODE)\ndeterministic local rules, honestly labelled"]
+    Nano --> Card
+    Code --> Card
+    Card --> Hist["History: localStorage always;\nFirestore verdict-only (opt-in)"]
+```
+
 - The message is analyzed **on the device first**, by a Gemini Nano-class
   model downloaded to the browser.
 - If the on-device model cannot answer, the request **falls back to the
   cloud** model `gemini-3.5-flash-lite` (explicitly set — see the note in
-  `src/ai.js` about the model name).
+  `src/ai.js` about the model name), each attempt with its own 30-second
+  timeout.
+- If the primary cloud model fails or times out, the **backup model**
+  `gemini-3.1-flash-lite` is tried once (`generateWithFailover` in
+  `src/ai.js`). The receipt and the history entry name the model that
+  actually answered (`Model: … (primary)` / `(backup)`).
+- If both cloud models fail, the check still returns a real verdict:
+  the **code-only fallback** (`CODE` badge) scores the same message
+  with the deterministic local rules and says plainly that there is
+  no AI verdict, with a **Try again** button that re-runs the full
+  AI check from the primary model.
 - The SDK reports where the answer came from via
   `response.inferenceSource` (`"on_device"` / `"in_cloud"` in the SDK;
   displayed as `ON_DEVICE` / `IN_CLOUD`). If it is missing, the badge
@@ -187,6 +215,8 @@ No account, no setup — open https://tipucek.web.app and:
 ## Run it
 
 ```bash
+git clone https://github.com/kyleweb3/tipucek.git
+cd tipucek
 npm install
 npm run dev      # development server (http://localhost:5173)
 npm run build    # production build
@@ -194,6 +224,17 @@ npm run preview  # serve the production build locally
 ```
 
 Requirements: Node.js 20+ (developed with Node 24), npm 10+.
+
+### Deploy to Firebase Hosting
+
+```bash
+npm run build
+firebase deploy --only hosting   # needs `firebase login` first (project: tipucek)
+```
+
+The deploy uploads `dist/` (the Vite build output) to
+https://tipucek.web.app. Verify afterwards that the live bundle hash
+matches the local build (`dist/index.html` + `dist/assets/index-*.js`).
 
 ## Connect Firebase (production AI)
 
@@ -304,14 +345,14 @@ deliberately narrow so that it stays true:
 
 Numbers we can stand behind (all re-runnable from this repo):
 
-- **59 tests passing, 0 failing** — `npm test` (43 unit tests in
-  `tests/unit.test.mjs`: local detectors, link-risk rules, email brand
-  checks, privacy gates; plus 4 structural tests for `firestore.rules`
-  in `tests/rules.test.mjs`; plus 12 gap-fix tests in
-  `tests/gaps.test.mjs` — text files, number-only call checks, call-voice
-  transcription helpers + verdict merge, the standalone link tracker).
-  The rules tests assert on
+- **137 tests passing, 0 failing** — `npm test` (unit + structural
+  `firestore.rules` + gap-fix + cache-stale + no-JS-render suites,
+  29 suites). The rules tests assert on
   the rules text (no Java → no Firestore emulator here) and say so.
+- **Model failover + code-only fallback are unit-tested** (primary
+  error/timeout → backup answers once; both fail → last error; primary
+  success → backup never called; code-only verdict identical to the
+  heuristic, source `CODE`, never cached).
 - **AI benchmark protocol** — `tests/ai-benchmark-cases.json` +
   `tests/AI-BENCHMARK.md`: 25 fixed cases run through the live site
   (11 scam, 10 safe, 4 hard). First live run pending; numbers are
@@ -331,7 +372,13 @@ Numbers we can stand behind (all re-runnable from this repo):
 - **Voice output removed 19 Nov** — cloud TTS + device voice never
   sounded on the user's phone, so the whole voice-output feature was
   removed; call-voice INPUT (record/upload → transcribe → score) is kept.
-- Live site verified: real Gemini verdicts with the `IN_CLOUD` badge.
+- Live site verified: real Gemini verdicts with the `IN_CLOUD` badge
+  (failover live run 20 Nov ~03:10). Honest caveat: since ~08:00 the
+  same VM's headless Chromium scores 0.1 on reCAPTCHA Enterprise, so
+  App Check attestation fails (403) and live VM checks fall back to
+  the code-only card — the fallback itself is verified, the AI path
+  is not re-verifiable from this VM until the attestation succeeds
+  again (see audit round 6).
 
 ## What's next
 
