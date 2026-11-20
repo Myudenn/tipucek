@@ -7,7 +7,7 @@ WhatsApp, DM or email — Indonesian or English) is a scam. Built for the
 **#BuildHybridAI 2026** hackathon (Devpost + Firebase AI Logic).
 
 Why it matters: Indonesia's Anti-Scam Centre (IASC, OJK) recorded
-about **Rp 9.1 trillion in losses from 411,000+ scam reports
+about **Rp 9.1 trillion (~US$500 million) in losses from 411,000+ scam reports
 (Nov 2024–Dec 2025)**, and GASA's 2025 report found **66% of
 Indonesians have experienced a scam attempt**. TipuCek is built for
 the people scammers target most — parents and grandparents, in their
@@ -238,21 +238,46 @@ matches the local build (`dist/index.html` + `dist/assets/index-*.js`).
 
 ## Connect Firebase (production AI)
 
+Takes about 15–20 minutes. Free (Firebase + Gemini Developer API free
+tiers — no credit card needed within the free limits).
+
 1. Create a Firebase project in the
    [Firebase Console](https://console.firebase.google.com/) and register a
-   Web app.
+   Web app. Name it `tipucek` (any name works); Google Analytics can stay
+   off.
 2. In the console, open **AI Logic** → **Get started** and choose the
-   **Gemini Developer API**.
+   **Gemini Developer API** (not Vertex AI — the Developer API is the
+   free, simplest backend).
 3. Copy the web app config into `.env.local` in the repo (copy
    `.env.local.example` first) with the `VITE_FIREBASE_*` variable
    names. Never commit real credentials to a public repo — `.env.local`
-   is git-ignored; see `SETUP-MYUDEN.md` (Bahasa Indonesia,
-   step-by-step) for the full walkthrough, including App Check.
+   is git-ignored, and never send API keys or tokens to anyone.
 4. Enable **Authentication → Anonymous** sign-in and create a Firestore
    database with a `checks` collection for history (and a `reports`
-   collection for community counts; see `firestore.rules`). Without
-   Firestore the app still works: history falls back to `localStorage`
-   and never crashes.
+   collection for community counts; see `firestore.rules`). Pick
+   production mode and a nearby region (e.g. `asia-southeast1` /
+   Singapore). Suggested rules: only the signed-in anonymous user can
+   create/read their own history documents — no update, no delete.
+   Without Firestore the app still works: history falls back to
+   `localStorage` and never crashes.
+5. **App Check (recommended).** In the console, open **Build → App
+   Check**, register the Web app, provider **reCAPTCHA Enterprise**
+   (score-based Website key — not classic reCAPTCHA v3). Add your
+   domains to the key (`localhost` plus your live domain, e.g.
+   `tipucek.web.app`), then copy the site key to
+   `VITE_FIREBASE_APPCHECK_SITE_KEY` in `.env.local`. The live domain
+   must be on the key's domain list or AI checks fail with an App Check
+   error. For localhost testing, register the debug token printed in
+   the browser console (F12) under **App Check → Manage debug tokens** —
+   never hardcode a debug token in code.
+6. Test it: `npm install && npm run dev`, open
+   http://localhost:5173 — the "Demo mode" banner must disappear
+   (replaced by the "AI mode" label). Check a sample and expect an
+   `ON_DEVICE` or `IN_CLOUD` badge on the result card.
+
+The cloud model is pinned to `gemini-3.5-flash-lite` (see `src/ai.js`)
+— if Firebase ever renames its default model, the app keeps using this
+name until changed manually.
 
 ## Project structure
 
@@ -287,7 +312,6 @@ public/sw.js             Service worker (offline app shell, cache tipucek-v5)
 firestore.rules          Rules: verdict-only history (hasOnly) + hash-only reports
 tests/unit.test.mjs      Unit tests (node --test)
 tests/benchmark-local-rules.mjs  Local-rules demo benchmark
-SETUP-MYUDEN.md          Firebase setup guide in Bahasa Indonesia
 DEVPOST-DESCRIPTION.md   Devpost submission text
 VIDEO-SCRIPT.md          Demo video script
 ```
