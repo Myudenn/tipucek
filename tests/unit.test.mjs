@@ -366,7 +366,7 @@ describe("hero OJK stat (polish 19 Nov)", () => {
   it("English stat matches the Devpost wording", () => {
     assert.equal(
       t("heroStat", "en"),
-      "Rp 9.1 trillion lost to scams in 411,000+ reports · Nov 2024–Dec 2025 · OJK (IASC)",
+      "Rp 9.1 trillion (~US$500 million) lost to scams in 411,000+ reports · Nov 2024–Dec 2025 · OJK (IASC)",
     );
   });
 });
@@ -749,9 +749,18 @@ describe("language switch: per-language samples + re-check (bugs 1+2, 19 Nov)", 
   });
   it("English samples contain no Indonesian text; Indonesian samples contain no English body", () => {
     const idMarkers = /SELAMAT|hadiah|Telkomsel|undian|Rp |BCA|Kode OTP|kurir|kantor|pernikahan|LOWONGAN/;
+    // Exception (Myuden 20 Nov): the OTP sample keeps the BCA case
+    // identity in every language — bank name BCA + the Indonesian
+    // number 0812-9876-5432 + the code 482916 — only the prose is
+    // translated. "Bank of America / +1 (555)" invented a different
+    // case, so it was replaced by the BCA translation.
     for (const key of SAMPLE_KEYS) {
+      if (key === "sampleTextOtp") continue;
       assert.ok(!idMarkers.test(t(key, "en")), `${key}/en leaks Indonesian: ${t(key, "en").slice(0, 80)}`);
     }
+    assert.ok(/BCA: Your OTP code is 482916/.test(t("sampleTextOtp", "en")), `en OTP must keep the BCA case: ${t("sampleTextOtp", "en").slice(0, 80)}`);
+    assert.ok(/0812-9876-5432/.test(t("sampleTextOtp", "en")), "en OTP must keep the Indonesian number");
+    assert.ok(!/Bank of America|\+1 \(555\)/.test(t("sampleTextOtp", "en")), "en OTP must not invent a US bank/number");
     assert.ok(/SELAMAT/.test(t("sampleTextScam", "id")), "id scam must keep SELAMAT");
     assert.ok(/Rp 50\.000\.000/.test(t("sampleTextScam", "id")), "id scam must keep the Rp amount");
     assert.ok(!/Your package is held|team meeting is moved/.test(t("sampleTextSuspicious", "id")), "id suspicious must not be the English DHL text");
