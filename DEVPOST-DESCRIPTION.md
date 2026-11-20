@@ -288,7 +288,7 @@ tool.
   tests for `firestore.rules` in `tests/rules.test.mjs` proving the
   verdict-only field list, the owner-only read, and the hash-only
   report shape, plus gap-fix tests in `tests/gaps.test.mjs` for the
-  holes live testing found on 19 Nov — text files, number-only
+  issues live testing found on 19 Nov — text files, number-only
   call checks, call-voice transcription helpers + verdict merge, the
   standalone link tracker — plus the model-failover and code-only
   fallback suites). No
@@ -307,18 +307,18 @@ tool.
   that way.
 - **89 Playwright checks (run 28)** (desktop + mobile), **28 design checks** and
   **16 avatar checks** run against the live build.
-- **Four holes found by live testing on 19 Nov, all fixed and
+- **Four issues found by live testing on 19 Nov, all fixed and
   re-verified in the browser:** text files were "unknown type" with no
   score (now read and scored like a message); a phone number alone
   errored "paste a message first" (now a number-only check — official
   match, format, reports — Suspicious 30 for an unknown number);
   link tracking had no visible module (now a standalone section with
   explicit per-link consent). QRIS checking was removed the same day
-  by the owner's order: a pasted QRIS payload had been judged 0/100
+  at the owner's request: a pasted QRIS payload had been judged 0/100
   Safe, and no official registry can verify a QRIS merchant — so the
   feature was deleted entirely rather than kept half-working.
 - **Voice output removed 19 Nov:** cloud TTS + device voice never
-  sounded on the user's phone, so the whole voice-output feature was
+  produced any sound on the user's phone, so the whole voice-output feature was
   removed; call-voice INPUT (record/upload → transcribe → score) is
   kept.
 - Ten new checker modules, senior mode, one-tap family alert and a PDF

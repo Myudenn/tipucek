@@ -5,12 +5,12 @@ perubahan yang dianggap selesai tanpa bukti yang bisa dicek ulang.
 Setiap item: LOLOS / GAGAL + bukti (perintah, file:baris, screenshot,
 log). Bila ada item GAGAL, ditulis GAGAL + sebabnya — tidak ditutupi.
 
-- Proyek: TipuCek (dulu PesanAman) — #BuildHybridAI, deadline submit
+- Proyek: TipuCek — #BuildHybridAI, deadline submit
   Devpost 1 Des 2026 05:00 WIB.
-- Situs live: https://pesanaman-80d63.web.app (URL/proyek Firebase
-  tetap pesanaman-80d63; repo tetap github.com/kyleweb3/pesanaman).
+- Situs live saat audit dibuat: proyek Firebase lama; repo lama.
+  Keduanya sudah pindah — lihat Pembaruan di bawah.
 - **Pembaruan 19 Nov 2026 ~14:20 (koordinator perbaikan serius):
-  audit ini dibuat saat proyek masih pesanaman-80d63. Sejak itu alamat
+  audit ini dibuat saat proyek masih memakai nama dan proyek Firebase lama. Sejak itu alamat
   live pindah ke https://tipucek.web.app (proyek Firebase baru
   "tipucek"), repo pindah ke https://github.com/kyleweb3/tipucek,
   dan cache service worker naik ke `tipucek-v5`. Isi audit di bawah
@@ -28,29 +28,27 @@ log). Bila ada item GAGAL, ditulis GAGAL + sebabnya — tidak ditutupi.
 - Standar: "Buat dengan serius" (Myuden 19 Nov ~12:20) — TELITI,
   DETAIL, EFISIEN, SEMPURNA; kualitas di atas kuantitas.
 
-## A. Rename PesanAman → TipuCek — LOLOS
+## A. Rename nama lama → TipuCek — LOLOS
 
 | Pemeriksaan | Hasil | Bukti |
 |---|---|---|
-| `grep -rn "PesanAman" src/ index.html public/ *.md` (kapital) | LOLOS, 0 temuan | audit independen §1; `git grep` ulang koordinator |
-| Teks UI live: 0 "PesanAman" di `body.innerText` | LOLOS | suite run 19–23, cek "0 PesanAman in UI text" |
+| `grep -rn "<nama-lama>" src/ index.html public/ *.md` (kapital) | LOLOS, 0 temuan | audit independen §1; `git grep` ulang koordinator |
+| Teks UI live: 0 nama lama di `body.innerText` | LOLOS | suite run 19–23, cek "0 nama lama in UI text" |
 | Title/hero/meta/OG/Twitter/JSON-LD | LOLOS | `TipuCek — Scam-Message Scanner \| Cek Pesan Penipuan` (index.html:16,27,39,53) |
 | manifest name/short_name | LOLOS | `TipuCek — Scam-Message Scanner` / `TipuCek` |
 | sw.js cache | LOLOS | `tipucek-v4` (naik dari v1 → v2 → v3 → v4 tiap perubahan aset) |
 | Tagline 8 bahasa | LOLOS | i18n: EN "Check the message before you trust it", ID "Cek pesannya sebelum kamu percaya", ES/FR/DE/PT/JA/ZH terverifikasi benar |
 | Nama asisten tetap Aman | LOLOS | header, panel "Ask Aman", chat, suara, prompt AI, i18n 8 bahasa — semua "Aman"; tidak ada nama lain |
 
-Sisa "pesanaman" (huruf kecil) yang DIBOLEHKAN: URL
-`pesanaman-80d63.web.app`, repo `github.com/kyleweb3/pesanaman`,
-kunci localStorage `pesanaman_history_v1` + `pesanaman_lang`
-(dipertahankan supaya riwayat/bahasa pengguna lama tidak hilang),
-debug hook `window.__pesanamanLastTts`, `package.json` name
-"pesanaman" (ID paket/proyek, bukan merek). Sisa lain yang
+Sisa nama lama (huruf kecil) yang DIBOLEHKAN: URL dan proyek Firebase
+lama, repo lama, kunci localStorage lama (dipertahankan supaya
+riwayat/bahasa pengguna lama tidak hilang), debug hook lama, dan nama
+paket di `package.json` (ID paket/proyek, bukan merek). Sisa lain yang
 dibersihkan saat audit: komentar `.env.local.example:1`
-("PesanAman" → "TipuCek"); judul "Safe Message" diganti
+(nama lama → "TipuCek"); judul "Safe Message" diganti
 "Scam-Message Scanner" (arti nama lama, bukan nama baru).
 Naskah video v3/v4 + skrip build lama di `video/` masih menyebut
-PesanAman — sengaja tidak diubah (arsip); video v5 menggantikannya.
+nama lama — sengaja tidak diubah (arsip); video v5 menggantikannya.
 
 ## B. Fitur baru — semua LOLOS (dengan perbaikan audit, §K)
 
@@ -171,7 +169,7 @@ klaim absolut "never leaves device", "no link is followed",
 tidak dapat dipin). **DIPERBAIKI**: DEVPOST-DESCRIPTION.md
 (251 baris) + README.md (294 baris) ditulis ulang penuh oleh
 penulis dokumen (subagen) dari fakta terverifikasi + dicek ulang
-koordinator: grep "PesanAman"/"roaming"/"anime"/"Safe Message"/
+koordinator: grep nama lama/"roaming"/"anime"/"Safe Message"/
 skor spesifik = BERSIH (hanya URL resmi). Klaim privasi ditulis
 tepat: janji soal PENYIMPANAN (pesan tidak pernah tersimpan di
 cloud; hanya verdict yang disinkronkan, opt-in) — BUKAN soal
@@ -205,9 +203,9 @@ Meta description situs LOLOS (ringkas, tidak melebih-lebihkan).
 - Desain `video/verify-design.cjs`: **28/28 LOLOS** (3 run).
 - **Build produksi**: `.env.local` dikembalikan dari
   `/tmp/.env.local.moved`, `npm run build` diulang dengan
-  config — grep `dist/`: 0 "PesanAman" di JS/CSS/HTML;
+  config — grep `dist/`: 0 nama lama di JS/CSS/HTML;
   keenam nilai config Firebase terisi nilai nyata
-  (apiKey, appId, projectId `pesanaman-80d63`, authDomain,
+  (apiKey, appId, projectId lama, authDomain,
   messagingSenderId, appCheckSiteKey reCAPTCHA Enterprise);
   satu-satunya string "YOUR_" di bundle adalah literal
   fallback di objek config sumber (`|| 'YOUR_API_KEY'` …)
@@ -385,7 +383,7 @@ dipindah selama kerja mereka.
     (transkrip asli → Scam 95 IN_CLOUD), privasi LOLOS,
     bundle live sha-identik. Syaratnya: (a) kata "QRIS"
     tersisa 1× di komentar `public/sw.js:5` — dihapus
-    (19 Nov ~16:00); (b) hook debug `__pesanamanLastTts`
+    (19 Nov ~16:00); (b) hook debug lama
     2× di bundle — diganti `__tipucekLastTts`.
     Temuan auditor soal `verify-rombak` crash 2× di cek
     pertama TERNYATA bukan bug produk: skrip dijalankan
@@ -398,7 +396,7 @@ dipindah selama kerja mereka.
     proses: `video/verify-rombak.cjs` kini mengatur
     sendiri build demo (pindah `.env.local`, build, uji,
     kembalikan + rebuild produksi, verifikasi bundle
-    produksi ≠ bundle demo) — run 95/95 dengan tarian
+    produksi ≠ bundle demo) — run 95/95 dengan prosedur
     itu terverifikasi 19 Nov ~16:00, lalu deploy ulang
     (bundle `index-Cy5R8RGb.js`, sha
     `2249f633…`) + cek live fresh 18/18 LOLOS.

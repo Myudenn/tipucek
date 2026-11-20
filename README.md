@@ -387,14 +387,14 @@ Numbers we can stand behind (all re-runnable from this repo):
   benchmark of the local demo rules, **not AI accuracy**.
 - **89 Playwright checks (run 28)** (desktop + mobile), **28 design checks** and
   **16 avatar checks** run against the live build.
-- **Four holes found by live testing on 19 Nov, all fixed and
+- **Four issues found by live testing on 19 Nov, all fixed and
   re-verified in the browser** — text files, number-only call checks,
   the standalone link tracker (see the checks table above). QRIS
-  checking was removed the same day by the owner's order — no official
+  checking was removed the same day at the owner's request — no official
   registry can verify a QRIS merchant, so the feature was deleted
   rather than kept half-working.
 - **Voice output removed 19 Nov** — cloud TTS + device voice never
-  sounded on the user's phone, so the whole voice-output feature was
+  produced any sound on the user's phone, so the whole voice-output feature was
   removed; call-voice INPUT (record/upload → transcribe → score) is kept.
 - Live site verified: real Gemini verdicts with the `IN_CLOUD` badge
   (failover live run 20 Nov ~03:10). Honest caveat: since ~08:00 the
