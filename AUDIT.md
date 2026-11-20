@@ -12,7 +12,7 @@ log). Bila ada item GAGAL, ditulis GAGAL + sebabnya — tidak ditutupi.
 - **Pembaruan 19 Nov 2026 ~14:20 (koordinator perbaikan serius):
   audit ini dibuat saat proyek masih memakai nama dan proyek Firebase lama. Sejak itu alamat
   live pindah ke https://tipucek.web.app (proyek Firebase baru
-  "tipucek"), repo pindah ke https://github.com/kyleweb3/tipucek,
+  "tipucek"), repo pindah ke https://github.com/Myudenn/tipucek,
   dan cache service worker naik ke `tipucek-v5`. Isi audit di bawah
   adalah catatan historis saat itu — angka-angka run test di dalamnya
   tetap berlaku untuk build yang diaudit.**

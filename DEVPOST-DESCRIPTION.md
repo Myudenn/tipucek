@@ -2,7 +2,7 @@
 
 > Built for the **#BuildHybridAI 2026** hackathon (Devpost + Firebase AI Logic).
 > Live demo: https://tipucek.web.app — Public repo:
-> https://github.com/kyleweb3/tipucek
+> https://github.com/Myudenn/tipucek
 
 **TipuCek** (from Indonesian *tipu*, "scam / deception", and *cek*, "check")
 answers one question in seconds: **is this message a scam?** Paste any
@@ -360,4 +360,4 @@ tool.
 ## Links
 
 - Live demo: https://tipucek.web.app
-- Source code (MIT): https://github.com/kyleweb3/tipucek
+- Source code (MIT): https://github.com/Myudenn/tipucek

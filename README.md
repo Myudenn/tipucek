@@ -215,7 +215,7 @@ No account, no setup — open https://tipucek.web.app and:
 ## Run it
 
 ```bash
-git clone https://github.com/kyleweb3/tipucek.git
+git clone https://github.com/Myudenn/tipucek.git
 cd tipucek
 npm install
 npm run dev      # development server (http://localhost:5173)
