@@ -413,7 +413,10 @@ function renderResult(verdict, message, elapsedSec, imageText = "", extra = {}, 
     : t("receiptStoredCloud", lang);
   const receiptSkipped =
     isLocalOnly() &&
-    (links.length > 0 || phones.length > 0 || accounts.length > 0)
+    (links.length > 0 ||
+      phones.length > 0 ||
+      accounts.length > 0 ||
+      files.length > 0)
       ? `<p>${escapeHtml(t("receiptSkipped", lang))}</p>`
       : "";
   // Which cloud model answered (primary / backup): the badge stays
@@ -699,11 +702,10 @@ async function enrichResult(message) {
       }
     }
     if (lines.length > 0) countsEl.innerHTML = lines.join("");
-  } else if (countsEl && targets.length > 0 && isLocalOnly()) {
-    // Honest note instead of silence: the counts exist, but looking
-    // them up would send a hash to the cloud while local-only is on.
-    countsEl.innerHTML = `<p class="muted">${escapeHtml(t("receiptSkipped", lang))}</p>`;
   }
+  // No second copy of the skipped note here: the privacy receipt in
+  // the result card already says once that community counts and link
+  // tracing were skipped while local-only is on.
   // Link tracking (short-link destination + public RDAP domain age)
   // ALSO only runs when the user opted into cloud history (local-only
   // OFF). Resolving a short link fetches the shortener and RDAP sends
@@ -746,9 +748,9 @@ async function enrichResult(message) {
       }
       trackEl.innerHTML = `<div class="links-box"><h3>${escapeHtml(t("linkTrackHeading", lang))}</h3><ul>${items.join("")}</ul></div>`;
     }
-  } else if (trackEl && isLocalOnly() && analyzeLinks(message).length > 0) {
-    trackEl.innerHTML = `<p class="muted">${escapeHtml(t("receiptSkipped", lang))}</p>`;
   }
+  // No second copy of the skipped note here either: the privacy
+  // receipt in the result card already says it once (see above).
 }
 
 function renderHistory(entries) {
@@ -1008,16 +1010,19 @@ async function onCheck() {
         verdict = codeOnlyVerdict(message, lang);
         codeOnly = true;
       }
-      if (!codeOnly) {
-        elapsedSec = (performance.now() - t0) / 1000;
-        if (isFirebaseConfigured()) {
-          verdictCacheSet("message", message, lang, {
-            verdict,
-            elapsedSec,
-            imageText: "",
-            extra: {},
-          });
-        }
+      // The receipt shows the real total wait for an answer, including
+      // a code-only fallback after the AI timed out — the receipt's
+      // code-only line still says the AI did not answer, so the number
+      // reads as total wait, never as the code check's own duration.
+      // Never cache the fallback: a retry must ask the AI again.
+      elapsedSec = (performance.now() - t0) / 1000;
+      if (!codeOnly && isFirebaseConfigured()) {
+        verdictCacheSet("message", message, lang, {
+          verdict,
+          elapsedSec,
+          imageText: "",
+          extra: {},
+        });
       }
     }
     // A newer check/re-check superseded this one: never render or save
@@ -1283,6 +1288,11 @@ function switchCheckerTab(name) {
     b.classList.toggle("active", n === name);
     b.setAttribute("aria-selected", n === name ? "true" : "false");
   });
+  // A verdict belongs to the tab that produced it: hide the stale card
+  // (and its toast) when switching tabs, so an old verdict is never
+  // read as the new tab's answer. The next check re-renders it.
+  $("result").hidden = true;
+  hideCheckCompleteToast();
 }
 
 // Module tabs (below the quick checker): file | link | contacts | aid
@@ -1354,12 +1364,13 @@ async function onEmailCheck() {
     errorEl.hidden = false;
     return;
   }
+  const t0 = performance.now();
   const btn = $("email-btn");
   btn.disabled = true;
   try {
     lastCheck = { kind: "email", fromName, fromEmail, body };
     const verdict = analyzeEmail({ fromName, fromEmail, body }, lang);
-    renderResult(verdict, body, null, "", {}, true);
+    renderResult(verdict, body, (performance.now() - t0) / 1000, "", {}, true);
     enrichResult(body);
     const where = await saveCheck({ message: body, ...verdict });
     lastStorageWhere = where;
@@ -1395,12 +1406,13 @@ async function onCallCheck() {
   btn.disabled = true;
   const runId = ++checkRunId;
   checkBusy = true;
+  const t0 = performance.now();
   try {
     lastCheck = { kind: "call", number, said };
     const { verdict } = await analyzeCall({ number, said }, lang, { allowReports: !isLocalOnly() });
     if (runId !== checkRunId) return;
     const message = number && said ? `${number}: ${said}` : number || said;
-    renderResult(verdict, message, null, "", {}, true);
+    renderResult(verdict, message, (performance.now() - t0) / 1000, "", {}, true);
     enrichResult(message);
     const where = await saveCheck({ message, ...verdict });
     lastStorageWhere = where;
@@ -1520,10 +1532,11 @@ async function scoreTranscribedCall(audioBlob) {
     );
     const verdict = mergeCallVerdict(aiVerdict, localVerdict);
     const message = number ? `${number}: ${scoredText}` : scoredText;
-    // No "checked in Xs" claim for a code-only card: the code verdict
-    // was instant, the seconds were waiting for the AI.
-    const elapsedSec =
-      verdict.source === "CODE" ? null : (performance.now() - t0) / 1000;
+    // The receipt shows the real total wait for an answer, even for a
+    // code-only card: the receipt's code-only line still says the AI
+    // did not answer, so the number reads as total wait, never as the
+    // code check's own duration.
+    const elapsedSec = (performance.now() - t0) / 1000;
     renderResult(verdict, message, elapsedSec, "", {
       audio: true,
       onRetry: () => scoreTranscribedCall(lastCallAudioBlob),
