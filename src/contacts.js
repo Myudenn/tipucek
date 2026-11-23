@@ -12,7 +12,8 @@
 // - LinkAja: conflicting numbers (150911 vs 021-80602109) -> via app.
 // - DANA: dana.id states "Call Center 1500 445", no CS WhatsApp.
 // - Shopee: help.shopee.co.id lists 1500702.
-// - OJK: Kontak 157 + WhatsApp 081157157157 + iasc.ojk.go.id.
+// - OJK: Kontak 157 + WhatsApp 081157157157 + the IASC report form
+//   (iasc.ojk.go.id/Guest/LaporanV2, verified 21 Nov 2026).
 
 export const CONTACTS = [
   { name: "BCA", cat: "bank", phone: "1500888", note: "Halo BCA" },
@@ -29,7 +30,10 @@ export const CONTACTS = [
   { name: "Telkomsel", cat: "telecom", phone: "188", note: "" },
   { name: "Indosat", cat: "telecom", phone: "185", note: "" },
   { name: "XL", cat: "telecom", phone: "817", note: "" },
-  { name: "OJK", cat: "official", phone: "157", note: "WA 081157157157 · iasc.ojk.go.id" },
+  // OJK: the url goes straight to the IASC report FORM
+  // (iasc.ojk.go.id/Guest/LaporanV2 — verified 21 Nov 2026: it
+  // opens "Buat Laporan" with the reporter form), not the homepage.
+  { name: "OJK", cat: "official", phone: "157", note: "WA 081157157157", url: "https://iasc.ojk.go.id/Guest/LaporanV2" },
   { name: "Polisi", cat: "official", phone: "110", note: "" },
 ];
 

@@ -21,7 +21,7 @@ tool for that decision — and the messages themselves are private, so
 pasting them into a random website to check is its own privacy problem.
 
 In Indonesia alone, the scale is staggering: the OJK's Indonesia
-Anti-Scam Centre (IASC) recorded about **Rp 9.1 trillion (~US$500 million) in losses
+Anti-Scam Centre (IASC) recorded about **Rp9 trillion (~US$500 million) in losses
 from 411,000+ scam reports between November 2024 and December 2025**,
 and the Global Anti-Scam Alliance's 2025 report found **66% of
 Indonesians have experienced a scam attempt**. The people scammers

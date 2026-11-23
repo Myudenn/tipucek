@@ -1,11 +1,11 @@
 {
   "path": "DEMO local rules (analyzeWithHeuristic) — NOT AI accuracy",
-  "cases": 14,
-  "flaggedAccuracy": "14/14",
-  "falsePositives": "0/7",
-  "falseNegatives": "0/7",
-  "meanScoreScam": 49.4,
-  "meanScoreSafe": 7.7,
+  "cases": 18,
+  "flaggedAccuracy": "18/18",
+  "falsePositives": "0/9",
+  "falseNegatives": "0/9",
+  "meanScoreScam": 68.3,
+  "meanScoreSafe": 5.3,
   "rows": [
     {
       "id": "scam-prize",
@@ -26,41 +26,73 @@
     {
       "id": "scam-otp",
       "intent": "scam",
-      "status": "suspicious",
-      "score": 40,
+      "status": "scam",
+      "score": 60,
       "flagged": true,
       "correct": true
     },
     {
       "id": "scam-job-fee",
       "intent": "scam",
-      "status": "suspicious",
-      "score": 38,
+      "status": "scam",
+      "score": 74,
       "flagged": true,
       "correct": true
     },
     {
       "id": "scam-family",
       "intent": "scam",
-      "status": "suspicious",
-      "score": 54,
+      "status": "scam",
+      "score": 70,
       "flagged": true,
       "correct": true
     },
     {
       "id": "scam-apk",
       "intent": "scam",
-      "status": "suspicious",
-      "score": 38,
+      "status": "scam",
+      "score": 65,
       "flagged": true,
       "correct": true
     },
     {
       "id": "scam-invest",
       "intent": "scam",
-      "status": "suspicious",
-      "score": 38,
+      "status": "scam",
+      "score": 68,
       "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-jobscam-pak-reza",
+      "intent": "scam",
+      "status": "scam",
+      "score": 66,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "scam-job-deposit",
+      "intent": "scam",
+      "status": "scam",
+      "score": 74,
+      "flagged": true,
+      "correct": true
+    },
+    {
+      "id": "safe-job-real",
+      "intent": "safe",
+      "status": "safe",
+      "score": 16,
+      "flagged": false,
+      "correct": true
+    },
+    {
+      "id": "safe-job-address",
+      "intent": "safe",
+      "status": "safe",
+      "score": 0,
+      "flagged": false,
       "correct": true
     },
     {
@@ -99,7 +131,7 @@
       "id": "safe-birthday",
       "intent": "safe",
       "status": "safe",
-      "score": 22,
+      "score": 0,
       "flagged": false,
       "correct": true
     },

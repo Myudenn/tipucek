@@ -1,9 +1,25 @@
+/* Plus Jakarta Sans (G2 — Ramah, 23 Nov 2026): bundled locally in
+   public/fonts/ (SIL OFL) so the PWA works offline — never loaded
+   from the internet at runtime. Google ships it as a variable font:
+   one latin file covers weights 200–800, including the 400 / 500 /
+   600 / 700 / 800 the app uses. System sans is the fallback if the
+   bundle fails to load. The file is also precached by the service
+   worker (see public/sw.js, tipucek-v11). */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/plus-jakarta-sans-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
-  --text: #1c2333;
-  --muted: #5b6478;
-  --bg: #f4f6fa;
+  --text: #0f172a;
+  --muted: #64748b;
+  --bg: #f1f5f9;
   --card: #ffffff;
-  --border: #dfe4ee;
+  --border: #e2e8f0;
   --accent: #1a56db;
   --accent-hover: #1448b8;
   --accent-soft: #eef4ff;
@@ -19,45 +35,184 @@
      thin 1px borders do the work, shadows are a hairline only, corners are
      a touch tighter, and the numbers are big. NOT vAPI's orange — the accent
      stays TipuCek blue, and Aman stays a Firebase AI Logic assistant. */
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   /* Aman float shadows: tight + darker when landed, wide + soft when lifted */
   --avatar-shadow-rest: 0 2px 3px rgba(16, 24, 40, 0.10), 0 6px 14px rgba(16, 24, 40, 0.10);
   --avatar-shadow-high: 0 1px 2px rgba(16, 24, 40, 0.05), 0 18px 30px rgba(16, 24, 40, 0.07);
-  --radius: 12px;
-  color-scheme: light dark;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  --radius: 16px;
+  color-scheme: light;
+  font-family: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #e8eaf0;
-    --muted: #a3adc2;
-    --bg: #12141c;
-    --card: #1b1e29;
-    --border: #2e3345;
-    --accent: #6b9bff;
-    --accent-hover: #8db2ff;
-    --accent-soft: #1c2c52;
-    --danger: #ff9a8a;
-    --danger-bg: #3a1d1a;
-    --warn: #f5c86e;
-    --warn-bg: #3a2f14;
-    --safe: #6fe3a5;
-    --safe-bg: #123626;
-    --hero-from: #274b9e;
-    --hero-to: #5b21b6;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-    --avatar-shadow-rest: 0 2px 3px rgba(0, 0, 0, 0.35), 0 6px 14px rgba(0, 0, 0, 0.35);
-    --avatar-shadow-high: 0 1px 2px rgba(0, 0, 0, 0.2), 0 18px 30px rgba(0, 0, 0, 0.25);
-  }
+/* Theme (23 Nov 2026): light is the default; dark mode + accent
+   choices are applied via data-theme / data-accent on <html> and
+   stored in localStorage (pesanaman_theme, pesanaman_accent).
+   Senior Mode always forces light, for readability. */
+:root[data-accent="green"] {
+  --accent: #15803d; --accent-hover: #166534; --accent-soft: #f0fdf4;
+  --hero-from: #15803d; --hero-to: #0f766e;
+}
+:root[data-accent="purple"] {
+  --accent: #6d28d9; --accent-hover: #5b21b6; --accent-soft: #f5f3ff;
+  --hero-from: #6d28d9; --hero-to: #1a56db;
+}
+/* Dark palette = DESIGN G tokens (23 Nov 2026, mockup
+   g-hibrida-gelap.html): page #0b0b16, cards #12121f, borders
+   #23233c, muted #9a9ab2, text #ececf4. The accent is light purple
+   #a78bfa — TEXT-ONLY (links, active nav, icon chips): every solid
+   accent surface with white text becomes the blue→purple gradient
+   instead (see the G overrides below), because white on #a78bfa is
+   not readable. */
+:root[data-theme="dark"] {
+  --text: #ececf4; --muted: #9a9ab2; --bg: #0b0b16; --card: #12121f; --border: #23233c;
+  --accent: #a78bfa; --accent-hover: #c4b5fd; --accent-soft: #1e1b3a;
+  --danger: #f87171; --danger-bg: #450a0a; --warn: #fbbf24; --warn-bg: #451a03;
+  --safe: #4ade80; --safe-bg: #052e16;
+  --hero-from: #1a56db; --hero-to: #6d28d9;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+:root[data-theme="dark"][data-accent="green"] {
+  --accent: #4ade80; --accent-hover: #86efac; --accent-soft: #14532d;
+  --hero-from: #166534; --hero-to: #0f766e;
+}
+:root[data-theme="dark"][data-accent="purple"] {
+  --accent: #c084fc; --accent-hover: #d8b4fe; --accent-soft: #3b0764;
+  --hero-from: #5b21b6; --hero-to: #1e40af;
 }
 
+/* DESIGN G — Hibrida Gelap (23 Nov 2026, Myuden's choice): dark mode
+   only. Light mode keeps the existing bright look. Hero title stays
+   SENTENCE CASE ("Apakah pesan ini penipuan?") per the G2 font
+   decision — the mockup's all-caps h1 is NOT copied. */
+:root[data-theme="dark"] .hero {
+  background:
+    radial-gradient(90% 140% at 85% 0%, rgba(109, 40, 217, 0.45), transparent 60%),
+    radial-gradient(70% 120% at 0% 100%, rgba(26, 86, 219, 0.35), transparent 60%),
+    #0e0e1c;
+  border: 1px solid var(--border);
+  padding: 40px 28px;
+}
+/* Non-blue accents keep the plain brand gradient so the purple/blue
+   glow never fights the chosen accent. */
+:root[data-theme="dark"][data-accent="green"] .hero,
+:root[data-theme="dark"][data-accent="purple"] .hero {
+  background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+}
+/* The light-mode white glows would smudge the dark hero — the radial
+   glows above do that job now. */
+:root[data-theme="dark"] .hero::before,
+:root[data-theme="dark"] .hero::after { display: none; }
+@media (max-width: 640px) {
+  :root[data-theme="dark"] .hero { padding: 26px 20px; }
+}
+:root[data-theme="dark"] .hero-title {
+  /* line-height 1.3 (was 0.98, then 1.12 — still not enough): the
+     keyword highlight box is as tall as the font's ascent+descent
+     (~1.26em for Plus Jakarta Sans), so its top sits ~0.14em ABOVE
+     its own line box. At 1.12 the box still overlapped the previous
+     line's descenders by 12px at 84px — the "p" of "pesan" in the
+     Indonesian title sits right under the "penipuan?" box and lost
+     its tail. 1.3em line boxes leave a real ~3px gap between the
+     descender bottom and the box top at every size, so no letter can
+     ever be covered, whatever the wrap. */
+  font-size: 3.25rem; line-height: 1.3; font-weight: 900; letter-spacing: -0.03em;
+  text-transform: none;
+}
+@media (max-width: 640px) {
+  :root[data-theme="dark"] .hero-title { font-size: 2.5rem; }
+}
+@media (min-width: 1024px) {
+  :root[data-theme="dark"] .hero-title { font-size: 5.25rem; }
+}
+:root[data-theme="dark"] .hero-keyword {
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  padding: 0 10px;
+}
+:root[data-theme="dark"] .hero-sub { color: #a5a5c0; opacity: 1; }
+:root[data-theme="dark"] .hero-check-btn {
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  color: #fff;
+}
+/* Section headings: giant 900 + gradient underline, like the G mockup.
+   Scoped to sections inside <main> only — the hero title (also an h2,
+   with its own giant sentence-case rule above), the result card's
+   status heading, and the share card's title are excluded, and the
+   Aman panel sits outside <main> so it is untouched; the Riwayat
+   dashboard sections sit one level deeper (main > div > section), so
+   they are listed separately above. */
+:root[data-theme="dark"] main > section h2:not(.result-status):not(.section-title):not(.hero-title),
+:root[data-theme="dark"] #view-history h2,
+:root[data-theme="dark"] .modules-label {
+  font-size: 1.625rem; font-weight: 900; letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+:root[data-theme="dark"] main > section h2:not(.result-status):not(.section-title):not(.hero-title)::after,
+:root[data-theme="dark"] #view-history h2::after,
+:root[data-theme="dark"] .modules-label::after {
+  content: ""; display: block; width: 44px; height: 4px; border-radius: 99px;
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  margin-top: 8px;
+}
+/* Gradient primary surfaces in dark mode (white text stays readable on
+   the blue→purple gradient; the flat #a78bfa accent is text-only). */
+:root[data-theme="dark"] .primary,
+:root[data-theme="dark"] .lang-btn[aria-pressed="true"],
+:root[data-theme="dark"] .checker-tab-btn.active,
+:root[data-theme="dark"] .module-tab-btn.active,
+:root[data-theme="dark"] .contacts-cat-btn.active,
+:root[data-theme="dark"] .aid-opt.active,
+:root[data-theme="dark"] .assistant-msg.user,
+:root[data-theme="dark"] .skip-link {
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  border-color: transparent;
+}
+:root[data-theme="dark"] .primary { box-shadow: 0 8px 28px rgba(109, 40, 217, 0.45); }
+:root[data-theme="dark"] .primary:hover:not(:disabled) {
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  filter: brightness(1.12);
+}
+:root[data-theme="dark"] .secondary:hover,
+:root[data-theme="dark"] .assistant-check-btn:hover,
+:root[data-theme="dark"] .assistant-retry-btn:hover {
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+}
+/* Share card becomes a gradient banner in dark mode; its copy button
+   turns white with purple text, like the G mockup. */
+:root[data-theme="dark"] .share {
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+}
+:root[data-theme="dark"] .share .section-title,
+:root[data-theme="dark"] .share p { color: #fff; }
+:root[data-theme="dark"] .share-link { background: rgba(255, 255, 255, 0.14); color: #fff; }
+:root[data-theme="dark"] .share-copy { background: #fff; color: #6d28d9; }
+:root[data-theme="dark"] .share-copy:hover { background: rgba(255, 255, 255, 0.9); }
+/* Bottom nav + Aman launcher follow G: the nav sits on the page
+   background, the active item is light purple, the launcher is
+   gradient with a page-coloured ring. */
+:root[data-theme="dark"] .bottomnav { background: var(--bg); }
+:root[data-theme="dark"] .aman-fab {
+  background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+  border-color: var(--bg);
+  box-shadow: 0 8px 28px rgba(109, 40, 217, 0.5);
+}
+/* Stat cards get the deep G shadow (their shadow is hardcoded, not var). */
+:root[data-theme="dark"] .stat { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); }
+:root[data-theme="dark"] .stat-num { font-size: 1.875rem; }
+
 * { box-sizing: border-box; }
+/* Text size (Myuden 23:37): a root font-size scale — Small 14px,
+   Medium 16px (default), Large 18px. rem-based text follows it;
+   the big display sizes below are written in rem so titles scale
+   too. Inputs stay 16px so iOS never zooms on focus. */
+html[data-text-size="small"] { font-size: 0.875rem; }
+html[data-text-size="medium"] { font-size: 16px; }
+html[data-text-size="large"] { font-size: 1.125rem; }
 /* Bottom space reserves room for the floating "Tanya Aman" button, so
    the footer never slides underneath it at the end of the page. */
-body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 88px; }
+body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 96px; }
 h1 { font-size: 1.5rem; margin: 0; }
 h2 { font-size: 1.15rem; margin: 0 0 0.5rem; }
 h3 { font-size: 1rem; margin: 1rem 0 0.4rem; }
@@ -70,10 +225,15 @@ a { color: var(--accent); }
    browser's built-in [hidden] styling and leaves the banner visible). */
 [hidden] { display: none !important; }
 
-/* Top bar */
-.topbar { background: var(--card); border-bottom: 1px solid var(--border); }
+/* Top bar — STICKY since 21 Nov 13:03 (Myuden, new decision, replacing
+   the 21 Nov morning "STATIC, never sticky"): it stays pinned at the
+   top while the page scrolls, so the theme/language switches (and the
+   desktop Riwayat link) are always reachable without scrolling back.
+   Solid background + bottom border separate it from content. The
+   bottom nav stays fixed; it is the navigation, not the header. */
+.topbar { position: sticky; top: 0; z-index: 50; background: var(--card); border-bottom: 1px solid var(--border); }
 .topbar-inner {
-  max-width: 1180px; margin: 0 auto; padding: 10px 20px;
+  max-width: 720px; margin: 0 auto; padding: 10px 16px;
   display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
 }
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -84,10 +244,11 @@ a { color: var(--accent); }
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-/* Logo kanonis = perisai favicon.svg: <img> di sini menampilkan berkas
-   yang sama persis dengan favicon, jadi header, tab browser, dan saran
-   browser selalu menampilkan logo yang sama. Gradien di belakang hanya
-   cadangan bila gambar gagal muat (warnanya sama dengan perisai). */
+/* Logo kanonis = V4 Huruf T (Myuden 23:33): header memakai
+   logo-mark.svg — T putih satu warna di atas ubin gradien — supaya
+   tetap terbaca (T warna di atas gradien yang sama akan hilang).
+   Tab browser + saran pemasangan memakai favicon.svg (V4 warna).
+   Keduanya dari berkas V4 yang sama, gradien brand tidak berubah. */
 .brand-mark img { display: block; width: 100%; height: 100%; }
 /* The tagline is hidden: it repeats the hero sub word for word, and
    its second line costs ~25px of top-bar height on every screen —
@@ -95,57 +256,387 @@ a { color: var(--accent); }
    stays wired (data-i18n="tagline") so it still translates. */
 .tagline { display: none; }
 .topbar-status { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+/* Desktop-only header Riwayat link (21 Nov, Myuden — opsi b): hidden
+   on phones/tablets, where the bottom nav opens Dashboard 2. Shown
+   only at ≥1024px (see the desktop media query below). */
+.header-history-link { display: none; }
+/* Header icon buttons (21 Nov): the theme button (sun/moon) uses this
+   class — same 40px touch target as the other header controls. The
+   hamburger that used to share it is gone (21 Nov, Myuden —
+   "Hapus hamburger, semua di dashboard"). */
+.menu-btn {
+  flex: none; width: 40px; height: 40px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border); color: var(--text);
+  cursor: pointer; padding: 0;
+}
+.menu-btn svg { width: 22px; height: 22px; }
+.menu-btn:hover { background: var(--accent-soft); }
+/* Header theme button (21 Nov, Myuden): icon-only, same 40px frame
+   as the hamburger. The menu is a small dropdown anchored under the
+   button (Dark / Light / System); the checkmark marks the SAVED
+   choice. No notification bell — TipuCek has no notification
+   source (no account/server). */
+.theme-menu-wrap { position: relative; }
+.theme-btn:disabled { opacity: 0.45; cursor: default; }
+/* Header theme icon, second layer (21 Nov, bug tema "Sistem"): the
+   icon is also derived from the applied theme in CSS, so it can never
+   disagree with the theme even if the JS hidden flags ever drift
+   (e.g. a future header re-render). The JS toggling in applyTheme
+   stays as the first layer (and the M7 checks assert its .hidden).
+   The sun has NO `hidden` attribute in the HTML on purpose (21 Nov,
+   tombol tema kosong di mode Terang): the CSS layer below is the
+   authority, so the button can never end up icon-less if the JS
+   toggle is ever skipped — at least one icon always shows. */
+:root[data-theme="dark"] #theme-icon-sun { display: none; }
+:root[data-theme="light"] #theme-icon-moon { display: none; }
+.theme-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 80;
+  min-width: 188px; padding: 6px;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18);
+}
+.theme-menu[hidden] { display: none; }
+.theme-option {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; min-height: 44px;
+  background: none; border: none; border-radius: 8px;
+  font: inherit; color: var(--text); text-align: left; cursor: pointer;
+}
+.theme-option:hover { background: var(--accent-soft); }
+.theme-option-icon { flex: none; width: 20px; height: 20px; color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.theme-option-icon svg { width: 20px; height: 20px; }
+.theme-check { margin-left: auto; color: var(--accent); font-weight: 700; visibility: hidden; }
+.theme-option[aria-checked="true"] .theme-check { visibility: visible; }
 .mode-label { font-size: 0.85rem; color: var(--muted); }
-.net-pill {
-  font-size: 0.85rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
-  border: 1px solid var(--border);
+/* Header net status: a 10px dot only (Myuden 23:50). Green online,
+   grey offline — visible on dark and light. The full "Online /
+   Offline" text lives in the Settings row of the Lainnya panel. */
+.net-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; flex: none; }
+.net-dot.offline { background: #94a3b8; }
+
+.page { max-width: 720px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 24px; }
+/* Two full-page dashboards (21 Nov, Myuden — "Hapus hamburger, semua
+   di dashboard"): Beranda (#view-home) and Riwayat (#view-history)
+   stack inside <main>; only one is visible at a time. */
+#view-home, #view-history { display: flex; flex-direction: column; gap: 24px; }
+/* Back button at the top of Dashboard 2 (21 Nov): the way home on
+   desktop, where the bottom nav is hidden — without it Dashboard 2
+   would be a dead end. Small, quiet, left-aligned. */
+.back-btn {
+  align-self: flex-start; background: none; border: none; cursor: pointer;
+  color: var(--accent); font: inherit; font-weight: 700; font-size: 0.95rem;
+  padding: 4px 2px; margin: -4px 0 -8px;
 }
-.net-pill.online { background: var(--safe-bg); color: var(--safe); border-color: transparent; }
-.net-pill.offline { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.back-btn:hover { text-decoration: underline; }
 
-.page { max-width: 1180px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+/* Single-column dashboard (mockup, 720px): the result stacks
+   under the checker — one idea per card, no cramped side-by-side. */
 
-/* Desktop two-column result (Myuden 19 Nov 17:45): once a verdict
-   exists, the checker stays left and the result sits beside it instead
-   of below — the width is used, not left empty. :has() keeps this pure
-   CSS; without a result the page stays one column (and the first screen
-   stays checker-only above the fold). Unsupported browsers just keep
-   the single column. */
-@media (min-width: 1024px) {
-  .page:has(#result:not([hidden])) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-  }
-  .page:has(#result:not([hidden])) > .checker { grid-column: 1; }
-  .page:has(#result:not([hidden])) > #result { grid-column: 2; }
-  .page:has(#result:not([hidden])) > :not(.checker):not(#result) { grid-column: 1 / -1; }
-}
-
-/* Hero */
-/* Hero — kept compact so the quick checker fits above the fold:
-   the OJK impact line sits right under the sub, the chips stay. */
+/* Hero — spacious like IASC (20 Nov 2026): big title, clear sub,
+   two firm buttons. Creative layer: two soft white glows + a faint
+   diagonal sheen over the blue→purple gradient, a pulsing Live dot,
+   and the keyword ("penipuan?" / "a scam?") in a soft highlight. */
 .hero {
-  border-radius: var(--radius);
+  position: relative; overflow: hidden;
+  border-radius: 20px;
   background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
-  color: #fff; padding: 18px 28px; box-shadow: var(--shadow);
+  color: #fff; padding: 24px 20px; box-shadow: var(--shadow);
 }
+/* Glow top-right + glow bottom-left: blurred white radial blobs that
+   make the gradient feel lit instead of flat. */
+.hero::before {
+  content: ""; position: absolute; width: 280px; height: 280px; border-radius: 50%;
+  top: -140px; right: -80px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%;
+  bottom: -140px; left: -60px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+}
+.hero > * { position: relative; }
 .hero-eyebrow {
-  margin: 0 0 6px; font-size: 0.8rem; font-weight: 700;
+  margin: 0 0 10px; font-size: 0.8rem; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85;
 }
-.hero-title { font-size: 1.8rem; line-height: 1.15; margin: 0 0 8px; }
-.hero-sub { font-size: 1.02rem; opacity: 0.92; max-width: 560px; margin: 0 0 8px; }
-.hero-stat { font-size: 0.92rem; font-weight: 600; opacity: 0.95; max-width: 640px; margin: 0 0 8px; overflow-wrap: break-word; }
-.hero-source { font-size: 0.85rem; margin: 0 0 8px; opacity: 0.9; }
-.hero-source a { color: #fff; text-decoration: underline; }
-.hero-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; }
-.hero-chips li {
-  font-size: 0.88rem; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+.hero-live {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
   background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px; padding: 5px 10px; margin-bottom: 14px;
 }
+.hero-live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+  animation: hero-live-pulse 2s ease-in-out infinite;
+}
+@keyframes hero-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+}
+/* Hero title size (21 Nov, Myuden: samakan ke besar seperti gelap) —
+   the base size now matches the dark (DESIGN G) sizes below
+   (2.5rem mobile / 3.25rem / 5.25rem desktop, weight 900), so the
+   light theme no longer looks smaller than the dark one. */
+.hero-title { font-size: 3.25rem; line-height: 1.3; font-weight: 900; letter-spacing: -0.03em; margin: 0 0 10px; text-wrap: balance; }
+.hero-keyword {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px; padding: 0 8px;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.hero-sub { font-size: 0.9375rem; line-height: 1.55; opacity: 0.92; max-width: 52ch; margin: 0 0 18px; }
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.hero-check-btn {
+  flex: 1 1 200px; font: inherit; font-size: 1rem; font-weight: 800;
+  color: var(--accent); background: #fff; border: none; border-radius: 12px;
+  padding: 14px 18px; cursor: pointer; min-height: 52px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hero-check-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
+.hero-report-btn {
+  flex: 1 1 200px; font: inherit; font-size: 1rem; font-weight: 700;
+  color: #fff; background: transparent; border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px; padding: 14px 18px; cursor: pointer; min-height: 52px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.hero-report-btn:hover { background: rgba(255, 255, 255, 0.14); transform: translateY(-1px); }
+.hero-source { font-size: 0.85rem; margin: 14px 0 0; opacity: 0.9; }
+.hero-source a { color: #fff; text-decoration: underline; }
 
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px; box-shadow: var(--shadow); }
+/* Scroll reveal (23 Nov 2026): sections fade + rise 8px when scrolled
+   into view. The class is added by JS only (no-JS render is unaffected);
+   reduced motion skips it entirely (see init + the media query). */
+.reveal { opacity: 0; transform: translateY(8px); transition: opacity 0.15s ease, transform 0.15s ease; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+  /* Typing dots stay still — the text already says Aman is checking. */
+  .chat-dots span { animation: none; opacity: 1; }
+  /* Score ring + send spinner jump to their final state at once. */
+  .ring-fill { transition: none; }
+  .send-spinner { animation: none; }
+}
+/* Gentle life (20 Nov 2026): cards lift a touch on hover — desktop
+   only in effect, phones never notice. Never a layout shift. */
+.card, .stat { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+@media (hover: hover) {
+  .card:hover, .stat:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+  .hero:hover { transform: none; }
+}
+/* Stats 2×2 (mockup): big 29px numbers, small caps labels, icon chip. */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat {
+  background: var(--card); border-radius: 16px; padding: 18px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.stat-icon {
+  display: inline-grid; place-items: center; width: 36px; height: 36px;
+  border-radius: 12px; background: var(--accent-soft); color: var(--accent);
+  margin-bottom: 10px;
+}
+.stat-icon svg { width: 20px; height: 20px; }
+.stat-label {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.stat-num {
+  font-size: 1.8125rem; line-height: 1.1; font-weight: 800;
+  letter-spacing: -0.02em; margin-bottom: 4px; overflow-wrap: break-word;
+}
+.stat-sub { font-size: 0.8125rem; color: var(--muted); }
+/* Trending card (mockup): icon per scam type + rank + honest tag. */
+.trend .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.trend .card-head h2 { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.trend-row {
+  padding: 14px 0; border-top: 1px solid var(--border);
+}
+.trend-row:first-of-type { border-top: none; }
+/* The row is a <details> — the summary is the tappable row, the
+   detail (signs + what to do) expands underneath it. */
+.trend-summary {
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; list-style: none;
+}
+.trend-summary::-webkit-details-marker { display: none; }
+.trend-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.trend-chevron {
+  flex: none; color: var(--muted); line-height: 1;
+  transition: transform 0.2s ease;
+}
+.trend-chevron svg { display: block; width: 18px; height: 18px; }
+.trend-row[open] .trend-chevron { transform: rotate(180deg); }
+.trend-detail { padding: 12px 0 2px 52px; font-size: 0.92rem; }
+.trend-detail p { margin: 0 0 8px; }
+.trend-detail strong { color: var(--text); }
+.trend-icon {
+  width: 40px; height: 40px; flex: none; border-radius: 12px;
+  display: grid; place-items: center; color: #fff;
+}
+.trend-icon svg { width: 22px; height: 22px; }
+.trend-apk { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.trend-link { background: linear-gradient(135deg, var(--hero-from), var(--hero-to)); }
+.trend-prize { background: linear-gradient(135deg, #d97706, #b45309); }
+.trend-job { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.trend-rank { width: 20px; flex: none; text-align: center; font-size: 1.0625rem; font-weight: 800; color: var(--accent); }
+.trend-body { flex: 1; min-width: 0; }
+.trend-name { font-size: 0.9375rem; font-weight: 700; }
+.trend-desc { font-size: 0.8125rem; color: var(--muted); }
+.trend-tag {
+  font-size: 0.75rem; font-weight: 700; color: var(--accent);
+  background: var(--accent-soft); border-radius: 999px; padding: 4px 10px; white-space: nowrap;
+}
+.trend-note { margin-top: 10px; }
+.trend-hint { margin: 0 0 4px; font-size: 0.88rem; }
+/* Share card (mockup). */
+.share .section-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 6px; text-wrap: balance; }
+.share p { font-size: 0.875rem; color: var(--muted); margin-bottom: 14px; }
+.share-row { display: flex; gap: 8px; }
+.share-link {
+  flex: 1; min-width: 0; background: var(--bg); border-radius: 10px;
+  padding: 12px 14px; font-size: 0.875rem; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.share-copy {
+  flex: none; font: inherit; font-size: 0.875rem; font-weight: 700;
+  color: #fff; background: var(--accent); border: none; border-radius: 10px;
+  padding: 12px 16px; cursor: pointer; white-space: nowrap; min-height: 48px;
+  transition: background 0.15s ease;
+}
+.share-copy:hover { background: var(--accent-hover); }
+/* Bottom navigation (mockup): fixed, 2 items, active = brand blue. */
+.bottomnav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: var(--card); border-top: 1px solid var(--border);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06);
+}
+.bottomnav-inner {
+  max-width: 720px; margin: 0 auto;
+  display: flex; justify-content: space-around;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 0.6875rem; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer; padding: 4px 10px; min-height: 48px;
+  transition: color 0.15s ease;
+}
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item.active { color: var(--accent); }
+/* Roomy settings rows (21 Nov 01:14, moved to the Riwayat dashboard
+   21 Nov): each setting gets its own breathing row — label left,
+   control right, never crammed together. */
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px 0; }
+.settings-label { font-weight: 600; font-size: 0.92rem; }
+/* Large text + Senior Mode: stack the settings rows (23 Nov 2026,
+   Myuden). At 1.125rem / 19px the long labels ("Sembunyikan isi
+   pesan di riwayat") no longer fit beside their toggle, so
+   flex-wrap pushed the toggle to a second line on SOME rows only —
+   an inconsistent mix of one-line and two-line rows. Stacking every
+   row (label on top, control below, left-aligned) makes all four
+   rows identical, and the label takes the full width so long text
+   wraps cleanly instead of crowding its control. Small/Medium keep
+   the one-line layout untouched. */
+html[data-text-size="large"] .settings-row,
+body.senior-mode .settings-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+html[data-text-size="large"] .settings-label,
+body.senior-mode .settings-label {
+  width: 100%;
+}
+/* Accent dots in the Riwayat dashboard Pengaturan (moved from the
+   deleted drawer 21 Nov): three accent colours, same segmented look
+   as the language toggle. */
+.accent-picks { display: inline-flex; gap: 10px; align-items: center; }
+.accent-pick {
+  width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border);
+  background: none; padding: 0; cursor: pointer;
+  display: grid; place-items: center;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.accent-pick .accent-dot { display: block; width: 20px; height: 20px; border-radius: 50%; }
+.accent-pick[data-accent-pick="blue"] .accent-dot { background: #1a56db; }
+.accent-pick[data-accent-pick="green"] .accent-dot { background: #15803d; }
+.accent-pick[data-accent-pick="purple"] .accent-dot { background: #6d28d9; }
+.accent-pick[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.lang-btn:disabled, .accent-pick:disabled { opacity: 0.45; cursor: not-allowed; }
+.history-search {
+  width: 100%; padding: 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font: inherit; font-size: 16px; margin-bottom: 4px;
+}
+/* Achievement badges at the top of the history sheet: earned tiles
+   are solid + accent, locked ones are dashed + dimmed with the
+   requirement (and live progress) written out. */
+.badges { margin-bottom: 12px; }
+.badges-title { margin: 0 0 8px; font-size: 0.95rem; }
+.badges-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.badge-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  border: 1px dashed var(--border); border-radius: 10px; padding: 10px 12px;
+  color: var(--muted); opacity: 0.75;
+}
+.badge-tile.earned { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--text); opacity: 1; }
+.badge-tile-icon {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px;
+  background: var(--bg); color: var(--muted); margin-bottom: 4px;
+}
+.badge-tile.earned .badge-tile-icon { background: var(--accent-soft); color: var(--accent); }
+.badge-tile-icon svg { width: 18px; height: 18px; }
+.badge-tile-name { font-size: 0.9rem; font-weight: 700; }
+.badge-tile-sub { font-size: 0.82rem; color: var(--muted); }
+.history-search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.history-foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+/* History rows on the Riwayat dashboard are buttons (tap to re-show the
+   verdict) — stacked, full-width lines so nothing is squeezed into
+   a narrow column: status + score + time on top, the message below,
+   the source last. Same status border as the page list. */
+.history-item-btn {
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  width: 100%; text-align: left; font: inherit; font-size: 0.9rem; color: var(--text);
+  background: none; border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px;
+  padding: 10px 12px; cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+/* Riwayat: baris atas kartu (vonis + alat + skor + tanggal) HARUS bisa
+   membungkus — di ukuran teks Besar/Sedang (Myuden 22 Nov 22:16) total
+   lebarnya melebihi kartu 390px dan tanggal terpotong di tepi kanan.
+   Dengan wrap, tanggal pindah ke baris sendiri (rata kanan) daripada
+   keluar jalur. */
+.history-row-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.history-row-top time { margin-left: auto; color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+.history-item-btn .history-text {
+  overflow-wrap: break-word; white-space: normal;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.history-item-btn .history-source { color: var(--muted); font-size: 0.85rem; }
+.history-item-btn .history-tool {
+  color: var(--muted); font-size: 0.85rem; white-space: nowrap;
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 8px;
+}
+.history-item-btn .history-legacy {
+  color: var(--warn); font-size: 0.85rem; overflow-wrap: break-word; white-space: normal;
+}
+.history-item-btn:hover { background: var(--accent-soft); }
+.history-item-btn.status-scam { border-left-color: var(--danger); }
+.history-item-btn.status-suspicious { border-left-color: var(--warn); }
+.history-item-btn.status-safe { border-left-color: var(--safe); }
+/* Language toggle: two small pills, ID | EN — no 8-language dropdown. */
+.lang-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.lang-btn {
+  font: inherit; font-size: 0.85rem; font-weight: 700;
+  background: transparent; color: var(--muted); border: none;
+  padding: 8px 12px; cursor: pointer; min-height: 36px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.lang-btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .hint, .muted, .storage-note { color: var(--muted); font-size: 0.92rem; }
 
 .demo-banner {
@@ -158,6 +649,15 @@ a { color: var(--accent); }
   background: var(--warn-bg); color: var(--warn);
   border-radius: var(--radius); padding: 12px 16px; font-size: 0.92rem;
 }
+
+/* Online-only mode (23 Nov 2026): the offline notice inside the
+   checker panel — warn-tinted, same voice as the offline banner. */
+.offline-check-note {
+  background: var(--warn-bg); color: var(--warn);
+  border-radius: 10px; padding: 12px 14px; margin: 12px 0;
+  font-size: 0.95rem; font-weight: 600;
+}
+.secondary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* Checker */
 .field-label { display: block; font-weight: 600; margin: 12px 0 6px; }
@@ -180,24 +680,85 @@ textarea {
 }
 textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.samples-heading { font-weight: 600; margin: 18px 0 8px; }
-.samples { display: flex; flex-direction: column; gap: 8px; }
+.samples-heading { font-weight: 600; margin: 12px 0 8px; }
+/* Sample chips: the 6 samples are a wrapping row of pill chips
+   above the composer — label only, no message preview. Tapping a
+   chip only fills the form; the user presses send themself
+   (21 Nov 2026, Myuden 18:01 — the chips no longer auto-send). */
+.samples { display: flex; flex-wrap: wrap; gap: 8px; }
 .sample-btn {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  text-align: left; width: 100%;
+  display: inline-flex; align-items: center; gap: 2px;
+  text-align: left; width: auto;
   background: var(--bg); color: var(--text);
-  border: 1px solid var(--border); border-left: 4px solid var(--accent);
-  border-radius: 12px; padding: 10px 14px; cursor: pointer; font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 14px; cursor: pointer; font: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .sample-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-.sample-label { font-weight: 700; font-size: 0.92rem; color: var(--accent); }
-.sample-preview { font-size: 0.9rem; color: var(--muted); }
+.sample-btn.selected { background: var(--accent); border-color: var(--accent); }
+.sample-btn.selected .sample-label { color: #fff; }
+.sample-label { font-weight: 600; font-size: 0.9rem; color: var(--accent); }
+
+/* Flow steps (21 Nov 2026, demo reference): one row of three pills —
+   1 fill, 2 send, 3 see the result — same width as the form below.
+   Active step: accent border + filled number; done steps: green. */
+.check-steps { display: flex; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.check-steps li { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 7px 12px 7px 8px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.check-steps .step-num { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--border); color: var(--muted); font-size: 0.78rem; font-weight: 800; }
+.check-steps li.active { color: var(--text); border-color: var(--accent); }
+.check-steps li.active .step-num { background: var(--accent); color: #fff; }
+.check-steps li.done { color: var(--safe); border-color: var(--safe); }
+.check-steps li.done .step-num { background: var(--safe); color: #fff; }
+/* Fill note (demo reference): shown under the chips once an example
+   fills the form — the text is filled but NOT sent yet. Hidden by
+   default; .show toggles it (never the [hidden] attribute — this rule
+   sets display, which would override it). */
+.fill-note { display: none; align-items: flex-start; gap: 8px; margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 0.85rem; font-weight: 500; }
+.fill-note.show { display: flex; }
+.fill-note svg { flex: none; margin-top: 2px; color: var(--accent); }
+/* Character count under the composer: small, muted, left-aligned. */
+.input-meta { display: flex; margin-top: 6px; }
+.char-count { font-size: 0.78rem; color: var(--muted); }
+@media (max-width: 430px) {
+  .check-steps li { font-size: 0.72rem; padding-right: 8px; gap: 6px; }
+  .check-steps .step-num { width: 20px; height: 20px; }
+}
+
+/* Composer: text field + labeled pill send button + paste.
+   (The WhatsApp-style thread, bubbles and typing indicator were
+   removed 21 Nov 2026, Myuden 18:01 — Cek Pesan is a plain form
+   again; the result card below is the only answer.) */
+.chat-composer { margin-top: 12px; display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.chat-composer textarea { flex: 1 1 200px; min-height: 48px; resize: none; }
+/* The send button is BOTH .primary (colour) and .chat-send-btn
+   (labeled pill shape). .primary is defined later in this file
+   and wins same-specificity ties on padding/border-radius — its
+   13px 28px padding used to eat the whole 48px width, leaving a
+   0-wide content box, so the paper-plane SVG (a flex item) shrank
+   to 0px wide: the live 21 Nov check saw an empty blue box. The
+   doubled selector below outranks .primary, and the SVG itself is
+   barred from shrinking, so the icon can never vanish again.
+   (21 Nov 2026, demo reference: the button is a LABELED pill —
+   icon + "Kirim untuk diperiksa" — not the old round icon button.) */
+.primary.chat-send-btn {
+  flex: none; min-height: 48px; padding: 12px 20px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.chat-send-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+.chat-send-btn .send-label { font-weight: 700; white-space: nowrap; }
+/* Loading spinner inside the send button (demo reference): a plain
+   bordered ring — no emoji, no image. */
+.send-spinner { width: 18px; height: 18px; flex: none; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.primary.chat-send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+body.senior-mode .chat-send-btn { min-height: 56px; }
 
 .actions { margin-top: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .primary {
   background: var(--accent); color: #fff; border: none; border-radius: 10px;
   padding: 13px 28px; font-size: 1rem; font-weight: 700; cursor: pointer;
   box-shadow: var(--shadow); min-height: 48px;
+  transition: background-color 0.15s ease;
 }
 .primary:hover:not(:disabled) { background: var(--accent-hover); }
 .primary:disabled { opacity: 0.6; cursor: wait; }
@@ -214,39 +775,75 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .error-detail summary { cursor: pointer; color: var(--muted); }
 .error-detail code { word-break: break-all; white-space: pre-wrap; }
 .retry-btn { margin-top: 8px; }
-/* Floating "Tanya Aman" shortcut (19 Nov 2026): a small pill button
-   pinned to the bottom-right corner, always reachable without
-   scrolling to the tools section. Minimum 48px touch target; the
-   page reserves bottom space (see body padding below) so it never
-   covers the footer when scrolled to the end. Hidden on print by the
-   print rule at the end of this file (only #print-report prints). */
+/* Visually hidden (screen-reader-only) text: keeps its layout box
+   (so innerText/textContent still read it) but paints nothing. Used
+   for the icon-only Aman launcher's accessible name. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+/* Aman launcher (20 Nov 2026): a round button with Aman's own face
+   and a green online dot — not a "?" circle. Pinned bottom-right,
+   always reachable. 56px touch target; the page reserves bottom
+   space (see body padding below) so it never covers the footer when
+   scrolled to the end. It floats gently up and down like the avatar
+   (same aman-float keyframe, 4.5 s — Myuden 20 Nov 20:26). Hidden on
+   print by the print rule at the end of this file (only #print-report
+   prints). */
 .aman-fab {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: 84px;
   z-index: 60;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 48px;
-  min-width: 48px;
-  padding: 12px 18px;
-  border: none;
-  border-radius: 999px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
   background: var(--accent);
-  color: #fff;
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
   cursor: pointer;
+  animation: aman-float 4.5s ease-in-out infinite;
+  transition: opacity 0.2s ease;
+  will-change: transform;
 }
-.aman-fab:hover { background: var(--accent-hover); }
-.aman-fab svg { width: 22px; height: 22px; flex: none; }
+/* Hidden while the footer is on screen (21 Nov, Myuden — the floating
+   button must never cover the footer): fades out, stops intercepting
+   taps, and leaves the tab order (visibility:hidden). Toggled by an
+   IntersectionObserver on .footer in main.js; reduced motion kills the
+   fade globally, so the hide is instant there. */
+.aman-fab-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.aman-fab img {
+  display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+}
+/* Hover keeps only the deeper shadow: the float animation owns the
+   transform now, so a hover translateY would be overridden anyway. */
+/* The float pauses on hover / keyboard focus: the button stops moving
+   the moment the user reaches for it, so it is easy to tap — and an
+   infinitely moving target never settles for an automated click. */
+.aman-fab:hover { box-shadow: 0 8px 26px rgba(0, 0, 0, 0.34); }
+.aman-fab:hover, .aman-fab:focus-visible { animation-play-state: paused; }
+.aman-fab-dot {
+  position: absolute; right: 0; bottom: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #22c55e; border: 2px solid #fff;
+}
 @media (max-width: 640px) {
-  .aman-fab { right: 12px; bottom: 12px; padding: 12px 16px; }
+  /* Smaller footprint on phones (22 Nov 2026): the 56px button's
+     left edge sat at x=322 on a 390px phone, overlapping the right
+     column's stat labels. 48px (56px Senior) pulls it clear. */
+  .aman-fab { right: 12px; bottom: 80px; width: 48px; height: 48px; }
 }
-body.senior-mode .aman-fab { min-height: 56px; font-size: 1.05rem; }
+body.senior-mode .aman-fab { width: 64px; height: 64px; }
+@media (max-width: 640px) {
+  body.senior-mode .aman-fab { width: 56px; height: 56px; }
+}
 /* Skip link: invisible until keyboard-focused. */
 .skip-link { position: absolute; left: -9999px; top: 0; background: var(--accent); color: #fff; padding: 8px 14px; border-radius: 0 0 8px 0; z-index: 100; }
 .skip-link:focus { left: 0; color: #fff; }
@@ -261,9 +858,62 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .privacy-receipt { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 12px 0; background: var(--accent-soft); }
 .privacy-receipt summary { cursor: pointer; font-weight: 600; }
 .privacy-receipt p { margin: 6px 0; font-size: 0.92rem; }
-.local-signal { border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
+/* Device code check (demo reference): plain section now — the dashed
+   box is gone, the checklist carries the information. Pills count the
+   checks; rows show each rule found or clean, same grid as the red
+   flags above. */
+.local-signal { margin: 18px 0 0; }
 .local-signal h3 { margin: 0 0 4px; font-size: 0.95rem; }
-.local-signal p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+.local-signal > p { margin: 0 0 10px; font-size: 0.92rem; color: var(--muted); }
+.check-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 4px; }
+.meta-pill { background: var(--border); border-radius: 999px; padding: 5px 12px; font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.meta-pill.bad { background: var(--danger-bg); color: var(--danger); }
+.meta-pill.good { background: var(--safe-bg); color: var(--safe); }
+/* Clickable pills (Myuden 22 Nov 20:57 + 21:02): the "triggered" and
+   "clean" pills are buttons that jump to their lists. The reset keeps
+   a button visually identical to the static spans (.meta-pill above
+   supplies background/padding/colour); the chevron › and pointer
+   cursor mark it tappable, the hover is a subtle dim. Keyboard focus
+   comes from the global button:focus-visible rule. */
+button.meta-pill-btn { border: 0; font-family: inherit; cursor: pointer; }
+button.meta-pill-btn:hover { filter: brightness(0.96); }
+.meta-pill-btn .pill-chev { margin-left: 2px; }
+.local-checks { list-style: none; margin: 10px 0 0; padding: 0; }
+.local-checks li { display: flex; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--border); }
+.local-checks li:last-child { border-bottom: none; padding-bottom: 2px; }
+.check-ico {
+  width: 30px; height: 30px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; margin-top: 1px;
+  font-size: 1rem; font-weight: 800; line-height: 1;
+}
+.found .check-ico { background: var(--danger-bg); color: var(--danger); }
+.clear .check-ico { background: var(--safe-bg); color: var(--safe); }
+/* Folded clean rows (21 Nov, Myuden: "lipat baris bersihnya"): the
+   disclosure toggle is one neat row — green ✓, count, chevron that
+   turns when open — and the clean rows inside reuse .local-checks. */
+.clean-checks { margin-top: 10px; border-top: 1px solid var(--border); }
+.clean-checks summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 2px; cursor: pointer; list-style: none;
+  font-size: 0.93rem; font-weight: 700;
+}
+.clean-checks summary::-webkit-details-marker { display: none; }
+.clean-checks summary .check-ico { background: var(--safe-bg); color: var(--safe); }
+.clean-checks summary::after {
+  content: "▾"; margin-left: auto; color: var(--muted);
+  font-size: 1rem; line-height: 1; transition: transform .2s ease;
+}
+.clean-checks[open ] summary::after { transform: rotate(180deg); }
+.clean-checks .local-checks { margin-top: 0; }
+.check-body { flex: 1; min-width: 0; }
+.check-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.check-head b { font-size: 0.93rem; font-weight: 700; }
+.check-head .status { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.found .status { color: var(--danger); }
+.clear .status { color: var(--safe); }
+.check-body p { margin: 2px 0 0; font-size: 0.85rem; color: var(--muted); }
+.evidence { margin-top: 7px; font-size: 0.82rem; background: var(--danger-bg); color: var(--text); border-radius: 10px; padding: 8px 11px; overflow-wrap: break-word; }
+.evidence b { color: var(--danger); font-weight: 700; }
 
 /* Result card */
 .result-card {
@@ -273,6 +923,22 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .result-card.status-scam { border-top: 4px solid var(--danger); }
 .result-card.status-suspicious { border-top: 4px solid var(--warn); }
 .result-card.status-safe { border-top: 4px solid var(--safe); }
+/* Stale verdict (demo reference): the message changed after the check.
+   The bar shows at the top of the card; everything else dims except
+   the bar and the action buttons (they stay usable). */
+.result-stale-bar { display: none; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--warn); font-size: 0.85rem; font-weight: 600; }
+.result-card.stale .result-stale-bar { display: block; }
+.result-card.stale > *:not(.result-stale-bar):not(.result-actions) { opacity: 0.45; }
+/* Audit 12 (1): the file/link panels get the same stale language as
+   the main card — banner + dim, everything except the banner. */
+.panel-stale .result-stale-bar { display: block; }
+.panel-stale > *:not(.result-stale-bar) { opacity: 0.45; }
+/* Empty state (demo reference): dashed box where the result will
+   appear, shown until the first result card renders. */
+.result-empty { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 28px 20px; text-align: center; color: var(--muted); background: var(--card); margin-top: 16px; }
+.result-empty svg { color: var(--muted); margin-bottom: 8px; }
+.result-empty p { margin: 0; font-size: 0.9rem; }
+.result-empty strong { display: block; color: var(--text); font-size: 0.98rem; margin-bottom: 2px; }
 /* Interim panel while the AI verdict loads: neutral accent top border
    (never a verdict color), no score ring, no status heading. */
 .result-card.result-checking { border-top: 4px solid var(--accent); }
@@ -282,6 +948,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .ring-fill {
   fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round;
   transform: rotate(-90deg); transform-origin: 42px 42px;
+  transition: stroke-dashoffset .8s cubic-bezier(.22,.8,.3,1);
 }
 .status-scam .ring-fill { stroke: var(--danger); }
 .status-suspicious .ring-fill { stroke: var(--warn); }
@@ -306,10 +973,9 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
   padding: 6px 12px; border-radius: 8px; line-height: 1.35; text-align: right;
 }
 .badge-device { background: var(--safe-bg); color: var(--safe); }
-.badge-cloud { background: #eef4ff; color: #1a56db; }
+.badge-cloud { background: var(--accent-soft); color: var(--accent); }
 .badge-demo { background: var(--warn-bg); color: var(--warn); }
 .badge-unknown { background: var(--border); color: var(--muted); }
-@media (prefers-color-scheme: dark) { .badge-cloud { background: #1c2c52; color: #9dbfff; } }
 /* Completion mark + toast (round 6): the CHECK finished — never a claim
    the message is safe. The score + status above carry the verdict. */
 .check-complete {
@@ -323,13 +989,12 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
   background: var(--safe); color: #fff;
   display: grid; place-items: center; font-size: 0.85rem; line-height: 1;
 }
-@media (prefers-color-scheme: dark) { .check-complete-icon { color: #06281a; } }
 /* Toast: fixed at the bottom edge, above the floating Aman button
    (bottom: 88px clears it). Only the toast itself takes taps (its ×
    button); it never covers the full width, so page buttons stay
    tappable underneath. Auto-hides after ~5 s. */
 .toast {
-  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+  position: fixed; left: 50%; bottom: 152px; transform: translateX(-50%);
   z-index: 60; width: min(480px, calc(100vw - 32px));
   display: flex; align-items: center; gap: 10px;
   background: var(--card); color: var(--text);
@@ -343,33 +1008,87 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
   font-size: 1.4rem; line-height: 1; padding: 4px 8px; cursor: pointer;
 }
 .toast-close:hover { color: var(--text); }
+/* Update toast action (21 Nov): one tap reloads to the new version. */
+.toast-action {
+  flex: none; white-space: nowrap;
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 8px 12px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+}
+.toast-action:hover { filter: brightness(1.1); }
+/* While the completion toast shows, the page gets bottom room so the
+   fixed toast never covers result content (audit round 7: it covered
+   the Red flags chips on desktop). 240px clears the toast's top edge
+   (bottom 152px + ~72px height + margin). Removed when the toast
+   hides. */
+body.toast-visible .page { padding-bottom: 240px; }
+/* "What to do" as an action checklist (demo reference): one row, arrow
+   marker + the same advice text — data and wording unchanged. */
 .result-next {
-  margin-top: 16px; padding: 10px 14px; border-radius: 10px;
+  margin-top: 16px; padding: 12px 14px; border-radius: 10px;
   background: var(--accent-soft); font-size: 0.95rem;
 }
-.flags { list-style: none; margin: 0.4rem 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.actions-checklist { list-style: none; margin: 0; padding: 0; }
+.actions-checklist li { display: flex; gap: 10px; align-items: flex-start; }
+.action-ico {
+  flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: grid; place-items: center; font-size: 0.95rem; font-weight: 700; line-height: 1; margin-top: 1px;
+}
+/* Main sign (demo reference): the top finding, highlighted in amber. */
+.main-sign { margin-top: 14px; border-radius: 12px; padding: 12px 14px; background: var(--warn-bg); font-size: 0.9rem; }
+.main-sign strong { color: var(--warn); }
+/* Red flags as a checklist (21 Nov 2026 polish): one row per finding,
+   warning marker + text, dividers between rows — no more wrapping
+   chips. The marker is a ::before circle so every .flags list gets
+   it, including the Cek File text-score list. */
+.flags { list-style: none; margin: 0.4rem 0; padding: 0; display: flex; flex-direction: column; }
 .flags li {
-  font-size: 0.9rem; padding: 6px 12px 6px 28px; border-radius: 999px;
-  background: var(--danger-bg); color: var(--danger); position: relative;
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 2px; border-bottom: 1px solid var(--border); font-size: 0.95rem;
 }
+.flags li:last-child { border-bottom: none; padding-bottom: 2px; }
 .flags li::before {
-  content: "!"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-  width: 16px; height: 16px; border-radius: 50%; background: var(--danger); color: #fff;
-  font-size: 0.75rem; font-weight: 800; display: grid; place-items: center; line-height: 1;
+  content: "!"; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--danger); color: #fff; font-size: 0.8rem; font-weight: 800;
+  display: grid; place-items: center; line-height: 1; margin-top: 1px;
 }
-.status-safe .flags li { background: var(--safe-bg); color: var(--safe); }
+.status-safe .flags li::before { background: var(--safe); }
 .no-flags { color: var(--muted); }
+/* Info flags (21 Nov audit 5): facts that explain the verdict but are
+   NOT danger signs (official-contact match, verified identity claim).
+   Same checklist shape as .flags, blue "i" marker instead of the red
+   "!" — a Safe card never shows them under "Tanda bahaya". */
+.info-flags { margin: 0.4rem 0; }
+.info-flags h3 { margin: 0 0 4px; font-size: 0.95rem; }
+.info-flags ul { list-style: none; margin: 0.4rem 0; padding: 0; display: flex; flex-direction: column; }
+.info-flags li {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 2px; border-bottom: 1px solid var(--border); font-size: 0.95rem;
+}
+.info-flags li:last-child { border-bottom: none; padding-bottom: 2px; }
+.info-flags li::before {
+  content: "i"; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 0.8rem; font-weight: 800;
+  font-style: italic; display: grid; place-items: center; line-height: 1; margin-top: 1px;
+}
+/* Info checklist rows (kind:"info"): same shape as .local-checks,
+   blue ℹ marker, neutral evidence box — never the red danger tint. */
+.local-info-checks { list-style: none; margin: 10px 0 0; padding: 0; }
+.local-info-checks li { display: flex; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--border); }
+.local-info-checks li:last-child { border-bottom: none; padding-bottom: 2px; }
+.local-info-checks .check-ico { background: var(--accent-soft); color: var(--accent); }
+.local-info-checks .evidence { background: var(--accent-soft); }
+.local-info-checks .evidence b { color: var(--accent); }
 .checked-message { margin-top: 14px; }
 .checked-message summary { cursor: pointer; color: var(--muted); }
 /* No horizontal overflow on phones: long unbroken strings (links,
    file fingerprints, phone/account numbers, pasted messages) must wrap
    instead of pushing the page wider than the screen. */
 code, .numbers-value, .file-name { overflow-wrap: anywhere; }
-.checked-message p { white-space: pre-wrap; color: var(--muted); font-size: 0.92rem; overflow-wrap: anywhere; }
+.checked-message p { white-space: pre-wrap; color: var(--muted); font-size: 0.92rem; overflow-wrap: break-word; }
 .links-url { overflow-wrap: anywhere; }
 
 /* History */
-.history-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .history-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
 .history-item {
   display: grid; grid-template-columns: auto auto auto 1fr auto; gap: 10px; align-items: baseline;
@@ -397,62 +1116,203 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 .how-card h3 { margin: 0 0 4px; }
 .how-card p { color: var(--muted); font-size: 0.92rem; margin: 0; }
 
-/* Language picker */
-.lang-select {
-  font: inherit; font-size: 0.88rem; font-weight: 600;
-  padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg); color: var(--text); cursor: pointer;
-}
-
 /* Result actions + links found */
 .result-actions { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+/* Verdict share buttons (WhatsApp / Telegram): icon + brand name. */
+.share-app-btn { display: inline-flex; align-items: center; gap: 6px; }
+.share-app-btn svg { width: 16px; height: 16px; }
 .links-box {
   margin-top: 14px; padding: 12px 14px; border-radius: 10px;
   background: var(--warn-bg); border: 1px solid transparent;
 }
 .linktrack-result { margin-top: 10px; }
-.linktrack input[type="url"] { flex: 1; min-width: 220px; }
+.linktrack input[type="text"] { flex: 1; min-width: 220px; }
 .links-box h3 { margin: 0 0 6px; color: var(--warn); }
 .links-box ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.links-box li { font-size: 0.9rem; word-break: break-all; }
+/* Links found: prose wraps on word boundaries — break-all split short
+   words mid-word ("ini" became "i/ni" on Myuden's phone, 21 Nov).
+   Long URLs still break anywhere via .links-url below. */
+.links-box li { font-size: 0.9rem; overflow-wrap: break-word; }
 .links-host { font-weight: 700; color: var(--warn); }
 .links-url { color: var(--muted); font-size: 0.85rem; }
 .links-warn { margin: 8px 0 0; font-size: 0.9rem; color: var(--warn); }
 
 /* History stats + actions */
-.history-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .history-stats { font-size: 0.9rem; font-weight: 600; margin: 8px 0 0; }
 .history-stats:empty { display: none; }
 
-.footer { color: var(--muted); font-size: 0.85rem; text-align: center; padding-bottom: 8px; }
-.footer a { color: var(--muted); }
+/* Footer (23 Nov 2026, kartu ala PackVault — Myuden): "gelembung"
+   membulat berisi merek di atas, tombol GitHub, pemisah, lalu
+   kredit/lisensi/hak cipta di bawah. Kartu = latar lembut + border +
+   sudut membulat, aman di tema gelap maupun terang. */
+.footer { margin: 24px 12px 0; padding: 0; border: none; }
+.footer-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); color: var(--muted); font-size: 0.85rem; text-align: left; padding: 32px 20px 28px; }
+.footer-card a { color: var(--muted); }
+.footer-row { margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px; }
+/* Deskripsi di bawah merek (Myuden 23 Nov 2026, ala PackVault):
+   satu kalimat singkat tentang TipuCek, rata kiri, warna redup. */
+.footer-desc-row { color: var(--muted); margin-bottom: 16px; max-width: 560px; }
+.footer-row:last-child { margin-bottom: 0; }
+.footer-brand-link, .footer-license-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.footer-brand-link:hover, .footer-license-link:hover { text-decoration: underline; }
+/* Nama merek (Myuden 23 Nov 2026): paling atas di kartu, tebal +
+   lebih besar dari teks footer, warna teks utama. */
+.footer-card .footer-brand-name { font-weight: 700; font-size: 1.125rem; color: var(--text); }
+/* Tombol GitHub (Myuden 22 Nov 22:22, gaya kotak ala PackVault 23 Nov):
+   logo saja tanpa teks, klik buka repo di tab baru. Kotak 44px +
+   border + sudut membulat, ikon 24px di tengah, hover jelas. */
+.footer-gh-link { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--text); }
+.footer-gh-link .footer-icon { width: 24px; height: 24px; }
+.footer-gh-link:hover { color: var(--text); background: var(--accent-soft); text-decoration: none; }
+.footer-icon { width: 16px; height: 16px; flex: none; }
+.footer-tile { width: 28px; height: 28px; flex: none; border-radius: 7px; background: linear-gradient(135deg, var(--hero-from), var(--hero-to)); display: inline-grid; place-items: center; overflow: hidden; }
+.footer-tile img { display: block; width: 100%; height: 100%; }
+.footer-dot { color: var(--muted); }
+/* Pemisah kartu (ala PackVault): garis tipis penuh lebar kartu. */
+.footer-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; width: 100%; }
+/* Hak cipta (Myuden 23 Nov 2026, referensi PackVault/Trippi/
+   Plunderport/GitHub): baris terakhir, lebih kecil + lebih redup. */
+.footer-copy { font-size: 0.8rem; opacity: 0.85; }
+/* Baris kredit ala PackVault (Myuden 23 Nov 08:47): HP = kredit di atas
+   Firebase, menumpuk rata kiri (sejajar); desktop = kredit di kiri,
+   Firebase pindah ke kanan, tetap satu baris sejajar. Celah besar 24px
+   ke baris lisensi + hak cipta di bawahnya tetap dipertahankan. */
+.footer-credit { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 24px; }
+.footer-credit .footer-row { margin-bottom: 0; }
+@media (min-width: 640px) {
+  .footer-credit { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+/* Baris bawah lisensi + hak cipta ala PackVault (Myuden 23 Nov 08:45):
+   HP = lisensi di atas hak cipta, menumpuk rata kiri (sejajar); desktop
+   = hak cipta di kiri, lisensi pindah ke kanan, tetap satu baris sejajar
+   (pola yang sama seperti copyright + support di PackVault). */
+.footer-bottom { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.footer-bottom .footer-row { margin-bottom: 0; }
+@media (min-width: 640px) {
+  .footer-bottom { flex-direction: row; align-items: center; justify-content: space-between; }
+  .footer-bottom .footer-copy { order: -1; }
+}
+/* Penghitung pengunjung di kartu Bagikan (Myuden 23 Nov 2026): bukti
+   sosial di tempat berbagi, bukan di footer. Baris kecil rata tengah. */
+.share-visitors { margin: 12px 0 0; text-align: center; }
+/* Lencana status pengunjung (Myuden 22 Nov 22:16): pil kecil berisi
+   titik hijau "hidup" + angka tebal — pola status line profesional
+   (Vercel/Resend). Latar transparan + border saja supaya aman di
+   tema gelap maupun terang. */
+.footer-status-pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; color: var(--muted); }
+.footer-status-pill strong { color: var(--text); font-weight: 700; }
+.footer-status-pill .status-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--safe); }
+@media (prefers-reduced-motion: no-preference) {
+  .footer-status-pill .status-dot { animation: footer-dot-pulse 2.2s ease-in-out infinite; }
+  @keyframes footer-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+}
 
+/* 7-day chart (23 Nov 2026): plain CSS bars from local history only.
+   Bars are fixed-height columns aligned at the bottom; zero days show
+   a 2px baseline so the row never looks broken. */
+.week-chart h2 { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 4px; text-wrap: balance; }
+.week-chart .muted { margin: 0 0 8px; }
+/* Chart empty state (21 Nov, audit M1): a visible invitation on a
+   first visit instead of a bare chart — centred text + one tap to
+   the examples in the checker below. */
+.week-chart-empty { text-align: center; padding: 18px 12px 20px; border: 1.5px dashed var(--border); border-radius: 12px; }
+.week-chart-empty .muted { margin: 0 0 12px; }
+.week-chart-try { font: inherit; font-size: 0.875rem; font-weight: 700; color: #fff; background: var(--accent); border: none; border-radius: 999px; padding: 10px 20px; min-height: 44px; cursor: pointer; }
+.week-chart-try:hover { background: var(--accent-hover); }
+.week-chart-row { display: flex; align-items: stretch; gap: 8px; }
+.week-chart-bars { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: 6px; }
+.week-bar { flex: 1; min-width: 0; height: 132px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+.week-bar-count { font-size: 0.75rem; font-weight: 800; line-height: 1; }
+.week-bar-fill { width: 100%; max-width: 34px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, var(--hero-from), var(--hero-to)); }
+.week-bar-day { font-size: 0.6875rem; color: var(--muted); line-height: 1; white-space: nowrap; }
+
+/* Install card (23 Nov 2026): the single install button + the tips
+   text that used to live in the footer. */
+.install-card h2 { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+.install-card p { margin: 0 0 12px; }
+.install-row { display: flex; }
+.install-row .primary { flex: 1; }
+#install-hint { margin: 12px 0 0; }
+
+/* FAQ (23 Nov 2026): <details> rows inside the "Cara kerja" panel,
+   same pattern as the trend details. */
+.faq { margin-top: 18px; }
+.faq h3 { font-size: 1.05rem; margin: 0 0 8px; }
+.faq-item { border-top: 1px solid var(--border); padding: 12px 0; }
+.faq-item summary { cursor: pointer; font-weight: 700; list-style: none; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.faq-item p { color: var(--muted); font-size: 0.92rem; margin: 8px 0 0; }
+#how-onboard-btn { margin-top: 14px; }
+
+/* Onboarding (23 Nov 2026): centered dialog over a scrim, shown once
+   to first-time visitors. Sits above sheets (z 65) and the Aman
+   launcher (z 60); the toast stays below it. */
+.onboard-scrim {
+  position: fixed; inset: 0; z-index: 75;
+  background: rgba(15, 23, 42, 0.45);
+}
+.onboard {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 76; width: min(420px, calc(100vw - 32px));
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  padding: 20px;
+}
+.onboard h2 { font-size: 1.25rem; margin: 0 0 14px; padding-right: 32px; }
+.dialog-close {
+  flex: none; background: none; border: none; color: var(--muted);
+  font-size: 1.6rem; line-height: 1; min-width: 44px; min-height: 44px;
+  padding: 4px 8px; cursor: pointer; border-radius: 8px;
+}
+.dialog-close:hover { color: var(--text); background: var(--accent-soft); }
+.onboard .dialog-close { position: absolute; top: 12px; right: 12px; }
+.onboard-steps { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.onboard-steps li { display: flex; gap: 12px; align-items: flex-start; }
+.onboard-num {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+  color: #fff; font-weight: 800; font-size: 0.9rem;
+}
+.onboard-steps strong { display: block; }
+.onboard-desc { display: block; color: var(--muted); font-size: 0.92rem; }
+.onboard .primary { width: 100%; }
+
+/* Senior Mode button in the Riwayat dashboard Pengaturan (21 Nov,
+   Myuden — moved out of the header so the header is one slim line):
+   full-width, pressed = accent-tinted so the ON state is obvious. */
+.senior-btn { width: 100%; min-height: 48px; margin-bottom: 6px; }
+.senior-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 640px) {
   .page { padding: 14px; }
   .card { padding: 14px 16px; }
   .topbar-inner { padding: 8px 14px; }
   .topbar-status { gap: 6px; }
-  .lang-select, .senior-toggle { font-size: 0.85rem; padding: 6px 8px; }
   .brand-mark { width: 36px; height: 36px; }
-  .hero { padding: 12px 16px; }
+  .hero { padding: 20px 16px; }
   .hero-eyebrow { font-size: 0.75rem; letter-spacing: 0.08em; }
-  .hero-title { font-size: 1.35rem; }
-  .hero-sub { font-size: 0.9rem; }
-  /* On phones the chip row costs two wrapped lines above the fold;
-     the same promises are in the hero sub + the checks overview below,
-     so the chips hide here while the OJK stat line stays. */
-  .hero-chips { display: none; }
-  .hero-stat { margin-bottom: 0; font-size: 0.85rem; }
+  .hero-title { font-size: 2.5rem; }
+  .hero-sub { font-size: 0.9375rem; }
+  .hero-actions { flex-direction: column; }
+  .hero-check-btn, .hero-report-btn { flex: none; width: 100%; }
   .mode-label { display: none; }
   /* The demo banner's long setup text stays on desktop; on phones the
      title alone states the mode, which is what the banner is for. */
   .demo-banner span { display: none; }
   .demo-banner { padding: 8px 12px; font-size: 0.85rem; }
-  /* Checker tabs scroll sideways in one row instead of wrapping to
-     two rows — the 44px touch targets stay, the fold stays reachable.
-     (Specificity: the base .checker-tabs rule comes later in this
-     file, so this needs the extra .checker to win.) */
-  .checker .checker-tabs { flex-wrap: nowrap; overflow-x: auto; }
+  /* Checker tabs (21 Nov, Myuden): all four tabs visible at once on
+     phones — 2 rows x 2 tabs, no sideways scroll, so users see every
+     check mode without swiping. (Specificity: the base .checker-tabs
+     rule comes later in this file, so this needs the extra .checker
+     to win.) */
+  .checker .checker-tabs { flex-wrap: wrap; overflow-x: visible; }
+  /* Half-row tab buttons: exactly two per row. Long labels ("Cek
+     sebelum kirim" / "Check before sending") wrap to two lines
+     inside the button instead of clipping — white-space: normal beats
+     the base nowrap, and the 48px min-height still holds. */
+  .checker .checker-tab-btn { flex: 1 1 calc(50% - 4px); white-space: normal; line-height: 1.25; padding: 10px 8px; }
   /* The checker hint (AI-mode vs cloud fallback) repeats the hero sub
      on a phone screen; it stays on desktop and in the checks overview
      below, so it hides here to keep the check button above the fold. */
@@ -461,6 +1321,73 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
   .history-item { grid-template-columns: auto auto 1fr; }
   .history-item time { grid-column: 1 / -1; }
   .result-badge { align-items: flex-start; }
+  /* Narrow phones: the rank + tag squeeze the name column so
+     "Tautan DHL palsu" breaks after "DHL" and "Lowongan kerja palsu"
+     after "kerja". Reflow the row into two lines — icon left, name +
+     desc on top, tag underneath — so every name fits on one line.
+     The rank is redundant here (top-to-bottom order already shows
+     it), so it hides on phones. */
+  .trend-rank { display: none; }
+  .trend-summary { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 6px; align-items: start; }
+  .trend-icon { grid-row: 1 / 3; grid-column: 1; align-self: start; margin-top: 2px; }
+  .trend-body { grid-row: 1; grid-column: 2; }
+  .trend-tag { grid-row: 2; grid-column: 2; justify-self: start; }
+  .trend-chevron { grid-row: 1; grid-column: 3; align-self: center; }
+  /* "Rp9 triliun" at 29px wraps mid-word in a 141px card — 24px
+     with balanced lines reads as two deliberate lines instead. */
+  .stat-num { font-size: 1.5rem; text-wrap: balance; }
+  /* Stat labels must never slide under the floating Aman button
+     (22 Nov 2026, Myuden's phone screenshot: "PENIPUAN TERDETEKSI"
+     was cut off by the button). The right-column label starts at
+     x=217 on a 390px phone (x=202 on 360px); the button's left edge
+     is x=330 (48px wide at right:12px; x=322 Senior at 56px, x=300
+     on a 360px phone). Capping the label at 84px forces every label
+     into short lines ("PENIPUAN" / "TERDETEKSI") that end well left
+     of the button, in both languages — the longest single word is
+     TERDETEKSI (~79px), so nothing breaks mid-word. */
+  .stat-label { max-width: 84px; overflow-wrap: break-word; }
+}
+
+/* Very narrow phones (≤400px): slim the header so every control fits
+   on one line — the old text pill crowded it out and "Senior mode"
+   was clipped on Myuden's phone (23:50). Brand mark + title smaller,
+   tighter gaps; the 10px net dot takes the place of the pill. The
+   Senior button is gone from the header entirely (21 Nov — it lives
+   in the Riwayat dashboard Pengaturan now). At text-size Large the
+   row may still wrap to two lines, which is fine — wrapping is not
+   clipping. */
+@media (max-width: 400px) {
+  .topbar-inner { padding: 8px 12px; gap: 8px; }
+  .brand { gap: 8px; }
+  .brand-mark { width: 32px; height: 32px; border-radius: 10px; }
+  .brand h1 { font-size: 1.15rem; }
+  .topbar-status { gap: 6px; }
+  .topbar-status .lang-btn { padding: 6px 7px; font-size: 0.85rem; }
+}
+
+/* Laptop/desktop (≥1024px): the bottom nav duplicates the header +
+   module tabs and eats a full bar at the foot of a wide screen, so
+   hide it for a cleaner jury view — phones/tablets keep it. The
+   floating Aman button and its panel drop back down with it, and the
+   page reclaims the reserved bottom space. The hero also grows a
+   little on wide screens for a stronger first impression. */
+@media (min-width: 1024px) {
+  .bottomnav { display: none; }
+  /* Desktop-only header Riwayat link (21 Nov, Myuden — opsi b): the
+     entry to Dashboard 2 on desktop, where the bottom nav is hidden.
+     Pill button matching the header controls; one slim line, no wrap. */
+  .header-history-link {
+    display: inline-flex; align-items: center;
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px;
+    background: transparent; color: var(--text);
+    font: inherit; font-size: 0.95rem; line-height: 1; cursor: pointer; white-space: nowrap;
+  }
+  .header-history-link:hover { background: var(--accent-soft); border-color: var(--accent); }
+  body { padding-bottom: 32px; }
+  .aman-fab { bottom: 16px; }
+  .aman-panel { bottom: 88px; }
+  .hero { padding: 32px 28px; }
+  .hero-title { font-size: 5.25rem; }
 }
 
 /* Screenshot check */
@@ -502,7 +1429,6 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 .assistant-head { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .assistant-title { flex: 1 1 auto; min-width: 140px; }
 .assistant-title h2 { margin: 0; }
-.assistant-sub { color: var(--muted); font-size: 0.9rem; margin: 0; }
 /* Aman is a round photo avatar: he floats and waves on greeting
    (CSS motion — see aman-float / aman-wave below). */
 .avatar {
@@ -533,12 +1459,22 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 .avatar.thinking { animation: aman-float 4.5s ease-in-out infinite, aman-pulse 1.2s ease-in-out infinite; }
 .avatar.waving { animation: aman-wave 1.2s ease-in-out 1; }
 @media (prefers-reduced-motion: reduce) {
-  .avatar, .avatar.thinking, .avatar.waving { animation: none; }
+  .avatar, .avatar.thinking, .avatar.waving, .aman-fab, .aman-panel { animation: none; }
+  .hero-live-dot { animation: none; }
+  /* Kill every remaining transition/animation too (hover lifts, tab
+     fades, panel slide) — reduced motion must mean still, everywhere. */
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  html { scroll-behavior: auto; }
 }
 @keyframes aman-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(26, 86, 219, 0.35); } 50% { box-shadow: 0 0 0 8px rgba(26, 86, 219, 0); } }
 
-.assistant-greeting { background: var(--accent-soft); border-radius: 12px; padding: 10px 14px; margin: 14px 0 10px; }
-.assistant-log { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; }
+/* Arah 3 greeting (Myuden 23:28): a centered welcome — spark, big
+   question, one-line subtext — no bubble, no left-aligned paragraph. */
+.assistant-greeting { text-align: center; padding: 2px 8px 0; margin: 14px 0 10px; }
+.assistant-greet-spark { display: block; font-size: 1.15rem; line-height: 1; color: var(--accent); }
+.assistant-greeting h3 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.25; margin: 6px 0 0; }
+.assistant-greet-sub { color: var(--muted); font-size: 0.9rem; line-height: 1.55; margin: 4px 0 0; }
+.assistant-log { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; margin-bottom: 10px; }
 .assistant-log:empty { display: none; }
 .assistant-msg {
   max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.95rem;
@@ -547,45 +1483,226 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 .assistant-msg.aman { align-self: flex-start; background: var(--accent-soft); border-bottom-left-radius: 4px; }
 .assistant-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
 .assistant-msg.typing { color: var(--muted); font-style: italic; }
-.assistant-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+/* Quick chips (Arah 3, Myuden 23:28): a centered, wrapping cloud —
+   not the old single scrollable row. Four chips wrap to ~2 rows;
+   the log still keeps its room because it is the only flex child
+   allowed to shrink (min-height 0, 20 Nov 20:57 fix). */
+.assistant-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 12px; }
 .assistant-chip {
+  /* Arah 3 wrap: chips may shrink and wrap to two lines — flex:none
+     let the longest chip (397px) overflow the 390px panel. */
+  flex: 0 1 auto; min-width: 0; max-width: 100%;
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
-  border-radius: 999px; padding: 6px 12px; font-size: 0.88rem; cursor: pointer; font: inherit;
+  border-radius: 999px; padding: 6px 10px; font-size: 0.88rem; cursor: pointer; font: inherit;
+  text-align: center; white-space: normal; line-height: 1.4;
 }
 .assistant-chip:hover { border-color: var(--accent); background: var(--accent-soft); }
 .assistant-input-row { display: flex; gap: 8px; }
 .assistant-input-row input {
-  flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+  flex: 1; padding: 12px 16px; border-radius: 999px; border: 1px solid var(--border);
   background: var(--bg); color: var(--text); font: inherit; font-size: 16px; min-width: 0;
+}
+/* Arah 3 send button: a round 46px gradient button with an ↑ arrow
+   (label in aria-label, set by refreshAssistantLanguage). */
+.assistant-send-round {
+  flex: none; width: 46px; height: 46px; min-height: 0; border-radius: 50%;
+  padding: 0; font-size: 1.15rem; font-weight: 700; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 .assistant-input-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .assistant-note { color: var(--muted); font-size: 0.85rem; margin-top: 10px; }
-.assistant-check-btn {
+.assistant-check-btn, .assistant-retry-btn {
   margin-top: 8px; background: transparent; color: var(--accent);
   border: 1px solid var(--accent); border-radius: 999px; padding: 4px 10px;
   font-size: 0.85rem; cursor: pointer;
 }
-.assistant-check-btn:hover { background: var(--accent); color: #fff; }
+.assistant-check-btn:hover, .assistant-retry-btn:hover { background: var(--accent); color: #fff; }
+
+/* Aman chat panel (20 Nov 2026): the #assistant section, restyled as
+   a fixed overlay anchored bottom-right, above the round launcher.
+   A flex column: header (avatar + title + online + close), greeting,
+   scrolling log, chips, input row, notes. [hidden] must win over the
+   flex display (the UA stylesheet's [hidden] rule loses to any
+   display declaration on the same element). */
+.aman-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 152px;
+  z-index: 70;
+  width: min(380px, calc(100vw - 24px));
+  /* 20 Nov 20:55: the panel may use more of the screen height so the
+     log has room — 100px clear at the bottom still leaves space for
+     the round launcher below it. */
+  max-height: calc(100vh - 100px);
+  max-height: min(640px, calc(100dvh - 100px));
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  /* 20 Nov 20:57: the panel must contain all of its content —
+     overflow hidden, so no text (the disclaimer notes below the
+     input) can ever spill out below the white card, in any state.
+     The log is the only scroller inside; everything else is
+     flex: none and the log's min-height is 0, so a squeeze is
+     absorbed by the log, never by spilling. */
+  overflow: hidden;
+  /* Panel entrance (20 Nov 2026): a brief slide-up + fade when it
+     opens. Runs on every unhide — [hidden] is display:none, so the
+     animation restarts each time the panel appears. */
+  animation: aman-panel-in 0.25s ease-out;
+}
+@keyframes aman-panel-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.aman-panel[hidden] { display: none; }
+/* Panel header (Arah 3, Myuden 23:28): minimal — no gradient band,
+   plain card background, robot avatar + "Aman" + green online dot.
+   White-on-gradient overrides are gone; text uses normal theme
+   colors so the head reads clean in dark and light mode alike. */
+.aman-panel .assistant-head {
+  flex: none;
+  margin: 0;
+  padding: 0 0 4px;
+  background: none;
+  color: inherit;
+}
+.aman-panel .assistant-head .assistant-title h2 { color: var(--text); }
+.aman-panel .assistant-head .assistant-online { color: var(--muted); }
+.aman-panel .assistant-head .assistant-close { color: var(--muted); }
+.aman-panel .assistant-head .assistant-close:hover { color: var(--text); background: var(--accent-soft); }
+.aman-panel .avatar { width: 48px; height: 48px; }
+.aman-panel .assistant-title { min-width: 0; }
+.aman-panel .assistant-title h2 { font-size: 1.1rem; }
+.assistant-online {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--muted); font-size: 0.82rem; margin: 2px 0 0;
+}
+.online-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e; flex: none;
+}
+.assistant-close {
+  flex: none; align-self: flex-start;
+  background: none; border: none; color: var(--muted);
+  font-size: 1.6rem; line-height: 1; min-width: 44px; min-height: 44px;
+  padding: 4px 8px; cursor: pointer; border-radius: 8px;
+}
+.assistant-close:hover { color: var(--text); background: var(--accent-soft); }
+.aman-panel .assistant-greeting { flex: none; margin: 12px 0 10px; }
+/* 21 Nov 01:05 live fix: once the conversation starts, the center
+   greeting hides so the log gets its room back (~140px on phones).
+   Before this, the log was squeezed to ~127px on a 390px phone and a
+   3-sentence reply stuck out below the log's visible edge — it read
+   as hidden behind the quick-question chips. The greeting's job
+   (welcome + prompt) is done once the first message is in. */
+.aman-panel.has-messages .assistant-greeting { display: none; }
+.aman-panel .assistant-log {
+  /* The log is the ONLY scrolling region in the panel: it takes the
+     free space (300px basis, so a question + a full 3-sentence answer
+     fit without scrolling on phones) and shrinks as needed. Its
+     min-height is 0 (20 Nov 20:57 fix): the old 120px floor meant the
+     panel could not shrink enough once the log appeared, so the
+     disclaimer notes spilled out below the white card. With
+     min-height 0 the log absorbs every squeeze instead. */
+  flex: 1 1 300px; min-height: 0; max-height: none;
+  margin-bottom: 10px;
+}
+.aman-panel .assistant-chips { flex: none; }
+.aman-panel .assistant-input-row { flex: none; }
+.aman-panel .assistant-note { flex: none; margin-top: 8px; text-align: center; }
+.aman-panel .assistant-note + .assistant-note { margin-top: 2px; }
+/* While the panel is open the completion toast moves to the top of
+   the screen, so it never hides behind the panel (on phones the
+   toast is nearly full-width at the bottom, exactly where the panel
+   sits). */
+body.aman-panel-open .toast { top: 16px; bottom: auto; }
+@media (max-width: 640px) {
+  /* bottom 86px (was 76px): the floating launcher rises 10px at the
+     peak of its float, which used to kiss the panel's bottom edge by
+     ~3px. 86px leaves a clean gap at every point of the float. */
+  .aman-panel { right: 12px; left: 12px; width: auto; bottom: 150px; max-height: calc(100vh - 170px); max-height: calc(100dvh - 170px); }
+}
+body.senior-mode .aman-panel { font-size: 1.05rem; }
+body.senior-mode .aman-panel .assistant-input-row input { min-height: 56px; }
 
 /* ---- Rombak TipuCek: tabs, fitur baru, mode orang tua, cetak ---- */
 
-/* Checker tabs + module tabs (same pill style, same keyboard pattern).
-   One row, never wrapped: the bar scrolls horizontally when the labels
-   do not fit (phones), buttons never shrink below their 48px touch
-   target (Myuden 19 Nov 17:44/17:45). */
-.checker-tabs, .module-tabs {
+/* Checker tabs (same pill style, same keyboard pattern): one row on
+   wide screens; on phones they wrap to 2 rows x 2 tabs so all four
+   modes are visible at once (see the ≤640px media query) — never a
+   sideways scroll that hides a tab. Buttons never shrink below their
+   48px touch target (Myuden 19 Nov 17:44/17:45). */
+.checker-tabs {
   display: flex; gap: 8px; flex-wrap: nowrap; margin: 10px 0 4px;
   overflow-x: auto; scrollbar-width: thin;
 }
-.module-tabs { margin: 0 0 12px; }
+/* Tools grid (21 Nov, Myuden — "Hapus hamburger, semua di dashboard";
+   4x2 since 21 Nov 12:29, Myuden — "4 4 jadi 2 pas"):
+   EIGHT tools in a 4x2 grid at EVERY width — icon + title, every card
+   fully visible, no horizontal scroll, no clipped labels, no empty cell
+   (the old chip row cut "Kontak Resmi" to "...smi"). On phones the cards
+   are compact: icon on top, title centred below, no description. On
+   desktop the cards are wide, so they switch to a row layout and show
+   the short description too. Tapping a card opens that tool exactly
+   like the old tab did (same switchModuleTab; the Riwayat card opens
+   Dashboard 2 instead). */
+/* Module cards ("Fitur lainnya") — 3x3 grid (Myuden 23 Nov 17:27,
+   "Fitur buat 3 3 supaya rapi"): 9 tools in 3 columns so every row
+   is full; the old 4-column grid left "Cara kerja" alone on row 3.
+   Desktop keeps the same 3 columns (cards are wide, so they switch
+   to a row layout and show the short description too). Tapping a
+   card opens that tool exactly like the old tab did (same
+   switchModuleTab; the Riwayat card opens Dashboard 2 instead). */
+.module-tabs {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px; margin: 0 0 12px;
+}
 .modules-label { font-size: 1.05rem; margin: 6px 0 10px; }
-.checker-tab-btn, .module-tab-btn {
+.module-tab-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+  background: var(--card); color: var(--text); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 8px; font: inherit; cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.module-tab-btn:hover { border-color: var(--accent); }
+.module-tab-btn.active {
+  border-color: var(--accent); background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.module-tab-btn.active .module-tab-name { color: var(--accent); }
+.module-tab-icon {
+  flex: none; width: 40px; height: 40px; border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.module-tab-icon svg { width: 20px; height: 20px; }
+.module-tab-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.module-tab-name { font-size: 0.9rem; font-weight: 700; line-height: 1.25; }
+.module-tab-desc { display: none; }
+@media (min-width: 1024px) {
+  .module-tab-btn {
+    flex-direction: row; align-items: flex-start; gap: 12px; text-align: left;
+    padding: 14px;
+  }
+  /* "Cek File" desc (21 Nov live check): "mencurigakan" ran to the very
+     edge of its line — 6px of right padding forces an earlier wrap so
+     the last word never sits on the card edge. */
+  .module-tab-desc { display: block; font-size: 0.85rem; font-weight: 400; color: var(--muted); line-height: 1.35; padding-right: 6px; }
+}
+/* Dark mode: the active tool card stays a soft-tinted card (never the
+   gradient used for solid primary surfaces — a gradient card would
+   make the muted description unreadable). */
+:root[data-theme="dark"] .module-tab-btn.active { background: var(--accent-soft); }
+.checker-tab-btn {
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
   border-radius: 999px; padding: 12px 15px; font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer;
   min-height: 48px; flex-shrink: 0; white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.checker-tab-btn:hover, .module-tab-btn:hover { border-color: var(--accent); }
-.checker-tab-btn.active, .module-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.checker-tab-btn:hover { border-color: var(--accent); }
+.checker-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .checker-tab input[type="text"],
 .checker-tab input[type="email"],
 .checker-tab input[type="tel"] {
@@ -615,9 +1732,27 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 
 /* File check / chat log results */
 .filecheck-result, .chatlog-result { margin-top: 14px; }
+/* QR check (23 Nov 2026): the camera preview fills the card width;
+   the result block follows the file-check spacing. */
+.qrcheck-result { margin-top: 14px; }
+.qrcheck-result h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.qrcheck-result p { margin: 6px 0; }
+#qrcheck-video { display: block; width: 100%; max-height: 320px; border-radius: 12px; background: #000; margin: 12px 0 8px; }
+#qrcheck-camera .secondary { margin-top: 4px; }
 .filecheck-result ul, .chatlog-result ul { margin: 8px 0 0 18px; font-size: 0.92rem; }
 .filecheck-result .file-item { padding: 10px 12px; border-radius: 10px; background: var(--danger-bg); }
 .filecheck-result .file-item.file-low { background: var(--warn-bg); }
+/* File-check verdict line (21 Nov): a plain verdict word, not just
+   box colour — the live check showed colour alone reads as "not
+   detected". High reuses the danger palette, low the safe palette.
+   The honest "not proof of safety" note still follows below. */
+.file-verdict { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; font-size: 0.95rem; }
+.file-verdict-high { background: var(--danger-bg); color: var(--danger); }
+.file-verdict-low { background: var(--safe-bg); color: var(--safe); }
+/* Audit 13: a suspicious file verdict (e.g. a script whose content
+   scored 30-59, or a script that could not be read) gets its own
+   amber headline — it must not reuse the green "safe" style. */
+.file-verdict-medium { background: var(--warn-bg); color: var(--warn); }
 
 /* Outbound guard */
 .outbound-result { margin-top: 14px; }
@@ -635,6 +1770,11 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
    demo badge — a caution signal, never the AI blue/green. */
 .badge-code { background: var(--warn-bg); color: var(--warn); }
 .code-only-note { border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 0.95rem; }
+/* Stale-language notice (21 Nov 01:20): an AI verdict whose re-check
+   failed keeps its text in the previous language. Same warning
+   treatment as the code-only note; the retry button sits inline. */
+.lang-stale-note { border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 0.95rem; }
+.lang-stale-note button { margin-left: 8px; }
 
 /* Crowd reports ("Laporkan penipuan"): the privacy note is a warning
    box on purpose — this form SENDS data to the TipuCek database for
@@ -653,8 +1793,6 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 .crowd-privacy { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; }
 .crowd-success { margin-top: 14px; background: var(--safe-bg); border-radius: 10px; padding: 12px 14px; }
 .crowd-success p { color: var(--safe); }
-.crowd-history { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
-.crowd-history h3 { margin: 0 0 6px; }
 
 /* Official contacts */
 .contacts-controls { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
@@ -683,10 +1821,6 @@ code, .numbers-value, .file-name { overflow-wrap: anywhere; }
 .quiz-feedback { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); }
 .quiz-score { font-weight: 700; margin-top: 10px; }
 
-/* Privacy toggle (history card) */
-.privacy-toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 600; font-size: 0.95rem; cursor: pointer; }
-.privacy-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
-
 /* Senior mode: bigger everything, one big check button. */
 .senior-note { background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; font-weight: 600; }
 body.senior-mode { font-size: 19px; }
@@ -694,8 +1828,13 @@ body.senior-mode .page { max-width: 960px; }
 body.senior-mode .primary { padding: 18px 32px; font-size: 1.2rem; }
 body.senior-mode .secondary { padding: 12px 18px; font-size: 1.05rem; }
 body.senior-mode textarea,
-body.senior-mode input { font-size: 1.1rem; padding: 16px; }
+body.senior-mode input { font-size: max(1.1rem, 16px); padding: 16px; }
 body.senior-mode h2 { font-size: 1.5rem; }
+/* The generic h2 rule above shrank the hero title (1.8rem -> 1.5rem);
+   Senior Mode must make everything bigger, including the hero title:
+   2.6rem stays above the 2.5rem mobile default instead of shrinking
+   it (the old 2rem was smaller than the default). */
+body.senior-mode .hero-title { font-size: 2.6rem; }
 body.senior-mode .result-status { font-size: 2.8rem; }
 
 /* Touch targets: on coarse pointers (phones/tablets) every button and
@@ -703,7 +1842,7 @@ body.senior-mode .result-status { font-size: 2.8rem; }
    zooms the page on focus. */
 @media (pointer: coarse) {
   .primary, .secondary, .sample-btn, .checker-tab-btn, .module-tab-btn, .assistant-chip,
-  .assistant-check-btn, .lang-select { min-height: 48px; }
+  .assistant-check-btn, .lang-btn { min-height: 48px; }
   textarea, input[type="text"], input[type="email"], input[type="tel"],
   input[type="search"], .assistant-input-row input { font-size: 16px; }
 }
@@ -713,7 +1852,148 @@ body.senior-mode .result-status { font-size: 2.8rem; }
 @media print {
   body { background: #fff; color: #000; }
   body > *:not(#print-report) { display: none !important; }
-  #print-report { display: block !important; padding: 24px; font-size: 14px; }
-  #print-report h1 { font-size: 20px; }
-  #print-report h2 { font-size: 16px; margin-top: 16px; }
+  #print-report { display: block !important; padding: 0 0 24px; font-size: 1rem;
+    font-family: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif; color: #1c2333; }
+  /* Exact colours: without this Chrome drops the navy header, the
+     gold rules and the flag badges from the printed page. */
+  #print-report, #print-report * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  #print-report > :not(.pr-header):not(.pr-gold):not(.pr-footer) { margin-left: 40px; margin-right: 40px; }
+  .pr-header { background: #0f2a4d; padding: 16px 40px 14px; display: flex; align-items: center; gap: 18px; }
+  .pr-logo-tile { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.22); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pr-logo-tile svg { width: 32px; height: 32px; }
+  .pr-brand { color: #ffffff; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+  .pr-tag { color: #b9c7dd; font-size: 14px; font-weight: 500; margin-top: 4px; }
+  .pr-header-right { margin-left: auto; text-align: right; }
+  .pr-doc { color: #e8c96a; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .pr-date { color: #b9c7dd; font-size: 14px; margin-top: 4px; }
+  .pr-gold { height: 4px; background: #c9a227; }
+  .pr-title { color: #0f2a4d; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-top: 12px; }
+  .pr-subtitle { color: #5b6478; font-size: 14px; margin-top: 4px; }
+  /* One compact meta line (21 Nov 19:06, one-A4 simplification) —
+     the old 5-row table is gone; same five facts, one or two lines. */
+  .pr-meta-line { margin-top: 10px; border: 1px solid #dfe4ee; border-radius: 10px; padding: 7px 16px;
+    font-size: 14px; line-height: 1.55; break-inside: avoid; }
+  .pr-meta-line b { color: #0f2a4d; }
+  .pr-meta-line .pr-sep { color: #8593ad; margin: 0 8px; }
+  .pr-status-scam { color: #b42318; font-weight: 800; }
+  .pr-status-suspicious { color: #854d0e; font-weight: 800; }
+  .pr-status-safe { color: #067647; font-weight: 800; }
+  .pr-status-bg-scam { background: #b42318; }
+  .pr-status-bg-suspicious { background: #854d0e; }
+  .pr-status-bg-safe { background: #067647; }
+  #print-report h2 { color: #0f2a4d; font-size: 15px; font-weight: 700; letter-spacing: 1.5px;
+    margin: 10px 0 5px; text-transform: uppercase; break-after: avoid; }
+  .pr-quote { background: #f6f7f9; border-left: 5px solid #0f2a4d; border-radius: 0 10px 10px 0;
+    padding: 8px 16px; font-size: 15px; line-height: 1.35; break-inside: avoid; }
+  .pr-text { font-size: 15px; line-height: 1.4; color: #333a48; }
+  ol.pr-flags { list-style: none; }
+  ol.pr-flags li { display: flex; align-items: center; gap: 12px; padding: 4px 0;
+    border-bottom: 1px solid #e6e9f0; font-size: 15px; font-weight: 600; break-inside: avoid; }
+  ol.pr-flags li:last-child { border-bottom: none; }
+  ol.pr-flags .pr-n { width: 28px; height: 28px; border-radius: 8px; color: #fff;
+    font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  ul.pr-found { list-style: disc; padding-left: 22px; }
+  ul.pr-found li { font-size: 15px; padding: 2px 0; }
+  .pr-note { margin-top: 10px; background: #f2f5fb; border: 1px solid #dbe3f0; border-radius: 12px;
+    padding: 8px 16px; font-size: 13px; line-height: 1.45; color: #5b6478; break-inside: avoid; }
+  /* Footer in normal flow (not fixed): a fixed print footer would
+     overlap content on middle pages, and real "Page X of Y" numbers
+     are not possible in Chrome print — so the footer states the
+     honest line only, once, at the end of the report. */
+  .pr-footer { margin-top: 12px; break-inside: avoid; }
+  .pr-footer .pr-gold-thin { height: 2px; background: #c9a227; margin-bottom: 10px; }
+  .pr-footer .pr-row { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; }
+  .pr-footer .pr-site { font-size: 16px; font-weight: 700; color: #0f2a4d; }
+  .pr-footer .pr-note-line { font-size: 13px; color: #5b6478; }
 }
+
+/* Desktop layout (22 Nov, Myuden — "web di PC/laptop memenuhi layar
+   dengan rapi"): at 1440px the .page column was only 720px, leaving
+   360px of empty dark space on each side, top to bottom (measured
+   live). CSS ONLY — mobile (<=640px) is untouched: every rule below
+   only applies at >=900px. The breakpoint is 900, NOT 1024, on
+   purpose: phone "desktop mode" reports a ~980px viewport, so a
+   >=1024px rule would miss it entirely. The width is fluid — the
+   column follows the viewport instead of jumping between fixed
+   sizes. Widened 22 Nov 18:32 (Myuden: "hampir mentok") from the
+   1120px cap + 1200px at >=1440px, then to full width 22 Nov
+   18:55 (Myuden: "buat maks layar") — the side margins are now
+   only the 24px page padding. (The 1400px cap from 18:32 is gone;
+   this comment used to name it and tripped the ab1 check.)
+   The panels fill the wide page like the other cards; only the
+   hero text keeps a narrow reading measure (hero-sub 52ch,
+   hero-actions 560px). The reading column stays narrow on purpose:
+   the checker form, the verdict card and the tool panels keep a
+   760px cap, while the grids (stats, badges, tools) use the wider
+   page. (The >=1024px desktop NAV behaviours — bottom nav hidden,
+   header Riwayat link shown — are separate rules elsewhere and
+   deliberately NOT lowered: at 980px the phone-style bottom nav
+   still shows, which is how History stays reachable there.) */
+@media (min-width: 900px) {
+  /* Maks layar (Myuden 22 Nov 18:55 — "buat maks layar", lanjutan
+     dari 18:32 "hampir mentok"): kolom memakai lebar layar penuh
+     (batas 1400px dicabut); margin hanya dari padding .page 24px
+     tiap sisi. Teks tetap terbaca lewat hero-sub 52ch, bukan lewat
+     batas kolom. */
+  .page, .topbar-inner { max-width: 100%; }
+  /* Senior mode keeps its own 960px page (bigger text); keep the
+     header aligned with it instead of the wider desktop column. */
+  body.senior-mode .topbar-inner { max-width: 960px; }
+  .page { padding: 20px 24px; }
+  .hero-actions { max-width: 560px; }
+  /* 4 stats in one row instead of 2+2; 3 badges in one row.
+     Groq CSS review: at exactly 900px the widest number ("Rp9
+     triliun", 158px in Plus Jakarta Sans 30px) leaves only 6px in
+     its 164px slot — it fits (probe: 1 line at 900/950/980/1024),
+     but the margin is thin, so the cards lose 4px of side padding
+     here (18px 12px) for a 14px margin instead. */
+  .stats { grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 18px 12px; }
+  .badges-grid { grid-template-columns: repeat(3, 1fr); }
+  /* Panels fill the column (Myuden 22 Nov 18:33 — "kurang rapi /
+     aneh": the old 760px reading cap left the checker + verdict +
+     tool panels as a narrow strip with a ragged right edge inside
+     the wide column, while the neighbouring cards stretched full
+     width). #how was already full width. Text stays readable
+     through the hero-sub 52ch cap, not through a panel cap. */
+  .checker, #result, .module-panel:not(#how) { width: 100%; }
+}
+
+/* KEPUTUSAN Myuden 22 Nov 18:57 — "Jawaban buat di bawah saja":
+   jawaban (vonis) kembali MENUMPUK di bawah form, BUKAN di samping.
+   Grid dua kolom #view-home (5fr/6fr, >=1280px) + form sticky yang
+   sempat dibuat untuk demo DICABUT — sticky tidak masuk akal bila
+   jawaban di bawah (form menempel akan menutupi vonis saat scroll).
+   Yang TETAP: maks layar (max-width 100% di atas) + panel memenuhi
+   kolom (tanpa batas 760px). */
+
+/* ---------------------------------------------------------------------------
+   Simplified verdict card (Myuden 22 Nov 18:58, audit 13).
+   The summary a user reads first is the verdict + score + one main
+   reason + who answered + the main action; everything else folds
+   into "Rincian pemeriksaan" (<details class="result-details">).
+   These rules ONLY style the card's own summary/details elements.
+   They never touch the page layout (.page, #view-home, max-width,
+   grid, sticky) — that is final: max screen, answer below.
+   --------------------------------------------------------------------------- */
+.result-source-line {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.result-details {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.result-details summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 2px; cursor: pointer; list-style: none;
+  font-size: 0.93rem; font-weight: 700;
+}
+.result-details summary::-webkit-details-marker { display: none; }
+.result-details summary::after {
+  content: "▾"; margin-left: auto; color: var(--muted);
+  font-size: 1rem; line-height: 1; transition: transform .2s ease;
+}
+.result-details[open] summary::after { transform: rotate(180deg); }

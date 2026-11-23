@@ -64,6 +64,10 @@ async function openPage(browser, url, viewport) {
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: "load", timeout: 60000 });
   await page.waitForTimeout(1500);
+  // First-run onboarding overlay (23 Nov 2026): a fresh profile always
+  // sees it once — dismiss it so the page underneath is clickable.
+  const onboard = page.locator("#onboard-start");
+  if (await onboard.isVisible().catch(() => false)) await onboard.click();
   return { ctx, page };
 }
 
@@ -111,7 +115,9 @@ describe("completion badge + toast", () => {
         assert.ok(toastVisible, "toast should be visible after the check");
         const toastText = await page.evaluate(() => document.querySelector("#toast")?.innerText || "");
         assert.match(toastText, /Pemeriksaan selesai/, `toast label: ${toastText}`);
-        assert.match(toastText, /Mencurigakan 40\/100/, `toast summary: ${toastText}`);
+        // OTP palsu (suruh telepon nomor HP) kini Penipuan 60 — pola
+        // contactNumber baru, 23 Nov 2026 (dulu Mencurigakan 40).
+        assert.match(toastText, /Penipuan 60\/100/, `toast summary: ${toastText}`);
         // Honesty: the label never claims the message is safe/verified.
         assert.doesNotMatch(toastText, /Terverifikasi/, "toast must not say Terverifikasi");
         assert.doesNotMatch(badge, /Terverifikasi/, "badge must not say Terverifikasi");
@@ -191,7 +197,7 @@ describe("completion badge + toast", () => {
         // cannot produce a new verdict here (no AI in this env), so no
         // new toast appears — but the old toast must be hidden, never
         // left showing stale Indonesian text.
-        await page.selectOption("#lang-select", "en");
+        await page.click("#lang-en-btn");
         assert.ok(await waitIdle(page, 120000), "EN re-check finished");
         const badgeEn = await page.evaluate(() => document.querySelector("#result .check-complete")?.innerText || "");
         assert.match(badgeEn, /Check complete/, `EN card badge: ${badgeEn}`);
@@ -201,7 +207,8 @@ describe("completion badge + toast", () => {
         assert.ok(await page.evaluate(() => !document.querySelector("#toast").hidden), "EN toast visible after fresh EN check");
         const toastEn = await page.evaluate(() => document.querySelector("#toast")?.innerText || "");
         assert.match(toastEn, /Check complete/, `EN toast: ${toastEn}`);
-        assert.match(toastEn, /Suspicious 40\/100/, `EN toast summary: ${toastEn}`);
+        // Fake OTP now Scam 60 (contactNumber pattern, 23 Nov 2026).
+        assert.match(toastEn, /Scam 60\/100/, `EN toast summary: ${toastEn}`);
       } finally {
         await ctx.close();
       }

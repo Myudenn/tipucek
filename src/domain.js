@@ -111,3 +111,45 @@ export async function resolveShortLink(url) {
     return { error: "unresolvable", resolved: false };
   }
 }
+
+/**
+ * Normalize what the user typed into Cek Tautan into a full URL.
+ * Returns "" when the input is not a usable link at all.
+ * - "https://example.com" (any case) passes through unchanged.
+ * - A bare domain — "example.com", "www.example.com/path?q=1",
+ *   "example.com:8080" — gets "https://" prepended (audit 10:
+ *   the auditor found a bare domain was rejected and the panel
+ *   demanded https:// first). Anything with a space, a non-http(s)
+ *   scheme ("ftp://", "javascript:") or no dot at all is rejected.
+ * Pure — unit-tested.
+ */
+export function normalizeLinkInput(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) {
+    // CoArena review, audit 10: the fast path must not pass a
+    // hostless or malformed URL ("https://", "http:// not-a-url")
+    // to the checker as if it were a usable link. URL parsing
+    // rejects those (and a port above 65535, which the WHATWG URL
+    // parser refuses) while keeping IPs, localhost and
+    // credential-bearing URLs scannable — their acceptance alone is
+    // not a bug, the checker judges them on their merits.
+    try {
+      if (!new URL(s).hostname) return "";
+    } catch {
+      return "";
+    }
+    // Audit 13 (D): the scheme is case-insensitive — normalize it to
+    // lowercase so "HTTPS://example.com" and "https://example.com"
+    // are the same link everywhere downstream (link panel, checker,
+    // history). The host/path case is the user's own input and is
+    // kept as typed.
+    return s.replace(/^https?:\/\//i, (m) => m.toLowerCase());
+  }
+  // Groq review, audit 10: a port above 65535 is not a usable URL —
+  // reject it instead of handing an un-fetchable URL to the panel.
+  const m = s.match(/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?::(\d{1,5}))?(?:[\/?#]\S*)?$/i);
+  if (!m) return "";
+  if (m[1] && Number(m[1]) > 65535) return "";
+  return "https://" + s;
+}

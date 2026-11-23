@@ -16,8 +16,16 @@ const FILE_RULES = [
   // In scam traffic "APK" almost always means the malicious installer.
   { re: /[\w.-]+\.apk\b/i, kind: "apk", level: "high", reason: "fileReasonApk" },
   { re: /\bapk\b/i, kind: "apk", level: "high", reason: "fileReasonApk" },
-  // Windows program files.
-  { re: /[\w.-]+\.(exe|msi|bat|cmd|scr|com)\b/i, kind: "exe", level: "high", reason: "fileReasonExe" },
+  // Windows program files. NOTE: ".com" is NOT in this list on
+  // purpose (21 Nov, Myuden): ".com" is a top-level domain, so a
+  // domain or email address in the message ("bca.com",
+  // "support@bca.com") was misread as a DOS program file. Real
+  // Windows programs pushed in scams are .exe/.msi/.bat/.cmd/.scr —
+  // none of those is a public TLD, so they cannot be domains.
+  // (An explicit file NAME ending in .com is still exe/high in
+  // filecheck.js analyzeFileName — there the user typed a file name,
+  // not a domain.)
+  { re: /[\w.-]+\.(exe|msi|bat|cmd|scr)\b/i, kind: "exe", level: "high", reason: "fileReasonExe" },
   // Archives can hide a harmful program inside.
   { re: /[\w.-]+\.(zip|rar|7z)\b/i, kind: "archive", level: "low", reason: "fileReasonArchive" },
 ];

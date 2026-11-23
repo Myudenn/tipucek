@@ -36,6 +36,31 @@ test("checks: create allows ONLY the 7 verdict fields, never message text", () =
   );
 });
 
+test("checks: create validates value types/ranges (audit round 7)", () => {
+  const m = rules.match(/match \/checks\/\{checkId\} \{([\s\S]*?)\n    \}/);
+  assert.ok(m, "checks rule block found");
+  const block = m[1];
+  assert.ok(
+    block.includes('request.resource.data.status in ["scam", "suspicious", "safe"]'),
+    "status is one of the three verdicts",
+  );
+  assert.ok(block.includes("request.resource.data.riskScore is int"), "riskScore must be an int");
+  assert.ok(block.includes("request.resource.data.riskScore >= 0"), "riskScore min 0");
+  assert.ok(block.includes("request.resource.data.riskScore <= 100"), "riskScore max 100");
+  assert.ok(block.includes("request.resource.data.redFlags is list"), "redFlags must be a list");
+  assert.ok(block.includes("request.resource.data.summary is string"), "summary must be a string");
+  assert.ok(
+    block.includes(
+      'request.resource.data.source in ["ON_DEVICE", "IN_CLOUD", "DEMO", "LOCAL", "CODE", "Unknown"]',
+    ),
+    "source is one of the six known sources",
+  );
+  assert.ok(
+    block.includes("request.resource.data.createdAt is string"),
+    "createdAt is an ISO string (history.js writes toISOString, not a timestamp)",
+  );
+});
+
 test("checks: read is owner-only; update/delete are denied", () => {
   const m = rules.match(/match \/checks\/\{checkId\} \{([\s\S]*?)\n    \}/);
   const block = m[1];
@@ -107,8 +132,8 @@ test("crowd_reports: create allows exactly the 6 fields, status pending", () => 
     "create hasOnly lists exactly the 6 crowd fields",
   );
   assert.ok(
-    block.includes('request.resource.data.type in ["phone", "account", "mode"]'),
-    "type is one of the three crowd types",
+    block.includes('request.resource.data.type in ["phone", "account", "mode", "message", "file"]'),
+    "type is one of the five crowd types",
   );
   assert.ok(
     block.includes("request.resource.data.value is string"),
@@ -119,8 +144,12 @@ test("crowd_reports: create allows exactly the 6 fields, status pending", () => 
     "value must not be empty",
   );
   assert.ok(
+    block.includes("request.resource.data.value.size() <= 2000"),
+    "message value max length 2000 enforced",
+  );
+  assert.ok(
     block.includes("request.resource.data.value.size() <= 100"),
-    "value max length 100 enforced",
+    "non-message value max length 100 enforced",
   );
   assert.ok(
     block.includes("request.resource.data.details is string"),

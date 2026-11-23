@@ -2,11 +2,26 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <!-- Theme before first paint (23 Nov 2026): apply the saved theme +
+         accent from localStorage so a dark-mode user never flashes
+         light first. Senior Mode always forces light. Default is
+         dark (design G); a saved "light" is honoured. -->
+    <script>
+      try {
+        var _t = localStorage.getItem("pesanaman_theme");
+        var _s = localStorage.getItem("tipucek_senior_mode") === "1";
+        document.documentElement.dataset.theme = _s ? "light" : _t === "light" ? "light" : "dark";
+        var _a = localStorage.getItem("pesanaman_accent");
+        document.documentElement.dataset.accent = _a === "green" || _a === "purple" ? _a : "blue";
+        var _z = localStorage.getItem("pesanaman_text_size");
+        document.documentElement.dataset.textSize = _z === "small" || _z === "large" ? _z : "medium";
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="TipuCek — pemeriksa pesan penipuan (scam) gratis dan privat. Cek pesan, file, email, panggilan, atau tautan mencurigakan — di perangkat dulu, 8 bahasa."
+      content="TipuCek — pemeriksa pesan penipuan (scam) gratis dan privat. Cek pesan, file, email, panggilan, atau tautan mencurigakan — di perangkat dulu, 2 bahasa."
     />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="canonical" href="https://tipucek.web.app/" />
@@ -44,9 +59,9 @@
         "operatingSystem": "Web",
         "isAccessibleForFree": true,
         "inLanguage": ["id", "en"],
-        "description": "TipuCek — pemeriksa penipuan gratis dan privat. Cek pesan teks, tangkapan layar (OCR), tautan & situs, nomor telepon, rekening bank, file (APK/exe/zip), dan undangan — di perangkat dulu, 8 bahasa.",
+        "description": "TipuCek — pemeriksa penipuan gratis dan privat. Cek pesan teks, tangkapan layar (OCR), tautan & situs, nomor telepon, rekening bank, file (APK/exe/zip), dan undangan — di perangkat dulu, 2 bahasa.",
         "image": "https://tipucek.web.app/og-image.png",
-        "author": { "@type": "Organization", "name": "TipuCek", "url": "https://github.com/kyleweb3/tipucek" },
+        "author": { "@type": "Organization", "name": "TipuCek", "url": "https://github.com/Myudenn/tipucek" },
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
       }
     </script>
@@ -55,28 +70,73 @@
     <title>TipuCek — Scam-Message Scanner | Cek Pesan Penipuan</title>
   </head>
   <body>
-    <a class="skip-link" href="#checker-heading">Lewati ke pemeriksa / Skip to checker</a>
+    <a class="skip-link" href="#checker-heading" data-i18n="skipLink">Lewati ke pemeriksa</a>
     <noscript><p class="noscript-note">TipuCek membutuhkan JavaScript untuk memeriksa pesan. / TipuCek needs JavaScript to check messages.</p></noscript>
     <header class="topbar">
       <div class="topbar-inner">
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true"><img src="/favicon.svg" alt="" /></span>
+          <span class="brand-mark" aria-hidden="true"><img src="/logo-mark.svg" alt="" /></span>
           <div>
             <h1>TipuCek</h1>
             <p class="tagline" data-i18n="tagline">Cek pesannya sebelum Anda percaya</p>
           </div>
         </div>
         <div class="topbar-status">
-          <select id="lang-select" class="lang-select" aria-label="Language"></select>
-          <button id="senior-toggle" type="button" class="secondary senior-toggle" aria-pressed="false" data-i18n="seniorToggle">Mode Orang Tua</button>
+          <!-- Desktop-only Riwayat link (21 Nov, Myuden — opsi b):
+               after the Riwayat grid card was removed, desktop
+               (≥1024px) had no visible way into Dashboard 2 (the
+               bottom nav is hidden there). This link opens Dashboard
+               2; hidden on mobile, where the bottom nav does the job.
+               Label follows language via the existing navHistory key. -->
+          <button id="header-history-link" type="button" class="header-history-link" data-i18n="navHistory">Riwayat</button>
+          <div class="lang-toggle" role="group" aria-label="Bahasa / Language">
+            <button id="lang-id-btn" type="button" class="lang-btn" aria-pressed="true">ID</button>
+            <button id="lang-en-btn" type="button" class="lang-btn" aria-pressed="false">EN</button>
+          </div>
           <span id="mode-label" class="mode-label">Mode AI</span>
-          <span id="net-status" class="net-pill online">Daring</span>
+          <span id="net-status" class="net-dot online" role="img" aria-label="Online" title="Online"></span>
+          <!-- Theme button (21 Nov, Myuden): icon-only (sun/moon for
+               the ACTIVE mode), visible at every width. Tap opens a
+               small menu: Dark / Light / System. System follows the
+               device (prefers-color-scheme) live. No notification
+               bell — TipuCek has no notification source (no
+               account/server), so none is shown. -->
+          <div class="theme-menu-wrap">
+            <button id="theme-btn" type="button" class="menu-btn theme-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">
+              <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+              <span class="visually-hidden" data-i18n="themeButton">Tema</span>
+            </button>
+            <div id="theme-menu" class="theme-menu" role="menu" hidden>
+              <button type="button" class="theme-option" role="menuitemradio" aria-checked="false" data-theme-pick="dark">
+                <span class="theme-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+                <span data-i18n="themeDark">Gelap</span>
+                <span class="theme-check" aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="theme-option" role="menuitemradio" aria-checked="false" data-theme-pick="light">
+                <span class="theme-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg></span>
+                <span data-i18n="themeLight">Terang</span>
+                <span class="theme-check" aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="theme-option" role="menuitemradio" aria-checked="false" data-theme-pick="system">
+                <span class="theme-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></span>
+                <span data-i18n="themeSystem">Sistem</span>
+                <span class="theme-check" aria-hidden="true">✓</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
     <main class="page">
-      <p id="senior-note" class="senior-note" data-i18n="seniorNote" hidden>Mode orang tua aktif: teks dan tombol besar, hasil dibacakan.</p>
+      <!-- Two full-page dashboards (21 Nov, Myuden — "Hapus hamburger,
+           semua di dashboard"): Beranda (#view-home) and Riwayat
+           (#view-history), switched by the bottom nav; only one is
+           visible at a time. The footer after </main> is shared by
+           both views. -->
+      <div id="view-home">
+      <p id="senior-note" class="senior-note" data-i18n="seniorNote" hidden>Mode orang tua aktif: teks dan tombol besar.</p>
       <div id="demo-banner" class="demo-banner" hidden>
         <strong data-i18n="demoTitle">Mode demo — AI belum tersambung.</strong>
         <span data-i18n="demoText">
@@ -86,25 +146,65 @@
         </span>
       </div>
 
-      <p id="offline-note" class="offline-note" data-i18n="offlineNote" hidden>Anda sedang offline (atau mode pesawat). Hanya AI di perangkat yang bisa jalan sekarang — AI cloud tidak terjangkau, dan AI di perangkat harus sudah diunduh di perangkat ini.</p>
+      <p id="offline-note" class="offline-note" data-i18n="offlineNote" hidden>Anda sedang offline — vonis AI cloud butuh internet; cek awal di perangkat, baca QR, dan cek sebelum kirim tetap jalan.</p>
 
       <section class="hero">
         <p class="hero-eyebrow" data-i18n="heroEyebrow">#BuildHybridAI 2026</p>
+        <span class="hero-live"><span class="hero-live-dot" aria-hidden="true"></span><span data-i18n="heroLive">Live</span></span>
         <h2 class="hero-title" data-i18n="heroTitle">Apakah pesan ini penipuan?</h2>
         <p class="hero-sub" data-i18n="heroSub">Tempel SMS, WhatsApp, DM, atau email apa pun — dalam Bahasa Indonesia atau Inggris. TipuCek memeriksanya secara privat, di perangkat Anda dulu, dan memberi tahu Anda dalam hitungan detik.</p>
-        <p class="hero-stat" data-i18n="heroStat">Rp 9,1 triliun kerugian penipuan dari 411.000+ laporan · Nov 2024–Des 2025 · OJK (IASC)</p>
-        <p class="hero-source"><a href="https://iasc.ojk.go.id/" target="_blank" rel="noopener" data-i18n="heroSource">Sumber: OJK — Indonesia Anti-Scam Centre (IASC)</a></p>
-        <ul class="hero-chips">
-          <li data-i18n="chipNoAccount">Tanpa akun</li>
-          <li data-i18n="chipOnDevice">Di perangkat dulu</li>
-          <li data-i18n="chipLanguages">Antarmuka 8 bahasa</li>
-          <li data-i18n="chipFree">Gratis</li>
-        </ul>
+        <div class="hero-actions">
+          <button id="hero-check-btn" type="button" class="hero-check-btn" data-i18n="checkBtn">Periksa pesan</button>
+          <button id="hero-report-btn" type="button" class="hero-report-btn" data-i18n="heroReportBtn">Laporkan penipuan</button>
+        </div>
+        <p class="hero-source"><a href="https://ojk.go.id/id/berita-dan-kegiatan/siaran-pers/Pages/OJK-dan-Bareskrim-Polri-Sepakat-Perkuat-Kolaborasi-Penanganan-Pengaduan-Pada-Indonesia-Anti-Scam-Centre.aspx" target="_blank" rel="noopener" data-i18n="heroSource">Sumber: OJK — Indonesia Anti-Scam Centre (IASC)</a></p>
+      </section>
+
+      <section class="stats" aria-label="Statistik penipuan">
+        <div class="stat">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span>
+          <div class="stat-label" data-i18n="statLossLabel">Kerugian Penipuan</div>
+          <div class="stat-num" data-i18n="statLossNum">Rp9 triliun</div>
+          <div class="stat-sub" data-i18n="statLossSub">~US$500 juta · OJK, Nov 2024–Des 2025</div>
+        </div>
+        <div class="stat">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg></span>
+          <div class="stat-label" data-i18n="statReportsLabel">Laporan Masuk</div>
+          <div class="stat-num" data-i18n="statReportsNum">411.000+</div>
+          <div class="stat-sub" data-i18n="statReportsSub">laporan penipuan</div>
+        </div>
+        <div class="stat">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8 11l2.5 2.5L16 8"/></svg></span>
+          <div class="stat-label" data-i18n="statCheckedLabel">Pesan Anda Diperiksa</div>
+          <div class="stat-num" id="stat-checked-num">–</div>
+          <div class="stat-sub" data-i18n="statCheckedSub">di perangkat ini</div>
+        </div>
+        <div class="stat">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+          <div class="stat-label" data-i18n="statCaughtLabel">Penipuan Terdeteksi</div>
+          <div class="stat-num" id="stat-caught-num">–</div>
+          <div class="stat-sub" id="stat-caught-sub">dari 0 pesan</div>
+        </div>
+      </section>
+
+      <!-- 7-day chart (23 Nov 2026): scams caught per day, counted from
+           this device's local history only. Empty state when no checks
+           yet — never a fake chart. Rendered by renderWeekChart(). -->
+      <section id="week-chart" class="card week-chart" aria-labelledby="week-chart-heading">
+        <h2 id="week-chart-heading" data-i18n="chartTitle">Penipuan tertangkap — 7 hari terakhir</h2>
+        <div id="week-chart-empty" class="week-chart-empty" hidden>
+          <p class="muted" data-i18n="chartEmpty">Belum ada data — coba salah satu contoh di bawah.</p>
+          <button id="week-chart-try-btn" type="button" class="week-chart-try" data-i18n="chartEmptyTryBtn">Coba contoh</button>
+        </div>
+        <p id="week-chart-noscams" class="muted" data-i18n="chartNoScams" hidden>Belum ada penipuan tertangkap dalam 7 hari terakhir.</p>
+        <div class="week-chart-row">
+          <div id="week-chart-bars" class="week-chart-bars" role="img" aria-label=""></div>
+        </div>
       </section>
 
       <section class="card checker" aria-labelledby="checker-heading">
         <h2 id="checker-heading" data-i18n="checkerHeading">Periksa pesan mencurigakan</h2>
-        <p class="hint" data-i18n="checkerHint">Dalam mode AI, pesan dianalisis di perangkat Anda dulu (privat), dan hanya beralih ke cloud bila diperlukan. Hasil selalu menunjukkan siapa yang menjawab.</p>
+        <p class="hint" id="checker-hint" data-i18n="checkerHint">Dalam mode AI, pesan dianalisis di perangkat Anda dulu (privat), dan hanya beralih ke cloud bila diperlukan. Hasil selalu menunjukkan siapa yang menjawab.</p>
 
         <div class="checker-tabs" role="tablist" aria-label="Mode pemeriksaan">
           <button id="tab-btn-message" type="button" class="checker-tab-btn" aria-controls="tab-message" role="tab" aria-selected="true" data-i18n="messageTab">Cek Pesan</button>
@@ -114,25 +214,34 @@
         </div>
 
         <div id="tab-message" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-message">
-        <label class="field-label" for="message-input" data-i18n="fieldLabel">Pesan</label>
-        <textarea
-          id="message-input"
-          rows="3"
-          maxlength="4000"
-          data-i18n-placeholder="placeholder"
-          placeholder="Tempel pesan mencurigakan di sini…"
-        ></textarea>
+        <!-- Flow steps (21 Nov 2026, demo reference): 1 fill, 2 send,
+             3 see the result. The active/done state follows progress
+             (see setCheckStep in main.js). -->
+        <ol class="check-steps" aria-label="Alur pemeriksaan">
+          <li id="step-1" class="active"><span class="step-num">1</span><span data-i18n="step1">Isi pesan</span></li>
+          <li id="step-2"><span class="step-num">2</span><span data-i18n="step2">Tekan kirim</span></li>
+          <li id="step-3"><span class="step-num">3</span><span data-i18n="step3">Lihat hasil</span></li>
+        </ol>
+        <p class="samples-heading" data-i18n="samplesHeading">Coba contoh:</p>
+        <div class="samples" id="samples" aria-label="Coba contoh pesan"></div>
+        <p id="fill-note" class="fill-note" role="status"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span data-i18n="fillNote">Contoh sudah terisi di kolom pesan dan belum terkirim. Tekan tombol kirim untuk memeriksanya.</span></p>
 
-        <div class="actions">
-          <button id="check-btn" type="button" class="primary" data-i18n="checkBtn">Periksa pesan</button>
+        <div class="chat-composer">
+          <label class="field-label visually-hidden" for="message-input" data-i18n="fieldLabel">Pesan</label>
+          <textarea
+            id="message-input"
+            rows="2"
+            maxlength="4000"
+            data-i18n-placeholder="placeholder"
+            placeholder="Tulis pesan mencurigakan…"
+          ></textarea>
+          <button id="check-btn" type="button" class="primary chat-send-btn" aria-label="Kirim untuk diperiksa" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span class="send-label">Kirim untuk diperiksa</span></button>
           <button id="paste-btn" type="button" class="secondary" data-i18n="pasteBtn">Tempel</button>
-          <p id="progress" class="progress" hidden></p>
         </div>
+        <div class="input-meta"><span id="char-count" class="char-count">0 karakter</span></div>
+        <p id="progress" class="progress" hidden></p>
         <p id="paste-note" class="muted" hidden></p>
         <div id="error" class="error" role="alert" hidden></div>
-
-        <p class="samples-heading" data-i18n="samplesHeading">Atau coba contoh yang terlihat asli:</p>
-        <div class="samples" id="samples" aria-label="Coba contoh pesan"></div>
 
         <div class="image-check">
           <h3 data-i18n="imageHeading">Atau periksa tangkapan layar</h3>
@@ -166,7 +275,7 @@
         </div>
 
         <div id="tab-call" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-call" hidden>
-          <p class="hint" data-i18n="callHint">Ketik nomor penelepon dan apa yang dikatakannya. TipuCek memeriksa nomor itu ke database laporan komunitas dan mencocokkan kata-katanya dengan naskah penipuan telepon yang dikenal. Kalau Anda hanya punya nomornya, isi nomor saja — nomor akan dicek ke kontak resmi dan database laporan.</p>
+          <p class="hint" data-i18n="callHint">Ketik nomor penelepon dan apa yang dikatakannya. TipuCek mencocokkan kata-katanya dengan naskah penipuan telepon yang dikenal, dan memeriksa nomornya ke kontak resmi serta database laporan komunitas (pencarian hash — nomornya tidak pernah dikirim). Bila belum ada laporan, hasilnya akan tertulis belum ada laporan.</p>
           <label class="field-label" for="call-number" data-i18n="callNumber">Nomor penelepon</label>
           <input id="call-number" type="tel" autocomplete="off" placeholder="08xx…" />
           <label class="field-label" for="call-said" data-i18n="callSaid">Apa yang dikatakan penelepon</label>
@@ -193,6 +302,17 @@
             </div>
             <p class="hint" data-i18n="callAudioNote">Rekaman dikirim ke cloud hanya untuk mentranskrip ucapan. Rekaman tidak disimpan di cloud dan tidak pernah masuk riwayat.</p>
           </div>
+          <div class="account-check">
+            <h3 data-i18n="accountCheckHeading">Atau periksa nomor rekening</h3>
+            <p class="hint" data-i18n="accountCheckHint">Ketik nomor rekeningnya. TipuCek memeriksa format nomor dan laporan komunitas. Nomor aslinya tidak pernah dikirim ke mana pun. Untuk hasil resmi, selalu periksa di cekrekening.id.</p>
+            <label class="field-label" for="account-number" data-i18n="accountCheckLabel">Nomor rekening</label>
+            <input id="account-number" type="text" inputmode="numeric" autocomplete="off" placeholder="1234567890" />
+            <div class="actions">
+              <button id="account-btn" type="button" class="primary" data-i18n="accountCheckBtn">Periksa rekening</button>
+            </div>
+            <p id="account-error" class="error" role="alert" hidden></p>
+            <div id="account-result" class="account-result" aria-live="polite" hidden></div>
+          </div>
         </div>
 
         <div id="tab-outbound" class="checker-tab" role="tabpanel" aria-labelledby="tab-btn-outbound" hidden>
@@ -213,7 +333,93 @@
         </div>
       </section>
 
+      <!-- Empty state (21 Nov 2026, demo reference): shown until the
+           first result card renders; never returns after that. -->
+      <div id="result-empty" class="result-empty">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+        <p><strong data-i18n="emptyResultTitle">Belum ada hasil pemeriksaan</strong><span data-i18n="emptyResultText">Hasilnya muncul di sini setelah Anda menekan tombol kirim — lengkap dengan daftar cek setiap tanda bahayanya.</span></p>
+      </div>
+
       <section id="result" class="result" aria-live="polite" hidden></section>
+
+      <!-- Storage receipt (moved here 21 Nov when the page history
+           section was removed): after every check this says where the
+           check was stored — local only, cloud, or not stored. -->
+      <p id="storage-note" class="storage-note">
+        Riwayat hanya tersimpan di browser ini. Selama pengaturan ini aktif, tidak ada yang dikirim ke cloud.
+      </p>
+
+            <section class="card trend" aria-labelledby="trend-heading">
+        <div class="card-head">
+          <h2 id="trend-heading" data-i18n="trendHeading">Penipuan yang sedang tren minggu ini</h2>
+        </div>
+        <p class="muted trend-hint" data-i18n="trendHint">Ketuk tiap modus untuk melihat ciri-ciri dan yang harus dilakukan.</p>
+        <details class="trend-row">
+          <summary class="trend-summary">
+            <span class="trend-icon trend-apk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
+            <span class="trend-rank" aria-hidden="true">1</span>
+            <div class="trend-body">
+              <div class="trend-name" data-i18n="trend1Name">APK palsu</div>
+              <div class="trend-desc" data-i18n="trend1Desc">Aplikasi kurir &amp; paket palsu</div>
+            </div>
+            <span class="trend-tag" data-i18n="trendTag">Modus umum</span>
+            <span class="trend-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+          </summary>
+          <div class="trend-detail">
+            <p><strong data-i18n="trendSignsLabel">Ciri-ciri:</strong> <span data-i18n="trend1Signs"></span></p>
+            <p><strong data-i18n="trendDoLabel">Yang harus dilakukan:</strong> <span data-i18n="trend1Do"></span></p>
+          </div>
+        </details>
+        <details class="trend-row">
+          <summary class="trend-summary">
+            <span class="trend-icon trend-link" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+            <span class="trend-rank" aria-hidden="true">2</span>
+            <div class="trend-body">
+              <div class="trend-name" data-i18n="trend2Name">Tautan DHL palsu</div>
+              <div class="trend-desc" data-i18n="trend2Desc">Paket tertahan di bea cukai</div>
+            </div>
+            <span class="trend-tag" data-i18n="trendTag">Modus umum</span>
+            <span class="trend-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+          </summary>
+          <div class="trend-detail">
+            <p><strong data-i18n="trendSignsLabel">Ciri-ciri:</strong> <span data-i18n="trend2Signs"></span></p>
+            <p><strong data-i18n="trendDoLabel">Yang harus dilakukan:</strong> <span data-i18n="trend2Do"></span></p>
+          </div>
+        </details>
+        <details class="trend-row">
+          <summary class="trend-summary">
+            <span class="trend-icon trend-prize" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8s-1.5-5-4.5-5C5 3 5 8 12 8zm0 0s1.5-5 4.5-5C19 3 19 8 12 8z"/></svg></span>
+            <span class="trend-rank" aria-hidden="true">3</span>
+            <div class="trend-body">
+              <div class="trend-name" data-i18n="trend3Name">Hadiah palsu</div>
+              <div class="trend-desc" data-i18n="trend3Desc">Anda memenangkan hadiah</div>
+            </div>
+            <span class="trend-tag" data-i18n="trendTag">Modus umum</span>
+            <span class="trend-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+          </summary>
+          <div class="trend-detail">
+            <p><strong data-i18n="trendSignsLabel">Ciri-ciri:</strong> <span data-i18n="trend3Signs"></span></p>
+            <p><strong data-i18n="trendDoLabel">Yang harus dilakukan:</strong> <span data-i18n="trend3Do"></span></p>
+          </div>
+        </details>
+        <details class="trend-row">
+          <summary class="trend-summary">
+            <span class="trend-icon trend-job" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>
+            <span class="trend-rank" aria-hidden="true">4</span>
+            <div class="trend-body">
+              <div class="trend-name" data-i18n="trend4Name">Lowongan kerja palsu</div>
+              <div class="trend-desc" data-i18n="trend4Desc">Gaji besar, biaya pendaftaran</div>
+            </div>
+            <span class="trend-tag" data-i18n="trendTag">Modus umum</span>
+            <span class="trend-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+          </summary>
+          <div class="trend-detail">
+            <p><strong data-i18n="trendSignsLabel">Ciri-ciri:</strong> <span data-i18n="trend4Signs"></span></p>
+            <p><strong data-i18n="trendDoLabel">Yang harus dilakukan:</strong> <span data-i18n="trend4Do"></span></p>
+          </div>
+        </details>
+        <p class="muted trend-note" data-i18n="trendNote">Contoh modus yang sering dilaporkan — bukan data live OJK.</p>
+      </section>
 
       <section class="card checks" aria-labelledby="checks-heading">
         <h2 id="checks-heading" data-i18n="checksHeading">Yang bisa diperiksa TipuCek</h2>
@@ -221,33 +427,68 @@
         <ul class="checks-list">
           <li data-i18n="checkText">Pesan teks — SMS, WhatsApp, DM atau email, teks apa pun yang ditempel</li>
           <li data-i18n="checkImage">Screenshot — gambar chat dibaca dengan OCR</li>
+          <li data-i18n="checkQr">Kode QR & QRIS — foto kode QR dibaca di perangkat, lalu diperiksa isinya</li>
           <li data-i18n="checkLink">Tautan &amp; situs — shortener, domain palsu, tiruan merek</li>
-          <li data-i18n="checkLinkTrack">Lacak tautan — ikuti tautan ke tujuan asli, registrar, dan tanggal pendaftaran</li>
+          <li data-i18n="checkLinkTrack">Lacak tautan — periksa registrar dan tanggal pendaftaran domain; tujuan tautan pendek tidak selalu bisa dilacak dari browser</li>
           <li data-i18n="checkPhone">Nomor HP — nomor Indonesia, dengan tautan lapor</li>
           <li data-i18n="checkAccount">Rekening bank — nomor rekening, dengan pemeriksa resmi</li>
           <li data-i18n="checkFile">File — APK, program, arsip dan dokumen, dari nama atau dari unggahan</li>
           <li data-i18n="checkInvite">Undangan — lowongan palsu, hadiah palsu, undangan acara palsu</li>
         </ul>
-        <p class="muted" data-i18n="checksNote">Tidak diperiksa: gambar kode QR dan kode pembayaran — TipuCek tidak memindai itu. Panggilan suara bisa diperiksa: rekam atau unggah rekamannya, TipuCek akan mentranskripnya.</p>
+        <p class="muted" data-i18n="checksNote">Batasan QRIS: TipuCek tidak bisa memastikan kode QRIS itu asli — tidak ada daftar NMID publik. Pastikan nama dan nominalnya sama dengan yang ditampilkan toko; bila beda, jangan bayar. Panggilan suara bisa diperiksa: rekam atau unggah rekamannya, TipuCek akan mentranskripnya.</p>
       </section>
 
       <nav class="modules" aria-labelledby="modules-heading">
-        <h2 id="modules-heading" class="modules-label" data-i18n="moduleTabsLabel">Alat lainnya</h2>
-        <div class="module-tabs" role="tablist" aria-label="Alat lainnya">
-          <button id="module-tab-file" type="button" class="module-tab-btn" role="tab" aria-controls="filecheck" aria-selected="true" data-i18n="moduleTabFile">Cek File</button>
-          <button id="module-tab-link" type="button" class="module-tab-btn" role="tab" aria-controls="linktrack" aria-selected="false" data-i18n="moduleTabLink">Cek Tautan</button>
-          <button id="module-tab-contacts" type="button" class="module-tab-btn" role="tab" aria-controls="contacts" aria-selected="false" data-i18n="moduleTabContacts">Kontak Resmi</button>
-          <button id="module-tab-aid" type="button" class="module-tab-btn" role="tab" aria-controls="firstaid" aria-selected="false" data-i18n="moduleTabAid">Panduan Darurat</button>
-          <button id="module-tab-report" type="button" class="module-tab-btn" role="tab" aria-controls="crowdreport" aria-selected="false" data-i18n="moduleTabReport">Laporkan</button>
-          <button id="module-tab-chatlog" type="button" class="module-tab-btn" role="tab" aria-controls="chatlog" aria-selected="false" data-i18n="moduleTabChatlog">Cek Chat</button>
-          <button id="module-tab-quiz" type="button" class="module-tab-btn" role="tab" aria-controls="quiz" aria-selected="false" data-i18n="moduleTabQuiz">Kuis</button>
-          <button id="module-tab-assistant" type="button" class="module-tab-btn" role="tab" aria-controls="assistant" aria-selected="false" data-i18n="moduleTabAssistant">Tanya Aman</button>
-          <button id="module-tab-history" type="button" class="module-tab-btn" role="tab" aria-controls="history" aria-selected="false" data-i18n="moduleTabHistory">Riwayat</button>
-          <button id="module-tab-how" type="button" class="module-tab-btn" role="tab" aria-controls="how" aria-selected="false" data-i18n="moduleTabHow">Cara kerja</button>
+        <h2 id="modules-heading" class="modules-label" data-i18n="moduleTabsLabel">Fitur lainnya</h2>
+        <!-- Tools grid (21 Nov, Myuden — "Hapus hamburger, semua di
+             dashboard"; 21 Nov 11:22 — kartu Riwayat DIHAPUS dari grid,
+             Riwayat hanya dibuka dari nav bawah): EIGHT tools in a 3x3
+             grid at every width — icon + title, every card fully
+             visible, no horizontal scroll, no clipped labels (the old
+             chip row cut "Kontak Resmi" to "...smi"). Last row has 2
+             cards (3+3+2). Tapping a card opens that tool exactly like
+             the old tab did (same switchModuleTab). -->
+        <div class="module-tabs" role="tablist" aria-label="Fitur lainnya">
+          <button id="module-tab-link" type="button" class="module-tab-btn" role="tab" aria-controls="linktrack" aria-selected="true">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabLink">Cek Tautan</span><span class="module-tab-desc" data-i18n="toolDescLink">Periksa keamanan tautan sebelum dibuka.</span></span>
+          </button>
+          <button id="module-tab-file" type="button" class="module-tab-btn" role="tab" aria-controls="filecheck" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabFile">Cek File</span><span class="module-tab-desc" data-i18n="toolDescFile">Periksa file mencurigakan di perangkat Anda.</span></span>
+          </button>
+          <button id="module-tab-qr" type="button" class="module-tab-btn" role="tab" aria-controls="qrcheck" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z"/><path d="M21 14v.01M14 21v.01M21 21v.01"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabQr">Cek QR</span><span class="module-tab-desc" data-i18n="toolDescQr">Baca kode QR dan periksa isinya.</span></span>
+          </button>
+          <button id="module-tab-chatlog" type="button" class="module-tab-btn" role="tab" aria-controls="chatlog" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabChatlog">Cek Chat</span><span class="module-tab-desc" data-i18n="toolDescChatlog">Pindai ekspor chat dan tandai pesan berisiko.</span></span>
+          </button>
+          <button id="module-tab-report" type="button" class="module-tab-btn" role="tab" aria-controls="crowdreport" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabReport">Laporkan</span><span class="module-tab-desc" data-i18n="toolDescReport">Laporkan nomor atau rekening penipu.</span></span>
+          </button>
+          <button id="module-tab-contacts" type="button" class="module-tab-btn" role="tab" aria-controls="contacts" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabContacts">Kontak Resmi</span><span class="module-tab-desc" data-i18n="toolDescContacts">Nomor resmi bank, polisi, dan OJK.</span></span>
+          </button>
+          <button id="module-tab-aid" type="button" class="module-tab-btn" role="tab" aria-controls="firstaid" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabAid">Panduan Darurat</span><span class="module-tab-desc" data-i18n="toolDescAid">Langkah cepat bila Anda sudah tertipu.</span></span>
+          </button>
+          <button id="module-tab-quiz" type="button" class="module-tab-btn" role="tab" aria-controls="quiz" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabQuiz">Kuis</span><span class="module-tab-desc" data-i18n="toolDescQuiz">Uji kemampuan Anda mengenali penipuan.</span></span>
+          </button>
+          <button id="module-tab-how" type="button" class="module-tab-btn" role="tab" aria-controls="how" aria-selected="false">
+            <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+            <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabHow">Cara kerja</span><span class="module-tab-desc" data-i18n="toolDescHow">Cara TipuCek memeriksa pesan Anda.</span></span>
+          </button>
         </div>
       </nav>
 
-      <section id="filecheck" class="card filecheck module-panel" role="tabpanel" aria-labelledby="module-tab-file">
+      <section id="filecheck" class="card filecheck module-panel" role="tabpanel" aria-labelledby="module-tab-file" hidden>
         <h2 id="filecheck-heading" data-i18n="fileCheckHeading">Periksa file</h2>
         <p class="hint" data-i18n="fileCheckHint">Unggah file yang dikirim seseorang — TipuCek membaca strukturnya di perangkat Anda. File tidak pernah keluar dari perangkat Anda.</p>
         <div class="image-row">
@@ -258,20 +499,56 @@
           <button id="filecheck-btn" type="button" class="primary" disabled data-i18n="fileCheckBtn">Periksa file</button>
         </div>
         <p id="filecheck-name" class="muted" hidden></p>
+        <label class="field-label" for="filecheck-name-input" data-i18n="fileNameLabel">Atau periksa dari nama file</label>
+        <div class="image-row">
+          <input id="filecheck-name-input" type="text" autocomplete="off" data-i18n-placeholder="fileNamePlaceholder" placeholder="contoh: undangan-nikah.apk" />
+          <button id="filecheck-name-btn" type="button" class="secondary" data-i18n="fileNameBtn">Periksa nama file</button>
+        </div>
+        <p id="filecheck-name-error" class="error" role="alert" hidden></p>
         <div id="filecheck-result" class="filecheck-result" aria-live="polite" hidden></div>
         <p class="hint" data-i18n="fileHashNote">Sidik file dihitung di perangkat ini — file tidak pernah dikirim ke mana pun. Laporan komunitas saja, bukan pemindai antivirus.</p>
       </section>
 
-      <section id="linktrack" class="card linktrack module-panel" role="tabpanel" aria-labelledby="module-tab-link" hidden>
-        <h2 id="linktrack-heading" data-i18n="linktrackHeading">Lacak tautan</h2>
-        <p class="hint" data-i18n="linktrackHint">Tempel tautan yang dikirim seseorang. TipuCek mengikuti pemendek tautan dan mencari tahu registrar serta tanggal pendaftaran domainnya — hanya untuk tautan ini, karena Anda memintanya.</p>
+      <section id="qrcheck" class="card qrcheck module-panel" role="tabpanel" aria-labelledby="module-tab-qr" hidden>
+        <h2 id="qrcheck-heading" data-i18n="qrHeading">Periksa kode QR</h2>
+        <p class="hint" data-i18n="qrHint">Unggah foto atau tangkapan layar kode QR — TipuCek membacanya di perangkat Anda. Gambar tidak pernah keluar dari perangkat Anda.</p>
         <div class="image-row">
-          <input id="linktrack-input" type="url" data-i18n-placeholder="linktrackPlaceholder" placeholder="https://…" autocomplete="off" />
+          <label class="secondary image-picker">
+            <span data-i18n="qrChoose">Pilih gambar QR</span>
+            <input id="qrcheck-input" type="file" accept="image/*" hidden />
+          </label>
+          <button id="qrcheck-camera-btn" type="button" class="secondary" data-i18n="qrCamera">Pakai kamera</button>
+        </div>
+        <div id="qrcheck-camera" hidden>
+          <video id="qrcheck-video" playsinline muted></video>
+          <p class="muted" data-i18n="qrCameraScanning">Arahkan kamera ke kode QR…</p>
+          <button id="qrcheck-camera-stop" type="button" class="secondary" data-i18n="qrCameraStop">Berhenti</button>
+        </div>
+        <p id="qrcheck-name" class="muted" hidden></p>
+        <p id="qrcheck-error" class="error" role="alert" hidden></p>
+        <div id="qrcheck-result" class="qrcheck-result" aria-live="polite" hidden></div>
+        <p class="hint" data-i18n="qrLimit">Batas jujur: CRC yang cocok hanya membuktikan isinya konsisten, bukan bahwa QRIS-nya asli. TipuCek tidak bisa memverifikasi NMID — tidak ada daftar publiknya.</p>
+      </section>
+
+      <section id="linktrack" class="card linktrack module-panel" role="tabpanel" aria-labelledby="module-tab-link">
+        <h2 id="linktrack-heading" data-i18n="linktrackHeading">Lacak tautan</h2>
+        <p class="hint" data-i18n="linktrackHint">Tempel tautan yang dikirim seseorang. TipuCek mencoba mengikuti pemendek tautan dan mencari tahu registrar serta tanggal pendaftaran domainnya — hanya untuk tautan ini, karena Anda memintanya. Pemendek sering memblokir pelacakan dari browser, jadi tujuannya tidak selalu terlihat.</p>
+        <div class="image-row">
+          <!-- Audit 12 (4): type="url" made the browser flag a bare
+               domain ("example.com") as [invalid] even though the
+               app then accepts and normalizes it — the field is now
+               plain text with a URL keyboard hint, and validation
+               is the app's own (normalizeLinkInput). Gemini review:
+               type="url" also used to switch off capitalisation and
+               autocorrect; with type="text" those are switched off
+               explicitly, so a phone keyboard cannot rewrite a
+               domain the user typed. -->
+          <input id="linktrack-input" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" data-i18n-placeholder="linktrackPlaceholder" placeholder="https://…" autocomplete="off" />
           <button id="linktrack-btn" type="button" class="primary" data-i18n="linktrackBtn">Lacak tautan ini</button>
         </div>
         <p id="linktrack-error" class="error" role="alert" hidden></p>
         <div id="linktrack-result" class="linktrack-result" aria-live="polite" hidden></div>
-        <p class="hint" data-i18n="linktrackNote">Pelacakan menghubungi pemendek tautan dan pendaftar domain untuk tautan yang Anda masukkan. Tidak ada yang lain yang dikirim.</p>
+        <p class="hint" data-i18n="linktrackNote">Pelacakan mencoba menghubungi pemendek tautan dan pendaftar domain untuk tautan yang Anda masukkan. Tidak ada yang lain yang dikirim.</p>
       </section>
 
       <section id="contacts" class="card contacts module-panel" role="tabpanel" aria-labelledby="module-tab-contacts" hidden>
@@ -303,10 +580,13 @@
         <select id="crowd-type" class="crowd-select">
           <option value="phone" data-i18n="crowdTypePhone">Nomor HP</option>
           <option value="account" data-i18n="crowdTypeAccount">Nomor rekening</option>
+          <option value="message" data-i18n="crowdTypeMessage">Pesan penipu</option>
+          <option value="file" data-i18n="crowdTypeFile">File</option>
           <option value="mode" data-i18n="crowdTypeMode">Modus baru</option>
         </select>
         <label class="field-label" for="crowd-value" id="crowd-value-label">Nomor HP penipu</label>
         <input id="crowd-value" type="text" autocomplete="off" placeholder="08xxxxxxxxxx" />
+        <textarea id="crowd-message" rows="4" maxlength="2000" placeholder="Tempel pesan penipu di sini…" hidden></textarea>
         <p id="crowd-value-error" class="error" role="alert" hidden></p>
         <label class="field-label" for="crowd-details" data-i18n="crowdDetailsLabel">Deskripsi modus</label>
         <textarea id="crowd-details" rows="4" maxlength="500" data-i18n-placeholder="crowdDetailsPh" placeholder="Ceritakan singkat modusnya — apa yang terjadi, apa yang diminta penipu…"></textarea>
@@ -327,7 +607,7 @@
         <div class="image-row">
           <label class="secondary image-picker">
             <span data-i18n="chatlogChoose">Pilih ekspor .txt</span>
-            <input id="chatlog-input" type="file" accept=".txt,text/plain" hidden />
+            <input id="chatlog-input" type="file" accept=".txt,.json,.html,.htm,text/plain,application/json,text/html" hidden />
           </label>
           <button id="chatlog-btn" type="button" class="primary" disabled data-i18n="chatlogBtn">Pindai log chat</button>
         </div>
@@ -356,58 +636,10 @@
         </div>
       </section>
 
-      <section id="assistant" class="card assistant module-panel" role="tabpanel" aria-labelledby="module-tab-assistant" hidden>
-        <div class="assistant-head">
-          <div class="avatar" id="aman-avatar">
-            <img src="/aman.png" alt="Aman — TipuCek AI assistant" />
-          </div>
-          <div class="assistant-title">
-            <h2 id="assistant-heading" data-i18n="assistantHeading">Tanya Aman</h2>
-            <p class="assistant-sub" data-i18n="assistantSub">Asisten AI keamanan pesan Anda</p>
-          </div>
-        </div>
-        <p id="assistant-greeting" class="assistant-greeting"></p>
-        <div id="assistant-log" class="assistant-log" aria-live="polite"></div>
-        <div id="assistant-chips" class="assistant-chips"></div>
-        <div class="assistant-input-row">
-          <input
-            id="assistant-input"
-            type="text"
-            data-i18n-placeholder="assistantPlaceholder"
-            placeholder="Tanya Aman soal penipuan…"
-            autocomplete="off"
-          />
-          <button id="assistant-send" type="button" class="primary" data-i18n="assistantSend">Kirim</button>
-        </div>
-        <p id="assistant-note" class="assistant-note"></p>
-      </section>
-
-      <section id="history" class="card history module-panel" role="tabpanel" aria-labelledby="module-tab-history" hidden>
-        <div class="history-head">
-          <h2 id="history-heading" data-i18n="historyHeading">Riwayat pemeriksaan</h2>
-          <div class="history-actions">
-            <button id="export-history-btn" type="button" class="secondary" data-i18n="exportHistory">Unduh CSV</button>
-            <button id="clear-history-btn" type="button" class="secondary" data-i18n="clearHistory">Hapus riwayat lokal</button>
-          </div>
-        </div>
-        <p id="history-stats" class="history-stats"></p>
-        <p id="storage-note" class="storage-note">
-          Riwayat hanya tersimpan di browser ini. Selama pengaturan ini aktif, tidak ada yang dikirim ke cloud.
-        </p>
-        <label class="privacy-toggle">
-          <input type="checkbox" id="local-only-toggle" checked />
-          <span data-i18n="privacyLocalOnly">Simpan riwayat hanya di perangkat ini</span>
-        </label>
-        <p class="storage-note" data-i18n="privacyLocalOnlyNote">Saat aktif, hasil pemeriksaan tidak pernah dikirim ke cloud — riwayat hanya tersimpan di browser ini. Matikan untuk menyinkronkan riwayat ke akun cloud anonim Anda.</p>
-        <p id="history-empty" class="muted" data-i18n="historyEmpty">Belum ada pemeriksaan.</p>
-        <ul id="history-list" class="history-list"></ul>
-        <div class="crowd-history">
-          <h3 data-i18n="crowdHistoryTitle">Laporan yang Anda kirim</h3>
-          <p id="crowd-history-empty" class="muted" data-i18n="crowdHistoryEmpty">Belum ada laporan terkirim.</p>
-          <ul id="crowd-history-list" class="history-list"></ul>
-        </div>
-      </section>
-
+      <!-- History lives ONLY on the Riwayat dashboard now (21 Nov):
+           the history panel/sheet is gone; the bottom nav switches to
+           the #view-history dashboard, which holds the list, search,
+           badges, delete, privacy toggles, and Pengaturan. -->
       <section id="how" class="how module-panel" role="tabpanel" aria-labelledby="module-tab-how" hidden>
         <h2 id="how-heading" data-i18n="howHeading">Cara kerja</h2>
         <div class="how-grid">
@@ -432,34 +664,270 @@
         </div>
         <p class="muted" data-i18n="disclaimer">TipuCek memberi penilaian risiko, bukan jaminan. Bila ragu, verifikasi pengirim lewat jalur resmi dan jangan pernah membagikan OTP, PIN, atau kata sandi.</p>
         <p class="muted" data-i18n="deviceNote">AI di perangkat butuh browser yang didukung (Chrome dengan AI di perangkat). Di browser lain, model cloud yang menjawab — hasilnya selalu menyebut siapa yang menjawab.</p>
+        <!-- FAQ (23 Nov 2026): short, honest answers about what the app
+             actually does — free, local-only by default, offline limits.
+             The offline answer matches the online-only mode. -->
+        <div class="faq">
+          <h3 data-i18n="faqHeading">Pertanyaan umum</h3>
+          <details class="faq-item">
+            <summary data-i18n="faq1Q">Apakah TipuCek gratis?</summary>
+            <p data-i18n="faq1A">Ya — tanpa biaya dan tanpa langganan.</p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq2Q">Apakah data saya aman?</summary>
+            <p data-i18n="faq2A">Ya. Riwayat hanya tersimpan di perangkat ini, dan isi pesan tidak pernah dikirim. Bila Anda mengaktifkan sinkronisasi cloud, hanya ringkasan vonis yang dikirim. Tidak perlu login.</p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq3Q">Apakah bisa offline?</summary>
+            <p data-i18n="faq3A">Ya, sebagian. Aplikasi tetap terbuka dan memberi skor awal saat offline. Vonis lengkap butuh internet — begitu kembali, ketuk Coba lagi.</p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq4Q">Apakah Aman menyimpan percakapan saya?</summary>
+            <p data-i18n="faq4A">Tidak. Obrolan dengan Aman hilang begitu panel ditutup. Pertanyaan hanya dikirim ke AI cloud untuk dijawab.</p>
+          </details>
+        </div>
+        <button id="how-onboard-btn" type="button" class="secondary" data-i18n="onboardAgain">Lihat panduan pertama kali</button>
       </section>
 
-      <footer class="footer">
-        <p>
-          <a href="https://tipucek.web.app">TipuCek</a>
-          <span data-i18n="footerPre">— dibuat untuk</span>
-          <a href="https://buildhybridai.devpost.com/">#BuildHybridAI 2026</a>
-          <span data-i18n="footerPost">hackathon (Devpost). Open source dengan lisensi MIT —</span>
-          <a href="https://github.com/kyleweb3/tipucek">github.com/kyleweb3/tipucek</a>.
+      <section class="card share" aria-labelledby="share-heading">
+        <h2 id="share-heading" class="section-title" data-i18n="shareHeading">Bagikan TipuCek, lindungi bersama</h2>
+        <p data-i18n="shareText">Kirim TipuCek ke keluarga dan teman — supaya mereka juga bisa memeriksa pesan sebelum percaya.</p>
+        <div class="share-row">
+          <span class="share-link">tipucek.web.app</span>
+          <button id="share-copy-btn" type="button" class="share-copy" data-i18n="shareCopy">Salin tautan</button>
+        </div>
+        <!-- Penghitung pengunjung (Myuden 23 Nov 2026): pindah dari
+             footer ke kartu Bagikan — bukti sosial di tempat berbagi.
+             Tersembunyi sampai Firestore mengembalikan angka nyata. -->
+        <p class="share-visitors">
+          <span id="visitor-count" hidden>
+            <span class="footer-status-pill">
+              <span class="status-dot" aria-hidden="true"></span>
+              <strong id="visitor-count-num">0</strong>
+              <span data-i18n="visitorCountLabel">kunjungan</span>
+            </span>
+          </span>
         </p>
+      </section>
+
+      <!-- Install card (23 Nov 2026): the one install button. The tips
+           text moved here from the footer (23 Nov 2026 footer rework);
+           the button uses beforeinstallprompt when the browser offers
+           it, otherwise it shows the browser-menu instructions — never
+           a false install promise. Hidden when already installed. -->
+      <section class="card install-card" id="install-card" aria-labelledby="install-card-heading">
+        <h2 id="install-card-heading" data-i18n="installCardTitle">Pasang TipuCek di HP</h2>
         <p data-i18n="pwaInstallHint">Tips: pasang TipuCek di HP Anda dari menu browser (Tambahkan ke Layar utama) — lalu bagikan pesan apa pun ke TipuCek langsung dari WhatsApp.</p>
-      </footer>
+        <div class="install-row">
+          <button id="install-btn" type="button" class="primary" data-i18n="installBtn">Pasang TipuCek</button>
+        </div>
+        <p id="install-hint" class="muted" hidden></p>
+      </section>
+
+      </div><!-- /#view-home -->
+      <div id="view-history" hidden>
+        <!-- Riwayat dashboard (21 Nov, Myuden — "Hapus hamburger, semua
+             di dashboard"): the history panel/sheet is gone; Riwayat is
+             a full second dashboard here, switched by the bottom nav
+             or the Riwayat grid card. One history UI only. The back
+             button below is the way home on desktop, where the bottom
+             nav is hidden — without it Dashboard 2 would be a dead
+             end (found by the 21 Nov 0-findings sweep). -->
+        <button id="history-back-btn" type="button" class="back-btn">← <span data-i18n="navHome">Beranda</span></button>
+        <section class="card history-view" aria-labelledby="history-view-title">
+          <h2 id="history-view-title" data-i18n="historyHeading">Riwayat pemeriksaan</h2>
+          <div class="badges">
+            <h3 class="badges-title" data-i18n="badgesHeading">Lencana</h3>
+            <div id="history-badges-grid" class="badges-grid"></div>
+          </div>
+          <input id="history-search" class="history-search" type="search" data-i18n-placeholder="historySearchPh" placeholder="Cari riwayat…" autocomplete="off" />
+          <p id="history-stats" class="history-stats"></p>
+          <p id="history-empty" class="muted" data-i18n="historyEmpty">Belum ada pemeriksaan.</p>
+          <p id="history-empty-hint" class="muted" data-i18n="historyEmptyHint">Riwayat hanya tersimpan di perangkat ini.</p>
+          <p id="history-nomatch" class="muted" data-i18n="historyNoMatch" hidden>Tidak ada yang cocok.</p>
+          <ul id="history-list" class="history-list"></ul>
+          <div class="history-foot">
+            <button id="export-history-btn" type="button" class="secondary" data-i18n="exportHistory">Unduh CSV</button>
+            <button id="history-clear-btn" type="button" class="secondary" data-i18n="clearHistory">Hapus riwayat lokal</button>
+          </div>
+        </section>
+        <!-- Pengaturan (21 Nov): moved here from the deleted drawer.
+             Text size + accent + privacy toggles only — theme, language
+             and Senior Mode stay in the header, never duplicated. -->
+        <section class="card settings-view" aria-labelledby="settings-view-title">
+          <h2 id="settings-view-title" data-i18n="settingsHeading">Pengaturan</h2>
+          <!-- Mode Orang Tua lives here now (21 Nov, Myuden — the
+               header must be one slim line: logo + language + theme +
+               status dot only). Same button, same ID and behaviour —
+               bigger text, simpler view, forces light theme — just
+               moved from the header. -->
+          <button id="senior-toggle" type="button" class="secondary senior-btn" aria-pressed="false" data-i18n="seniorToggle">Mode Orang Tua</button>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="textSizeLabel">Ukuran teks</span>
+            <div class="lang-toggle" role="group" aria-label="Ukuran teks">
+              <button type="button" class="lang-btn" data-text-size-pick="small" aria-pressed="false" data-i18n="textSizeSmall">Kecil</button>
+              <button type="button" class="lang-btn" data-text-size-pick="medium" aria-pressed="true" data-i18n="textSizeMedium">Sedang</button>
+              <button type="button" class="lang-btn" data-text-size-pick="large" aria-pressed="false" data-i18n="textSizeLarge">Besar</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="accentLabel">Warna aksen</span>
+            <div class="accent-picks" role="group" aria-label="Warna aksen">
+              <button type="button" class="accent-pick" data-accent-pick="blue" aria-pressed="true"><span class="accent-dot" aria-hidden="true"></span><span class="visually-hidden" data-i18n="accentBlue">Biru</span></button>
+              <button type="button" class="accent-pick" data-accent-pick="green" aria-pressed="false"><span class="accent-dot" aria-hidden="true"></span><span class="visually-hidden" data-i18n="accentGreen">Hijau</span></button>
+              <button type="button" class="accent-pick" data-accent-pick="purple" aria-pressed="false"><span class="accent-dot" aria-hidden="true"></span><span class="visually-hidden" data-i18n="accentPurple">Ungu</span></button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="privacySaveHistory">Simpan riwayat pemeriksaan</span>
+            <span class="lang-toggle">
+              <button id="history-save-on-btn" type="button" class="lang-btn" aria-pressed="true" data-i18n="toggleOn">Aktif</button>
+              <button id="history-save-off-btn" type="button" class="lang-btn" aria-pressed="false" data-i18n="toggleOff">Mati</button>
+            </span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="privacyHideHistoryText">Sembunyikan isi pesan di riwayat</span>
+            <span class="lang-toggle">
+              <button id="history-hide-on-btn" type="button" class="lang-btn" aria-pressed="false" data-i18n="toggleOn">Aktif</button>
+              <button id="history-hide-off-btn" type="button" class="lang-btn" aria-pressed="true" data-i18n="toggleOff">Mati</button>
+            </span>
+          </div>
+        </section>
+      </div><!-- /#view-history -->
     </main>
 
-    <!-- Floating shortcut to Aman (the assistant): one tap opens the
-         "Tanya Aman" tab from anywhere on the page, without scrolling
-         to the tools section. The label follows the UI language via
-         data-i18n; the icon is decorative (aria-hidden), the visible
-         text is the accessible name. -->
-    <button id="aman-fab" type="button" class="aman-fab">
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-      <span data-i18n="moduleTabAssistant">Tanya Aman</span>
+    <!-- Footer (23 Nov 2026, gaya kartu ala PackVault — Myuden):
+         "gelembung" (kartu membulat, latar lembut) berisi: (1) logo +
+         TipuCek paling atas; (2) tombol GitHub di bawahnya; (3) garis
+         pemisah; (4) kredit hackathon, lisensi MIT, hak cipta di bawah.
+         Penghitung pengunjung PINDAH ke kartu Bagikan (bukti sosial),
+         tidak lagi di footer. -->
+    <footer class="footer">
+      <div class="footer-card">
+        <p class="footer-row footer-brand-row">
+          <a class="footer-brand-link footer-brand-name" href="https://tipucek.web.app">
+            <span class="footer-tile" aria-hidden="true"><img src="/logo-mark.svg" alt="" /></span>TipuCek
+          </a>
+        </p>
+        <p class="footer-row footer-desc-row">
+          <span data-i18n="footerDesc">Periksa pesan mencurigakan sebelum Anda percaya — gratis, privat, dibantu AI.</span>
+        </p>
+        <p class="footer-row">
+          <a class="footer-brand-link footer-gh-link" href="https://github.com/Myudenn/tipucek" target="_blank" rel="noopener" aria-label="GitHub TipuCek — github.com/Myudenn/tipucek">
+            <svg class="footer-icon" viewBox="0 0 19 19" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd" /></svg>
+          </a>
+        </p>
+        <p class="footer-row">
+          <a href="/privacy.html"><span data-i18n="footerPrivacy">Kebijakan Privasi</span></a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/Myudenn/tipucek/issues" target="_blank" rel="noopener"><span data-i18n="footerReport">Laporkan masalah</span></a>
+        </p>
+        <hr class="footer-divider" aria-hidden="true" />
+        <div class="footer-credit">
+          <p class="footer-row">
+            <span data-i18n="footerPre">Dibuat untuk</span>
+            <a href="https://firebasehybridaihackathon.devpost.com/">#BuildHybridAI 2026</a>
+            <span data-i18n="footerPost">hackathon (Devpost)</span>
+          </p>
+          <p class="footer-row">
+            <span data-i18n="footerTech">Firebase AI Logic + Gemini</span>
+          </p>
+        </div>
+        <div class="footer-bottom">
+          <p class="footer-row footer-license-row">
+            <span data-i18n="footerLicensePre">Open source dengan</span>
+            <a class="footer-license-link" href="https://github.com/Myudenn/tipucek/blob/main/LICENSE" target="_blank" rel="noopener">
+              <span data-i18n="footerLicense">lisensi MIT</span>
+            </a>
+          </p>
+          <p class="footer-row footer-copy">© 2026 TipuCek</p>
+        </div>
+      </div>
+    </footer>
+
+    <nav class="bottomnav" aria-label="Navigasi utama">
+      <div class="bottomnav-inner">
+        <button id="nav-home" type="button" class="nav-item active" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+          <span data-i18n="navHome">Beranda</span>
+        </button>
+        <button id="nav-history" type="button" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span data-i18n="navHistory">Riwayat</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Aman chat panel (20 Nov 2026): the assistant lives here, as a
+         floating overlay anchored bottom-right — opened ONLY by the
+         round avatar launcher (the module tab was removed 20 Nov 2026).
+         There is no second Aman UI on the page. -->
+    <section id="assistant" class="card assistant aman-panel module-panel" role="dialog" aria-labelledby="assistant-heading" aria-modal="false" hidden>
+      <div class="assistant-head">
+        <div class="avatar" id="aman-avatar">
+          <img src="/aman.png" alt="Aman — TipuCek AI assistant" />
+        </div>
+        <div class="assistant-title">
+          <h2 id="assistant-heading" data-i18n="assistantHeading">Aman</h2>
+          <p class="assistant-online"><span class="online-dot" aria-hidden="true"></span><span data-i18n="netOnline">Online</span></p>
+        </div>
+        <button id="assistant-close" type="button" class="assistant-close" aria-label="Tutup obrolan dengan Aman">×</button>
+      </div>
+      <div class="assistant-greeting">
+        <span class="assistant-greet-spark" aria-hidden="true">✦</span>
+        <h3 id="assistant-greeting"></h3>
+        <p id="assistant-greeting-sub" class="assistant-greet-sub"></p>
+      </div>
+      <div id="assistant-log" class="assistant-log" aria-live="polite"></div>
+      <div id="assistant-chips" class="assistant-chips"></div>
+      <div class="assistant-input-row">
+        <input
+          id="assistant-input"
+          type="text"
+          data-i18n-placeholder="assistantPlaceholder"
+          placeholder="Tanya Aman soal penipuan…"
+          autocomplete="off"
+        />
+        <button id="assistant-send" type="button" class="primary assistant-send-round" aria-label="Kirim">↑</button>
+      </div>
+      <p id="assistant-note" class="assistant-note"></p>
+      <p id="assistant-privacy" class="assistant-note"></p>
+    </section>
+
+    <!-- Aman launcher (20 Nov 2026): a round button with Aman's own
+         face and a green online dot — not a "?" circle. One tap opens
+         the Aman chat panel from anywhere on the page. The accessible
+         name comes from the visually hidden label (it follows the UI
+         language via data-i18n); the image is decorative. -->
+    <button id="aman-fab" type="button" class="aman-fab" aria-expanded="false" aria-controls="assistant">
+      <img src="/aman.png" alt="" />
+      <span class="aman-fab-dot" aria-hidden="true"></span>
+      <span class="visually-hidden" data-i18n="moduleTabAssistant">Tanya Aman</span>
     </button>
 
     <!-- Completion toast (round 6): shown when a final result card
          renders. role=status + aria-live announces it to screen
          readers; hidden until a check completes. -->
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+
+    <!-- (21 Nov: the "Periksa cepat" sheet was removed — the dashboard
+         checker is now the only check form. The bottom nav "Periksa"
+         item went with it.) -->
+    <!-- Onboarding (23 Nov 2026): 3-step first-time guide, shown once
+         (flag tipucek_onboarding_seen in localStorage), reopenable
+         from the "Cara kerja" panel. -->
+    <div id="onboard-scrim" class="onboard-scrim" hidden></div>
+    <section id="onboard" class="onboard" role="dialog" aria-modal="true" aria-labelledby="onboard-title" hidden>
+      <button id="onboard-close" type="button" class="dialog-close" aria-label="Tutup panduan">×</button>
+      <h2 id="onboard-title" data-i18n="onboardTitle">Mulai dalam 3 langkah</h2>
+      <ol class="onboard-steps">
+        <li><span class="onboard-num" aria-hidden="true">1</span><span><strong data-i18n="onboardStep1Title">Tempel pesan</strong><span class="onboard-desc" data-i18n="onboardStep1Desc">SMS, WhatsApp, DM, atau email apa pun yang mencurigakan.</span></span></li>
+        <li><span class="onboard-num" aria-hidden="true">2</span><span><strong data-i18n="onboardStep2Title">Periksa</strong><span class="onboard-desc" data-i18n="onboardStep2Desc">TipuCek memberi skor dan menunjukkan tanda bahayanya.</span></span></li>
+        <li><span class="onboard-num" aria-hidden="true">3</span><span><strong data-i18n="onboardStep3Title">Laporkan bila penipuan</strong><span class="onboard-desc" data-i18n="onboardStep3Desc">Sekali ketuk untuk mengirim nomor atau rekening penipuan.</span></span></li>
+      </ol>
+      <button id="onboard-start" type="button" class="primary" data-i18n="onboardStart">Mulai memeriksa</button>
+    </section>
 
     <script type="module" src="/src/main.js"></script>
     <!-- Print-only report (V4): filled by JS before window.print(),

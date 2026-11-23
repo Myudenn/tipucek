@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-// TipuCek — all-8-languages verification (bugs 1+2, Myuden 19 Nov 20:12:
+// TipuCek — both-languages verification (bugs 1+2, Myuden 19 Nov 20:12:
 // "Tes juga semua bahasa nya semua").
 //
 // Runs against a LOCAL Vite dev server (demo mode: no Firebase config,
 // so the local heuristic answers — its verdict strings come from the
 // same i18n tables as the production AI prompt language, which is what
-// this test pins). One scenario per language (id, en, es, fr, de, pt,
-// ja, zh), fresh browser context each:
+// this test pins). One scenario per language (id, en), fresh browser context each:
 //   (a) UI in that language: every [data-i18n] element + every
 //       [data-i18n-placeholder] equals t(key, lang); hero stat, mode
 //       label and <html lang> match; no "undefined" in visible text.
@@ -35,7 +34,7 @@ const PROXY_PORT = parseInt(process.env.LOCAL_PROXY_PORT || "18086", 10);
 const DEV_PORT = parseInt(process.env.TIPUCEK_DEV_PORT || "5174", 10);
 const DEV = `http://127.0.0.1:${DEV_PORT}/`;
 
-const LANGS = ["en", "id", "es", "fr", "de", "pt", "ja", "zh"];
+const LANGS = ["en", "id"];
 const SAMPLE_KEYS = [
   "sampleTextScam",
   "sampleTextSuspicious",
@@ -190,7 +189,7 @@ async function main() {
       // as a failed scenario check and continue with the next language.
       try {
         await page.goto(`${DEV}?lang=${lang}`, { waitUntil: "load", timeout: 60000 });
-        await page.waitForSelector("#lang-select option", { state: "attached", timeout: 15000 });
+        await page.waitForSelector("#lang-en-btn", { state: "attached", timeout: 15000 });
         await page.waitForTimeout(800);
 
         // ---- (a) static strings in this language ----
@@ -289,7 +288,7 @@ async function main() {
           (await historyCount(page)) === 1, `count=${await historyCount(page)}`);
 
         // ---- (c) switch language after the result is shown ----
-        await page.selectOption("#lang-select", nextLang);
+        await page.click(nextLang === "en" ? "#lang-en-btn" : "#lang-id-btn");
         const wantStatus = t(STATUS_KEY[statusKey], nextLang);
         const wantSummary = demoSummary(statusKey, nextLang);
         await page.waitForFunction(

@@ -7,7 +7,7 @@
 //     - history note is the honest local-only text, no "kamu" in the
 //       visible Indonesian UI, no static "Demo mode"
 //     - FAB visible, >= 48x48, label follows the language; clicking it
-//       opens the Tanya Aman tab and focuses the question box
+//       opens the Aman panel and focuses the question box
 //     - FAB overlaps neither the Check button (top) nor the footer
 //       (scrolled to the end)
 //   Phase B (VITE_* forced empty -> demo mode, local heuristic):
@@ -149,13 +149,17 @@ async function main() {
     const checkBox = await page.locator("#check-btn").boundingBox();
     check(tag, "FAB does not cover the Check button",
       !intersects(box, checkBox), `fab=${JSON.stringify(box)} check=${JSON.stringify(checkBox)}`);
-    // Click: opens the assistant tab + focuses the question box.
+    // Click: opens the Aman panel and focuses the question box. There
+    // is no "Tanya Aman" module tab anymore (Myuden 20 Nov 20:50) —
+    // the launcher is the only door, and the previously active module
+    // tab (link, the default since the 20 Nov 21:23 reorder) stays
+    // active underneath the overlay.
     await fab.click();
     await page.waitForTimeout(600);
     const assistantVisible = await page.locator("#assistant").isVisible();
-    const tabActive = await page.locator("#module-tab-assistant").getAttribute("aria-selected");
+    const tabActive = await page.locator("#module-tab-link").getAttribute("aria-selected");
     const focusedId = await page.evaluate(() => document.activeElement && document.activeElement.id);
-    check(tag, "FAB click opens the Tanya Aman tab", assistantVisible && tabActive === "true",
+    check(tag, "FAB click opens the Aman panel; the link tab stays active", assistantVisible && tabActive === "true",
       `visible=${assistantVisible} selected=${tabActive}`);
     check(tag, "FAB click focuses the question box", focusedId === "assistant-input", `focused=${focusedId}`);
     // Footer (scrolled to the very end): the FAB must not cover it.
@@ -180,7 +184,7 @@ async function main() {
           page.on("pageerror", (e) => errors.push("PAGEERROR: " + String((e && e.message) || e)));
           try {
             await page.goto(`${DEV}?lang=${lang}`, { waitUntil: "load", timeout: 60000 });
-            await page.waitForSelector("#lang-select option", { state: "attached", timeout: 15000 });
+            await page.waitForSelector("#lang-en-btn", { state: "attached", timeout: 15000 });
             await page.waitForTimeout(800);
             const modeLabel = (await page.locator("#mode-label").innerText()).trim();
             check(tag, "live mode label is the production value",
@@ -220,7 +224,7 @@ async function main() {
           page.on("pageerror", (e) => errors.push("PAGEERROR: " + String((e && e.message) || e)));
           try {
             await page.goto(`${DEV}?lang=${lang}`, { waitUntil: "load", timeout: 60000 });
-            await page.waitForSelector("#lang-select option", { state: "attached", timeout: 15000 });
+            await page.waitForSelector("#lang-en-btn", { state: "attached", timeout: 15000 });
             await page.waitForTimeout(800);
             const modeLabel = (await page.locator("#mode-label").innerText()).trim();
             check(tag, "demo build: JS overwrites the label to the demo label",

@@ -22,6 +22,15 @@ const CASES = [
   { id: "scam-family", intent: "scam", text: "Halo ini aku, ini nomor baru. Mama kecelakaan, kirim uang Rp 5 juta segera!" },
   { id: "scam-apk", intent: "scam", text: "Download aplikasi undangan pernikahan kami di sini: http://bit.ly/undangan-apk — install APK-nya ya!" },
   { id: "scam-invest", intent: "scam", text: "Investasi dijamin profit 30% per hari, guaranteed profit! Daftar sekarang, kirim dana Rp 500 ribu." },
+  // Job-scam regression (21 Nov 2026 false negative): "Pak Reza" — the
+  // job seeker transferred Rp 480.000 and was told to standby + check
+  // email. The cloud model judged it Safe 0/100; these rules scored 0.
+  { id: "scam-jobscam-pak-reza", intent: "scam", text: "Pak Reza\nJumlah Total Rp 480.000\nNo. Transaksi 2026011743008130078713\nudah di tf pak\nBaik\nBesok standby ya jam 14.00\nbaik pak\nBsk cek email ya\nbaik pak terimakasih\nFaqih udah selesai... No 1724" },
+  { id: "scam-job-deposit", intent: "scam", text: "LOWONGAN KERJA PARUH WAKTU! Gaji Rp 500.000/hari, kerja dari rumah, hanya like & subscribe video YouTube. Daftar sekarang, bayar deposit Rp 100.000 untuk aktivasi akun. Hubungi WA 0812-3456-7890." },
+  { id: "safe-job-real", intent: "safe", text: "Lowongan: Admin toko, gaji Rp 4,5 juta/bulan, jam kerja 09:00-17:00. Kirim CV ke tokoabadi@gmail.com." },
+  // J2 address fix (21 Nov, flows test): a street address is not a
+  // task number — "No. 12" must not fire the task-number rule.
+  { id: "safe-job-address", intent: "safe", text: "Selamat pagi, kami dari PT Maju Bersama mengundang Anda untuk wawancara kerja hari Senin jam 10 di kantor kami Jl. Sudirman No. 12. Harap bawa CV dan KTP. Terima kasih." },
   { id: "safe-office", intent: "safe", text: "Hi Budi, this is Sari from the office. The team meeting is moved to Thursday 10:00 in room 3B. Please bring the Q3 report. See you there!" },
   { id: "safe-meeting-id", intent: "safe", text: "Halo, ini Budi. Rapat besok jam 10 di kantor lantai 3." },
   { id: "safe-package", intent: "safe", text: "Paket Anda sudah sampai di rumah, terima kasih." },

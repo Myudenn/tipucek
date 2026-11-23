@@ -13,12 +13,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /checks/{checkId} {
       // Defense in depth: the client only ever writes the verdict
-      // fields (never the message text). The rule enforces that
-      // shape, so even a buggy or malicious client cannot store a
-      // raw message in the cloud (audit §2, added 19 Nov 2026).
+      // fields (never the message text). The rule enforces that shape
+      // AND the value types/ranges, so even a buggy or malicious
+      // client cannot store a raw message in the cloud (audit §2,
+      // added 19 Nov 2026) or a nonsense verdict (audit round 7, 20
+      // Nov 2026: riskScore 9999 / free-form status were possible).
+      // createdAt is an ISO string here (history.js writes
+      // new Date().toISOString()), NOT a timestamp — unlike the
+      // /reports and /crowd_reports collections.
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(["status", "riskScore", "redFlags", "summary", "source", "createdAt", "ownerUid"])
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status in ["scam", "suspicious", "safe"]
+        && request.resource.data.riskScore is int
+        && request.resource.data.riskScore >= 0
+        && request.resource.data.riskScore <= 100
+        && request.resource.data.redFlags is list
+        && request.resource.data.summary is string
+        && request.resource.data.source in ["ON_DEVICE", "IN_CLOUD", "DEMO", "LOCAL", "CODE", "Unknown"]
+        && request.resource.data.createdAt is string;
       allow read: if request.auth != null
         && resource.data.ownerUid == request.auth.uid;
       allow update, delete: if false;
@@ -51,12 +64,34 @@ service cloud.firestore {
         && request.resource.data.lastSeen is timestamp;
       allow delete: if false;
     }
+    // Anonymous visitor counter (Myuden 22 Nov 2026).
+    //
+    // Document site_stats/visitors holds ONLY { count } — a total
+    // visit count, no personal data. Anyone may read it (the site
+    // displays the total in the footer). Writes may only create a
+    // count-1 document or bump the count by exactly 1, and never
+    // touch another field. Like /reports, the client throttles to
+    // one count per device per day (localStorage date gate) and App
+    // Check + anonymous auth + these rules bound abuse. A
+    // determined actor can still inflate the number (clear storage
+    // and refresh) — that only makes it bigger, never leaks data.
+    match /site_stats/visitors {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(["count"])
+        && request.resource.data.count == 1;
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["count"])
+        && request.resource.data.count == resource.data.count + 1;
+      allow delete: if false;
+    }
     match /crowd_reports/{reportId} {
       // Crowdsourced scam reports — reviewed by a human first.
       //
       // A report holds EXACTLY { type, value, details, status,
       // createdAt, reporterUid } — the reported phone number / bank
-      // account / scam-mode title + a short description. Anyone
+      // account / scam message / file name / scam-mode title + a
+      // short description. Anyone
       // (including anonymous) may create one, but only with
       // status == "pending": a report is NEVER trusted outright and
       // NEVER shown to the public until the TipuCek team reviews it
@@ -65,10 +100,12 @@ service cloud.firestore {
       // Firebase Console. reporterUid is null for the anonymous app;
       // a future signed-in client may attach its own UID.
       allow create: if request.resource.data.keys().hasOnly(["type", "value", "details", "status", "createdAt", "reporterUid"])
-        && request.resource.data.type in ["phone", "account", "mode"]
+        && request.resource.data.type in ["phone", "account", "mode", "message", "file"]
         && request.resource.data.value is string
         && request.resource.data.value.size() > 0
-        && request.resource.data.value.size() <= 100
+        && (request.resource.data.type == "message"
+          ? request.resource.data.value.size() <= 2000
+          : request.resource.data.value.size() <= 100)
         && request.resource.data.details is string
         && request.resource.data.details.size() >= 10
         && request.resource.data.details.size() <= 500

@@ -1,5 +1,10 @@
 # TipuCek — Private Scam-Message Scanner
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Live](https://img.shields.io/badge/Live-tipucek.web.app-brightgreen)](https://tipucek.web.app)
+![Firebase AI Logic](https://img.shields.io/badge/Firebase_AI_Logic-Gemini-orange)
+![#BuildHybridAI 2026](https://img.shields.io/badge/%23BuildHybridAI-2026-blue)
+
 **Check the message before you trust it.**
 
 A single-page web app that checks whether a suspicious message (SMS,
@@ -7,7 +12,7 @@ WhatsApp, DM or email — Indonesian or English) is a scam. Built for the
 **#BuildHybridAI 2026** hackathon (Devpost + Firebase AI Logic).
 
 Why it matters: Indonesia's Anti-Scam Centre (IASC, OJK) recorded
-about **Rp 9.1 trillion (~US$500 million) in losses from 411,000+ scam reports
+about **Rp9 trillion (~US$500 million) in losses from 411,000+ scam reports
 (Nov 2024–Dec 2025)**, and GASA's 2025 report found **66% of
 Indonesians have experienced a scam attempt**. TipuCek is built for
 the people scammers target most — parents and grandparents, in their
@@ -98,16 +103,15 @@ own language, in one tap.
   shareable warning card rendered as a PNG through the native share
   sheet, and a one-tap PDF report (browser print, no dependencies).
 
-### Phone and PC, 8 languages
+### Phone and PC, 2 languages
 
 Responsive on a 390 px phone and a 1280 px desktop, with no horizontal
 overflow, touch targets of at least 44 px and 16 px inputs (no iOS zoom
 jump). Installable PWA (standalone display, service-worker cache
-`tipucek-v5`, 192/512/maskable icons, Apple touch icon) that registers
+`tipucek-v11`, 192/512/maskable icons, Apple touch icon) that registers
 as a share target — share a message to TipuCek straight from WhatsApp
 and it opens with the checker already filled in. The whole interface is
-translated into 8 languages (English, Bahasa Indonesia, Español,
-Français, Deutsch, Português, 日本語, 中文), auto-detected from the
+translated into 2 languages (English, Bahasa Indonesia), auto-detected from the
 browser, and the verdict itself is returned in the interface language.
 (The quiz bank is Indonesian + English only so far; other languages
 fall back to English.)
@@ -209,8 +213,7 @@ No account, no setup — open https://tipucek.web.app and:
 4. Open the **privacy receipt** at the bottom of any result card: it
    says what was sent, where it was answered, how long it took, and
    where the result is stored.
-5. Switch language (top right) — interface + verdict follow in
-   8 languages.
+5. Switch language (top right) — interface + verdict follow in 2 languages.
 
 ## Run it
 
@@ -282,7 +285,7 @@ name until changed manually.
 ## Project structure
 
 ```
-index.html               Single-page UI (8 languages, auto-detected)
+index.html               Single-page UI (2 languages, auto-detected)
 src/main.js              UI wiring, samples, online/offline indicator, copy/CSV,
                          screenshot check, share card, PWA registration,
                          senior mode, family alert, PDF report
@@ -302,13 +305,13 @@ src/quiz.js              "Scam or safe?" quiz (8 questions, ID + EN)
 src/emailcheck.js        Phishing-email check (local)
 src/callcheck.js         Phone-call check (local patterns + gated report lookup)
 src/sharecard.js         Shareable warning card (canvas PNG + Web Share)
-src/i18n.js              Interface translations (8 languages) + auto-detect
+src/i18n.js              Interface translations (2 languages) + auto-detect
 src/history.js           History: localStorage first, opt-in Firestore verdicts
 src/firebase-config.js   Firebase config (reads `.env.local`; placeholders mean Demo mode)
 src/styles.css           Responsive styling (light + dark, senior mode, print styles)
 public/aman.png          Aman avatar art (shield-and-star robot)
 public/manifest.webmanifest  PWA manifest (installable + share target)
-public/sw.js             Service worker (offline app shell, cache tipucek-v5)
+public/sw.js             Service worker (offline app shell, cache tipucek-v11)
 firestore.rules          Rules: verdict-only history (hasOnly) + hash-only reports
 tests/unit.test.mjs      Unit tests (node --test)
 tests/benchmark-local-rules.mjs  Local-rules demo benchmark

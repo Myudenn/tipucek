@@ -90,16 +90,28 @@ describe("static HTML: no visible mode claim", () => {
   });
 });
 
-describe("service worker: network-first documents, v7", () => {
+describe("service worker: network-first documents, v12", () => {
   for (const file of ["public/sw.js", "dist/sw.js"]) {
-    it(`${file}: cache is tipucek-v7`, (t) => {
+    it(`${file}: cache is tipucek-v12`, (t) => {
       if (!existsSync(path.join(ROOT, file))) {
         t.skip(`${file} not present (run npm run build first)`);
         return;
       }
       const sw = read(file);
-      assert.match(sw, /const CACHE = "tipucek-v7"/);
-      assert.doesNotMatch(sw, /tipucek-v6/);
+      assert.match(sw, /const CACHE = "tipucek-v12"/);
+      assert.doesNotMatch(sw, /tipucek-v11/);
+    });
+
+    it(`${file}: document fetch bypasses the HTTP cache (refresh-biasa, Myuden 22 Nov 21:25)`, (t) => {
+      if (!existsSync(path.join(ROOT, file))) {
+        t.skip(`${file} not present (run npm run build first)`);
+        return;
+      }
+      const sw = read(file);
+      // A plain fetch() can return a stale index.html the browser
+      // cached with max-age=3600 — cache:"reload" forces a real
+      // network fetch, so a normal refresh always gets the new bundle.
+      assert.match(sw, /fetch\(new Request\(event\.request, \{ cache: "reload" \}\)\)/);
     });
 
     it(`${file}: install is per-asset, never all-or-nothing`, (t) => {
@@ -151,9 +163,10 @@ describe("service worker: network-first documents, v7", () => {
         fetchHandler.indexOf('startsWith("/assets/")'),
       );
       assert.ok(
-        docBranch.indexOf("fetch(event.request)") <
-          docBranch.indexOf("caches.match(event.request)"),
-        "document branch must fetch from the network before falling back to cache",
+        docBranch.indexOf('fetch(new Request(event.request, { cache: "reload" }))') >= 0 &&
+          docBranch.indexOf('fetch(new Request(event.request, { cache: "reload" }))') <
+            docBranch.indexOf("caches.match(event.request)"),
+        "document branch must fetch from the network (cache:reload) before falling back to cache",
       );
       // Hashed assets: cache-first (caches.match before fetch).
       assert.match(fetchHandler, /startsWith\("\/assets\/"\)/);

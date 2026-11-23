@@ -114,11 +114,16 @@ describe("call check, number only (gap 2)", () => {
       JSON.stringify(verdict.redFlags),
     );
   });
-  it("an official number alone is safe, with the official flag", async () => {
+  it("an official number alone is safe, with the official INFO (not a red flag)", async () => {
     const { verdict } = await analyzeCall({ number: "1500888", said: "" }, "en");
     assert.equal(verdict.status, "safe");
     assert.equal(verdict.riskScore, 0);
-    assert.ok(verdict.redFlags.some((f) => /BCA/.test(f)), JSON.stringify(verdict.redFlags));
+    // Audit 5: the official match is information, never a danger sign.
+    assert.equal(verdict.redFlags.length, 0);
+    assert.ok((verdict.infoFlags || []).some((f) => /BCA/.test(f)), JSON.stringify(verdict.infoFlags));
+    // The number-only row is info too: 0 triggered rules.
+    assert.equal(verdict.checks.filter((c) => c.found && c.kind !== "info").length, 0);
+    assert.equal(verdict.checks.filter((c) => c.kind === "info").length, 1);
   });
   it("a malformed number alone is suspicious, not safe", async () => {
     const { verdict } = await analyzeCall({ number: "123", said: "" }, "en");

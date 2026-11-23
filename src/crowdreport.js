@@ -8,10 +8,14 @@
 // no public list of reports anywhere in the app.
 //
 // Privacy: only what the user typed in the form is sent — the
-// reported number/account/mode + the description. No check history,
-// no personal data. The form says so in plain language, and the
-// success box repeats it. reporterUid is null: the app signs in
-// anonymously, but no UID is stored with the report.
+// reported number/account/message/file/mode + the description. No
+// check history, no personal data. The form says so in plain
+// language, and the success box repeats it. reporterUid is null:
+// the app signs in anonymously, but no UID is stored with the report.
+// A reported scam message is stored as the user pasted it — that is
+// the point of the report (the evidence for review) — and it is only
+// ever visible to the TipuCek owner in the Firebase Console, never
+// shown to the public.
 //
 // A local copy is also kept in localStorage
 // ("tipucek_crowd_reports_v1") so the user sees their own sent
@@ -23,11 +27,15 @@ import {
   connectEmulatorsIfEnabled,
 } from "./firebase-config.js";
 
-export const CROWD_TYPES = ["phone", "account", "mode"];
+export const CROWD_TYPES = ["phone", "account", "mode", "message", "file"];
 export const CROWD_DETAILS_MIN = 10;
 export const CROWD_DETAILS_MAX = 500;
 export const CROWD_MODE_VALUE_MIN = 3;
 export const CROWD_MODE_VALUE_MAX = 100;
+export const CROWD_MESSAGE_VALUE_MIN = 10;
+export const CROWD_MESSAGE_VALUE_MAX = 2000;
+export const CROWD_FILE_VALUE_MIN = 1;
+export const CROWD_FILE_VALUE_MAX = 100;
 
 const LS_KEY = "tipucek_crowd_reports_v1";
 const MAX_LOCAL = 50;
@@ -74,6 +82,14 @@ export function validateCrowdReport({ type, value, details }) {
   } else if (type === "mode") {
     if (v.length < CROWD_MODE_VALUE_MIN || v.length > CROWD_MODE_VALUE_MAX) {
       errors.value = "crowdErrMode";
+    }
+  } else if (type === "message") {
+    if (v.length < CROWD_MESSAGE_VALUE_MIN || v.length > CROWD_MESSAGE_VALUE_MAX) {
+      errors.value = "crowdErrMessage";
+    }
+  } else if (type === "file") {
+    if (v.length < CROWD_FILE_VALUE_MIN || v.length > CROWD_FILE_VALUE_MAX) {
+      errors.value = "crowdErrFile";
     }
   }
   if (d.length < CROWD_DETAILS_MIN || d.length > CROWD_DETAILS_MAX) {

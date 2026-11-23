@@ -13,9 +13,18 @@
 // official checker (cekrekening.id) instead of pretending otherwise.
 
 const SHORTENERS = new Set([
-  "bit.ly", "tinyurl.com", "t.co", "s.id", "goo.gl", "shorturl.at",
-  "cutt.ly", "is.gd", "rb.gy", "shorte.st", "ow.ly", "buff.ly", "adf.ly",
-  "bit.do", "mcaf.ee", "soo.gd", "tiny.cc", "v.gd", "qr.ae", "t.ly",
+  "bit.ly", "bitly.is", "tinyurl.com", "t.co", "s.id", "goo.gl",
+  "shorturl.at", "cutt.ly", "is.gd", "rb.gy", "shorte.st", "ow.ly",
+  "buff.ly", "adf.ly", "bit.do", "mcaf.ee", "soo.gd", "tiny.cc",
+  "v.gd", "qr.ae", "t.ly",
+  // Audit 13 ("lacak tautan apa saja"): more well-known shorteners
+  // so their links are judged by their (hidden) destination, not
+  // by their own harmless-looking address. Only genuine URL
+  // shorteners are listed — a regular site is never added here.
+  "rebrand.ly", "bl.ink", "cut.ly", "short.io", "tiny.one", "lnk.to",
+  "cli.re", "urlz.fr", "gg.gg", "t2m.io", "short.cm", "v.ht", "u.to",
+  "q.gs", "bc.vc", "cur.lv", "ity.im", "shorturl.com", "shrtco.de",
+  "snip.ly",
 ]);
 
 const SUSPICIOUS_TLDS = new Set([
@@ -70,6 +79,11 @@ function tldOf(host) {
 
 /** Analyze one URL. Returns { url, host, level, reasons[] (i18n keys) }. */
 export function analyzeLink(url) {
+  // Audit 13 (D): the scheme is case-insensitive (RFC 3986) — an
+  // uppercase "HTTPS://" is the same scheme. Normalize it here so a
+  // directly-passed uppercase URL is judged exactly like its
+  // lowercase twin (the "http://" rule below is case-sensitive).
+  url = String(url || "").replace(/^https?:\/\//i, (m) => m.toLowerCase());
   const host = hostOf(url);
   const reasons = [];
   let level = "safe";
@@ -89,7 +103,10 @@ export function analyzeLink(url) {
     reasons.push("linkRiskIp");
   }
   if (host.includes("xn--")) {
-    if (level !== "high") level = "low";
+    // Punycode (IDN homograph) host: a classic phishing vector — a
+    // domain that only looks like a familiar brand once decoded
+    // (e.g. xn--bca-9ya.co.id). Never merely "low": it is high risk.
+    level = "high";
     reasons.push("linkRiskPunycode");
   }
   if (url.includes("@") && !url.startsWith("mailto:")) {
@@ -104,6 +121,20 @@ export function analyzeLink(url) {
   if (subdomains >= 3) {
     if (level === "safe") level = "low";
     reasons.push("linkRiskSubdomains");
+  }
+  // Direct .apk download from a non-store host: the classic Indonesian
+  // wedding-invite / courier APK scam — an installer link in a chat
+  // message is never "safe". The Play Store never serves raw .apk
+  // links in chat, so it is exempted.
+  let path = "";
+  try { path = new URL(url).pathname.toLowerCase(); } catch { path = ""; }
+  if (
+    /\.apk(\/|$)/.test(path) &&
+    host !== "play.google.com" &&
+    !host.endsWith(".play.google.com")
+  ) {
+    level = "high";
+    reasons.push("linkRiskApk");
   }
   // Brand look-alike: host mentions a brand but is not its real domain.
   // Matched on host LABELS (split on "." and "-"): "abcabc.com" does
@@ -125,8 +156,14 @@ export function analyzeLink(url) {
 
 /** Analyze every URL in a message (deduplicated, order preserved). */
 export function analyzeLinks(message) {
-  const urls = (message.match(/https?:\/\/[^\s<>"')]+/g) || []).map((u) =>
-    u.replace(/[.,;:!?]+$/, ""),
+  // Audit 13 (D): the scheme is case-insensitive (RFC 3986) — an
+  // uppercase "HTTPS://" is the same scheme, but the old regex only
+  // matched lowercase, so the "links in this message" section
+  // silently vanished for "HTTPS://example.com/...". Match any case
+  // and normalize the scheme to lowercase so the rest of the
+  // pipeline (token stripping, risk rules) sees one canonical form.
+  const urls = (message.match(/https?:\/\/[^\s<>"')]+/gi) || []).map((u) =>
+    u.replace(/[.,;:!?]+$/, "").replace(/^https?:\/\//i, (m) => m.toLowerCase()),
   );
   const seen = new Set();
   const out = [];
@@ -147,9 +184,24 @@ const ACCOUNT_RE = /\b\d{4}[- ]?\d{4}[- ]?\d{2,8}\b/g;
 /** Extract phone numbers + account-like numbers from a message. */
 export function extractNumbers(message) {
   const text = message || "";
-  const phones = [...new Set(text.match(PHONE_RE) || [])];
-  const accounts = [...new Set(text.match(ACCOUNT_RE) || [])].filter(
-    (a) => !phones.includes(a),
-  );
+  // A phone match must NOT start inside a longer digit run (21 Nov
+  // 2026, live: "No. Transaksi 2026011743008130078713" yielded the
+  // phantom phone "08130078713" — a substring of the 22-digit
+  // transaction number). The char before the match must not be a
+  // digit; the trailing \b already stops a match ending mid-run.
+  const phoneSpans = [...text.matchAll(PHONE_RE)]
+    .map((m) => ({ value: m[0], start: m.index, end: m.index + m[0].length }))
+    .filter((m) => m.start === 0 || !/\d/.test(text[m.start - 1]));
+  const phones = [...new Set(phoneSpans.map((m) => m.value))];
+  const accounts = [...new Set(
+    [...text.matchAll(ACCOUNT_RE)]
+      .map((m) => ({ value: m[0], start: m.index, end: m.index + m[0].length }))
+      // An account candidate overlapping a phone match is the same
+      // number, not a second one (e.g. "+6281234567890" also matches
+      // ACCOUNT_RE as "6281234567890" — it must not be listed as a
+      // bank account as well).
+      .filter((a) => !phoneSpans.some((p) => a.start < p.end && p.start < a.end))
+      .map((a) => a.value),
+  )].filter((a) => !phones.includes(a));
   return { phones, accounts };
 }
