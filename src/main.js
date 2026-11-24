@@ -3817,8 +3817,12 @@ function buildSamples() {
 // Apply the current language to every static string in the page.
 function applyStaticLanguage() {
   document.documentElement.lang = lang;
+  document.title = t("pageTitle", lang);
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     el.textContent = t(el.dataset.i18n, lang);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel, lang));
   });
   // Hero title: highlight the keyword ("penipuan?" / "a scam?") — the
   // generic loop above would wipe the inner span, so set it by hand.

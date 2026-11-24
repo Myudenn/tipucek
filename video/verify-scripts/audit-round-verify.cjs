@@ -989,6 +989,7 @@ async function main() {
   // AMBIGUOUS CASES prompt calibration (23 Nov 2026): courier non-official domain + personal-email job
   check("ah21 ai.js prompt ambiguous courier rule: non-official domain is suspicious 30-59", /AMBIGUOUS CASES[\s\S]*?COURIER[\s\S]*?NOT the courier's official domain[\s\S]*?'suspicious' 30-59/i.test(ai));
   check("ah22 ai.js prompt ambiguous job rule: personal-email contact is suspicious 30-59", /AMBIGUOUS CASES[\s\S]*?JOB[\s\S]*?personal email address[\s\S]*?'suspicious' 30-59/i.test(ai));
+  check("ah23 ai.js prompt ambiguous promo rule: unsolicited voucher on official domain is suspicious 30-59", /AMBIGUOUS CASES[\s\S]*?PROMO[\s\S]*?official domain[\s\S]*?'suspicious' 30-59/i.test(ai));
 
   try {
     execFileSync(process.execPath, ["tests/i18n-parity-audit.cjs"], { cwd: ROOT, stdio: "pipe" });

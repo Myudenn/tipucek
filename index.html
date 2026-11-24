@@ -89,7 +89,7 @@
                2; hidden on mobile, where the bottom nav does the job.
                Label follows language via the existing navHistory key. -->
           <button id="header-history-link" type="button" class="header-history-link" data-i18n="navHistory">Riwayat</button>
-          <div class="lang-toggle" role="group" aria-label="Bahasa / Language">
+          <div class="lang-toggle" role="group" aria-label="Bahasa / Language" data-i18n-aria-label="langToggleAria">
             <button id="lang-id-btn" type="button" class="lang-btn" aria-pressed="true">ID</button>
             <button id="lang-en-btn" type="button" class="lang-btn" aria-pressed="false">EN</button>
           </div>
@@ -160,7 +160,7 @@
         <p class="hero-source"><a href="https://ojk.go.id/id/berita-dan-kegiatan/siaran-pers/Pages/OJK-dan-Bareskrim-Polri-Sepakat-Perkuat-Kolaborasi-Penanganan-Pengaduan-Pada-Indonesia-Anti-Scam-Centre.aspx" target="_blank" rel="noopener" data-i18n="heroSource">Sumber: OJK — Indonesia Anti-Scam Centre (IASC)</a></p>
       </section>
 
-      <section class="stats" aria-label="Statistik penipuan">
+      <section class="stats" aria-label="Statistik penipuan" data-i18n-aria-label="statsAria">
         <div class="stat">
           <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span>
           <div class="stat-label" data-i18n="statLossLabel">Kerugian Penipuan</div>
@@ -206,7 +206,7 @@
         <h2 id="checker-heading" data-i18n="checkerHeading">Periksa pesan mencurigakan</h2>
         <p class="hint" id="checker-hint" data-i18n="checkerHint">Dalam mode AI, pesan dianalisis di perangkat Anda dulu (privat), dan hanya beralih ke cloud bila diperlukan. Hasil selalu menunjukkan siapa yang menjawab.</p>
 
-        <div class="checker-tabs" role="tablist" aria-label="Mode pemeriksaan">
+        <div class="checker-tabs" role="tablist" aria-label="Mode pemeriksaan" data-i18n-aria-label="checkerTabsAria">
           <button id="tab-btn-message" type="button" class="checker-tab-btn" aria-controls="tab-message" role="tab" aria-selected="true" data-i18n="messageTab">Cek Pesan</button>
           <button id="tab-btn-email" type="button" class="checker-tab-btn" aria-controls="tab-email" role="tab" aria-selected="false" data-i18n="emailTab">Cek Email</button>
           <button id="tab-btn-call" type="button" class="checker-tab-btn" aria-controls="tab-call" role="tab" aria-selected="false" data-i18n="callTab">Cek Nomor</button>
@@ -217,13 +217,13 @@
         <!-- Flow steps (21 Nov 2026, demo reference): 1 fill, 2 send,
              3 see the result. The active/done state follows progress
              (see setCheckStep in main.js). -->
-        <ol class="check-steps" aria-label="Alur pemeriksaan">
+        <ol class="check-steps" aria-label="Alur pemeriksaan" data-i18n-aria-label="checkStepsAria">
           <li id="step-1" class="active"><span class="step-num">1</span><span data-i18n="step1">Isi pesan</span></li>
           <li id="step-2"><span class="step-num">2</span><span data-i18n="step2">Tekan kirim</span></li>
           <li id="step-3"><span class="step-num">3</span><span data-i18n="step3">Lihat hasil</span></li>
         </ol>
         <p class="samples-heading" data-i18n="samplesHeading">Coba contoh:</p>
-        <div class="samples" id="samples" aria-label="Coba contoh pesan"></div>
+        <div class="samples" id="samples" aria-label="Coba contoh pesan" data-i18n-aria-label="samplesAria"></div>
         <p id="fill-note" class="fill-note" role="status"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span data-i18n="fillNote">Contoh sudah terisi di kolom pesan dan belum terkirim. Tekan tombol kirim untuk memeriksanya.</span></p>
 
         <div class="chat-composer">
@@ -448,7 +448,7 @@
              chip row cut "Kontak Resmi" to "...smi"). Last row has 2
              cards (3+3+2). Tapping a card opens that tool exactly like
              the old tab did (same switchModuleTab). -->
-        <div class="module-tabs" role="tablist" aria-label="Fitur lainnya">
+        <div class="module-tabs" role="tablist" aria-label="Fitur lainnya" data-i18n-aria-label="moduleTabsAria">
           <button id="module-tab-link" type="button" class="module-tab-btn" role="tab" aria-controls="linktrack" aria-selected="true">
             <span class="module-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
             <span class="module-tab-text"><span class="module-tab-name" data-i18n="moduleTabLink">Cek Tautan</span><span class="module-tab-desc" data-i18n="toolDescLink">Periksa keamanan tautan sebelum dibuka.</span></span>
@@ -556,7 +556,7 @@
         <p class="hint" data-i18n="contactsHint">Pesan yang mengaku dari bank, toko, atau operator adalah palsu bila nomornya bukan nomor resmi di bawah ini. Hubungi nomor di sini — jangan pernah nomor yang ada di pesan.</p>
         <div class="contacts-controls">
           <input id="contacts-search" type="search" data-i18n-placeholder="contactsSearch" placeholder="Cari bank, toko, atau operator…" autocomplete="off" />
-          <div class="contacts-cats" id="contacts-cats" role="group" aria-label="Kategori"></div>
+          <div class="contacts-cats" id="contacts-cats" role="group" aria-label="Kategori" data-i18n-aria-label="contactsCatsAria"></div>
         </div>
         <ul id="contacts-list" class="contacts-list"></ul>
         <p id="contacts-empty" class="muted" hidden data-i18n="contactsNoResult">Tidak ada yang cocok — coba nama lain.</p>
@@ -566,7 +566,7 @@
       <section id="firstaid" class="card firstaid module-panel" role="tabpanel" aria-labelledby="module-tab-aid" hidden>
         <h2 id="aid-heading" data-i18n="aidHeading">Sudah terjadi? Bertindak sekarang</h2>
         <p class="hint" data-i18n="aidHint">Pilih yang terjadi. Kerjakan langkahnya berurutan — menit-menit pertama paling penting.</p>
-        <div class="aid-options" id="aid-options" role="group" aria-label="Yang terjadi"></div>
+        <div class="aid-options" id="aid-options" role="group" aria-label="Yang terjadi" data-i18n-aria-label="aidOptionsAria"></div>
         <p id="aid-steps-title" class="aid-steps-title" hidden></p>
         <ol id="aid-steps" class="aid-steps" hidden></ol>
         <p class="muted" data-i18n="aidNote">Panduan umum, bukan nasihat hukum atau keuangan. Uang yang sudah terkirim tidak dijamin kembali — bertindak cepat dan ikuti arahan bank serta pihak berwenang.</p>
@@ -764,7 +764,7 @@
           <button id="senior-toggle" type="button" class="secondary senior-btn" aria-pressed="false" data-i18n="seniorToggle">Mode Orang Tua</button>
           <div class="settings-row">
             <span class="settings-label" data-i18n="textSizeLabel">Ukuran teks</span>
-            <div class="lang-toggle" role="group" aria-label="Ukuran teks">
+            <div class="lang-toggle" role="group" aria-label="Ukuran teks" data-i18n-aria-label="textSizeAria">
               <button type="button" class="lang-btn" data-text-size-pick="small" aria-pressed="false" data-i18n="textSizeSmall">Kecil</button>
               <button type="button" class="lang-btn" data-text-size-pick="medium" aria-pressed="true" data-i18n="textSizeMedium">Sedang</button>
               <button type="button" class="lang-btn" data-text-size-pick="large" aria-pressed="false" data-i18n="textSizeLarge">Besar</button>
@@ -772,7 +772,7 @@
           </div>
           <div class="settings-row">
             <span class="settings-label" data-i18n="accentLabel">Warna aksen</span>
-            <div class="accent-picks" role="group" aria-label="Warna aksen">
+            <div class="accent-picks" role="group" aria-label="Warna aksen" data-i18n-aria-label="accentAria">
               <button type="button" class="accent-pick" data-accent-pick="blue" aria-pressed="true"><span class="accent-dot" aria-hidden="true"></span><span class="visually-hidden" data-i18n="accentBlue">Biru</span></button>
               <button type="button" class="accent-pick" data-accent-pick="green" aria-pressed="false"><span class="accent-dot" aria-hidden="true"></span><span class="visually-hidden" data-i18n="accentGreen">Hijau</span></button>
               <button type="button" class="accent-pick" data-accent-pick="purple" aria-pressed="false"><span class="accent-dot" aria-hidden="true"></span><span class="visually-hidden" data-i18n="accentPurple">Ungu</span></button>
@@ -845,7 +845,7 @@
       </div>
     </footer>
 
-    <nav class="bottomnav" aria-label="Navigasi utama">
+    <nav class="bottomnav" aria-label="Navigasi utama" data-i18n-aria-label="bottomNavAria">
       <div class="bottomnav-inner">
         <button id="nav-home" type="button" class="nav-item active" aria-current="page">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>

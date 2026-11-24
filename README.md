@@ -372,18 +372,21 @@ deliberately narrow so that it stays true:
 
 Numbers we can stand behind (all re-runnable from this repo):
 
-- **137 tests passing, 0 failing** — `npm test` (unit + structural
-  `firestore.rules` + gap-fix + cache-stale + no-JS-render suites,
-  29 suites). The rules tests assert on
+- **345 tests passing, 0 failing** — `npm test` (56 suites: unit +
+  structural `firestore.rules` + gap-fix + cache-stale + no-JS-render +
+  toast-complete; verified 25 Nov 2026 — run `npm run build` first, the
+  toast-complete suite tests the bundle in `dist/`). The rules tests assert on
   the rules text (no Java → no Firestore emulator here) and say so.
 - **Model failover + code-only fallback are unit-tested** (primary
   error/timeout → backup answers once; both fail → last error; primary
   success → backup never called; code-only verdict identical to the
   heuristic, source `CODE`, never cached).
-- **AI benchmark protocol** — `tests/ai-benchmark-cases.json` +
+- **AI benchmark: Run 4 scored 25/25 (100%)** — `tests/ai-benchmark-cases.json` +
   `tests/AI-BENCHMARK.md`: 25 fixed cases run through the live site
-  (11 scam, 10 safe, 4 hard). First live run pending; numbers are
-  quoted only after that run.
+  (11 scam, 10 safe, 4 hard), latest run 23 Nov 2026 via cloud browser.
+  Run 1: 21/25, Run 2: 23/25, Run 3: 24/25. Local rules score 24/25 on
+  the same set. AI scores are non-deterministic — always quote the
+  latest run's numbers.
 - **Local-rules demo benchmark: 14/14 flagged, 0 false positives,
   0 false negatives**, mean scam score 49.4 vs. safe 7.7
   (`tests/benchmark-local-rules.mjs`). Labelled honestly: this is a
@@ -393,9 +396,11 @@ Numbers we can stand behind (all re-runnable from this repo):
 - **Four issues found by live testing on 19 Nov, all fixed and
   re-verified in the browser** — text files, number-only call checks,
   the standalone link tracker (see the checks table above). QRIS
-  checking was removed the same day at the owner's request — no official
-  registry can verify a QRIS merchant, so the feature was deleted
-  rather than kept half-working.
+  *payment* was removed the same day at the owner's request. QR
+  *checking* (read-only detection) was added 23 Nov: it parses the code
+  (EMV/TLV + CRC-16 check) and says plainly that a structurally valid
+  QRIS code does not prove the merchant genuine — no public NMID
+  registry exists.
 - **Voice output removed 19 Nov** — cloud TTS + device voice never
   produced any sound on the user's phone, so the whole voice-output feature was
   removed; call-voice INPUT (record/upload → transcribe → score) is kept.
@@ -412,7 +417,8 @@ Numbers we can stand behind (all re-runnable from this repo):
 - Verify on-device inference on a real desktop Chrome and report the
   result honestly.
 - Google Search Console + search indexing.
-- Demo video (max 3 minutes) for the Devpost submission.
+- Demo video: done — https://www.youtube.com/watch?v=C6FjuBs7Wuo
+  (v18, 2:53, submitted to Devpost 25 Nov 2026).
 - Moderation for community reports: the crowd report-back form
   exists and every report stays `pending` until a human reviews it;
   the next step is the review workflow that turns reviewed reports
